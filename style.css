@@ -1,0 +1,390 @@
+/* ==========================================================================
+   Base & Typography Enhancements
+   ========================================================================== */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f4f4f4 100%);
+    background-attachment: fixed;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+    background: #fffb00;
+    color: #1a1a1a;
+}
+
+/* ==========================================================================
+   Visual Flair & Highlights
+   ========================================================================== */
+.highlight-yellow {
+    background: linear-gradient(180deg, transparent 60%, #fffb00 60%);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    animation: drawHighlight 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    animation-delay: 0.5s;
+    padding: 0 4px;
+    margin: 0 -4px;
+}
+
+@keyframes drawHighlight {
+    to { background-size: 100% 100%; }
+}
+
+/* Add a subtle modern floating effect to main cards */
+.bg-white.shadow-xl {
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.bg-white.shadow-xl:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 20px rgba(217, 37, 37, 0.03);
+}
+
+/* ==========================================================================
+   Custom Range Sliders (Inputs)
+   ========================================================================== */
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    padding: 10px 0;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: #e5e7eb;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    transition: background 0.3s;
+}
+
+input[type=range]:hover::-webkit-slider-runnable-track {
+    background: #d1d5db;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    border: 2px solid #fff;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+}
+
+input[type=range]::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+    background: #d92525;
+}
+
+/* Map specific accent slider */
+#slider-map-year::-webkit-slider-thumb {
+    background: #d92525;
+}
+
+/* ==========================================================================
+   Buttons & Interactive Elements
+   ========================================================================== */
+button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+    transform: scale(0.96);
+}
+
+/* Glassmorphism for map panels */
+#region-info-panel, .absolute.bottom-6.left-6.bg-white {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   Backgrounds (Molecule & Map)
+   ========================================================================== */
+.molecule-bg {
+    background-color: #0f172a; /* Deeper, richer dark blue/black */
+    background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255, 251, 0, 0.05) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 20px 20px, 20px 20px;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+    border: 1px solid #334155;
+}
+
+.map-bg {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #f0f9ff;
+    position: relative;
+}
+
+/* Vignette overlay for map to make lines pop */
+.map-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ==========================================================================
+   Ethnography Hotspots & Map Nodes
+   ========================================================================== */
+.hotspot {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: #fffb00;
+    border-radius: 50%;
+    cursor: pointer;
+    animation: pulse 2s infinite;
+    border: 3px solid #1a1a1a;
+    box-shadow: 0 0 10px rgba(255, 251, 0, 0.8);
+    transform: translate(-50%, -50%); 
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(217, 37, 37, 0.7); }
+    70% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 0 15px rgba(217, 37, 37, 0); }
+    100% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(217, 37, 37, 0); }
+}
+
+button[title="USA"], button[title="Africa"], button[title="Europe"] {
+    animation: pulse 2.5s infinite;
+}
+
+.hotspot-content {
+    display: none;
+}
+
+.hotspot.active + .hotspot-content {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Chart Containers & Specific Layouts
+   ========================================================================== */
+.chart-container {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+/* Dynamic Legal Citation Footnote Styling */
+#case-citation {
+    position: relative;
+    padding-left: 28px !important; 
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+#case-citation:hover {
+    background-color: #eff6ff;
+    border-left: 3px solid #3b82f6;
+}
+
+#case-citation::before {
+    content: '↳';
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    color: #3b82f6; 
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* ==========================================================================
+   Map Flow Animations
+   ========================================================================== */
+.flow-line {
+    stroke-dasharray: 12, 12;
+    animation: dash-flow 30s linear infinite;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.flow-line-reverse {
+    animation: dash-flow-reverse 10s linear infinite;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+@keyframes dash-flow {
+    to { stroke-dashoffset: -1000; }
+}
+
+@keyframes dash-flow-reverse {
+    to { stroke-dashoffset: 1000; }
+}
+
+/* ==========================================================================
+   Grid Animations & Scrollbars (Section 7)
+   ========================================================================== */
+@keyframes fadeInBlock {
+    0% { opacity: 0; transform: scale(0.5) translateY(5px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.labor-block {
+    opacity: 0; 
+    transition: background-color 0.2s;
+}
+
+.labor-block:hover {
+    background-color: #1a1a1a;
+    transform: scale(1.2);
+    z-index: 10;
+    position: relative;
+}
+
+/* Elegant Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 8px;
+    border: 2px solid #f8fafc; /* creates padding effect */
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+}
+
+#labor-grid-container::-webkit-scrollbar-thumb {
+    background: #d92525;
+    border-color: #f9fafb;
+}
+
+/* ==========================================================================
+   Game Theory Button States (Section 9)
+   ========================================================================== */
+.btn-strategy {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-strategy.selected {
+    background-color: #1a1a1a; 
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.btn-strategy.selected:hover {
+    background-color: #000000;
+}
+
+.btn-strategy.selected .badge-cost {
+    background-color: #374151; 
+    color: #ffffff;
+}
+
+.btn-strategy.unselected {
+    background-color: #ffffff;
+    color: #1a1a1a; 
+    border-color: #1a1a1a;
+}
+
+.btn-strategy.unselected:hover {
+    background-color: #f3f4f6; 
+}
+
+.btn-strategy.unselected .badge-cost {
+    background-color: #e5e7eb; 
+    color: #1a1a1a;
+}
+
+/* ==========================================================================
+   Game Theory Button States (Section 9)
+   ========================================================================== */
+.btn-strategy {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-strategy.selected {
+    background-color: #1a1a1a; 
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.btn-strategy.selected:hover {
+    background-color: #000000;
+}
+
+.btn-strategy.selected .badge-cost {
+    background-color: #374151; 
+    color: #ffffff;
+}
+
+.btn-strategy.unselected {
+    background-color: #ffffff;
+    color: #1a1a1a; 
+    border-color: #1a1a1a;
+}
+
+.btn-strategy.unselected:hover {
+    background-color: #f3f4f6; 
+}
+
+.btn-strategy.unselected .badge-cost {
+    background-color: #e5e7eb; 
+    color: #1a1a1a;
+}
+
+/* Ensure Section 10 header follows normal casing */
+#oecd-benchmarks h3 {
+    text-transform: none !important;
+}
+
+/* Style for the new source block list markers */
+.text-scrollRed {
+    color: #d92525; /* Match your brand red */
+}
+
+/* Standardizing the Section 10 Card */
+.article-card {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.article-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08); /* Matches your project shadow style */
+}
+
+/* Ensure font casing is correct */
+#oecd-benchmarks h3 {
+    text-transform: none;
+}
