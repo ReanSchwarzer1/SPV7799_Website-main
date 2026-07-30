@@ -750,5 +750,24 @@
     <script src="script.js"></script>
     <script src="game.js"></script>
     <script type="module" src="interludes.js"></script>
+    <script type="module" src="interlude-molecule.js"></script>
+    <script type="module" src="interlude-courtroom.js"></script>
+    <script>
+    // The 3D layer uses ES modules, which browsers refuse to load from a
+    // file:// origin. If this page was opened by double-clicking the file,
+    // say so plainly instead of failing silently.
+    if (location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function () {
+        var b = document.createElement('div');
+        b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:200;' +
+          'background:#d92525;color:#fff;font:600 13px system-ui,sans-serif;' +
+          'padding:10px 16px;text-align:center;';
+        b.textContent = 'Opened as a file, so the 3D scenes cannot load. ' +
+          'Double-click run-game.cmd in this folder instead (it starts a local ' +
+          'server and opens the game). The 2D layer still works on this page.';
+        document.body.appendChild(b);
+      });
+    }
+    </script>
 </body>
 </html>

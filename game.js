@@ -21,14 +21,16 @@
     innov: INNOV_START,
     done: {},            // levelIndex -> true
     ruledCases: {},      // caseNumber -> 'open'|'monopoly'
+    rulings: {},         // caseNumber -> full record, for the term dispatch
+    viaMoleculeScene: false,
     regionVisited: false,
     started: false
   };
 
   // level config, indexed to the 10 <section> elements in order
   var LEVELS = [
-    { t: "Read the price, not the chemistry",
-      g: "Toggle the market to <b>Indian Generic</b> and watch the same molecule's price collapse." },
+    { t: "Prove the two samples are one drug",
+      g: "At the synthesis bench, rotate the US sample until it superimposes on the Indian generic. Identical molecule, and then look at the two prices." },
     { t: "Rule as the Patent Authority",
       g: "Decide all <b>6</b> cases. Protecting access raises Access; granting monopolies raises Innovation but costs Access." },
     { t: "Shift value to patients",
@@ -133,7 +135,258 @@
     var fb = $("goal-fb-" + idx);
     if (fb && feedback) fb.innerHTML = feedback;
     updateHUD();
+    directorAdvance(idx);
     if (levelsDone() === 10) setTimeout(showReport, 600);
+  }
+
+  // -------- director: linear flow between objectives --------
+  // The game leads: finishing an objective moves the player to the next one.
+  // Modules 1 and 2 ARE 3D scenes, entered directly rather than opted into.
+  function toast(msg, ms) {
+    var t = $("game-toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "game-toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._hide);
+    t._hide = setTimeout(function () { t.classList.remove("show"); }, ms || 3200);
+  }
+
+  function goToSection(n) {
+    var secs = document.querySelectorAll("main > section");
+    var sec = secs[n];
+    if (!sec) return;
+    sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    var card = $("goal-card-" + n);
+    if (card) {
+      card.classList.add("flash");
+      setTimeout(function () { card.classList.remove("flash"); }, 2600);
+    }
+  }
+
+  // Enter a 3D scene, waiting for the module layer to arrive. The 3D files
+  // load as ES modules (plus three.js from a CDN) and can lag behind this
+  // script, so poll before concluding the layer is unavailable.
+  function enterScene(opts) {
+    if (opts.doneCheck()) return;
+    if (document.querySelector(".il-overlay")) return;   // a scene is already open
+    var waited = 0;
+    (function attempt() {
+      if (opts.doneCheck() || document.querySelector(".il-overlay")) return;
+      var launch = window[opts.launcher];
+      if (typeof launch === "function") { launch(); return; }
+      if (waited >= 6000) {
+        console.warn("[game] 3D layer unavailable; falling back to the page for " + opts.launcher);
+        toast("3D scenes could not load. Continuing on the page — run the site through a local server (run-game.cmd) for the full game.", 5200);
+        goToSection(opts.fallbackSection);
+        return;
+      }
+      waited += 300;
+      setTimeout(attempt, 300);
+    })();
+  }
+
+  function enterMolecule() {
+    enterScene({ launcher: "launchMolecule", fallbackSection: 0,
+                 doneCheck: function () { return !!g.done[0]; } });
+  }
+
+  function enterCourtroom() {
+    enterScene({ launcher: "launchCourtroom", fallbackSection: 1,
+                 doneCheck: function () { return !!g.done[1]; } });
+  }
+
+  // -------- the term dispatch --------
+  // After the two embodied modules, the player reads back what they did and
+  // what it produced, in the site's own voice, then chooses to walk on. Built
+  // as a <div> (not a <section>) so the module indexing stays untouched.
+  function buildDispatch() {
+    if ($("term-dispatch")) return $("term-dispatch");
+    var secs = document.querySelectorAll("main > section");
+    if (!secs[1]) return null;
+
+    var rulings = [];
+    for (var i = 1; i <= 6; i++) if (g.rulings[i]) rulings.push(g.rulings[i]);
+    var opened = rulings.filter(function (r) { return !r.granted; }).length;
+    var granted = rulings.length - opened;
+
+    var openingLine = g.viaMoleculeScene
+      ? "Your term began at the synthesis bench. Two sealed vials, one bought in the United States " +
+        "at $179.93 a pill and one made in India for around $1.50. You turned one until it lay in the " +
+        "same orientation as the other and saw the thing for yourself: one molecule, imatinib, in both " +
+        "hands. Nothing in the chemistry accounted for the gap."
+      : "Your term began with two prices for one molecule. Imatinib sells at $179.93 a pill in the " +
+        "United States and around $1.50 in India, and the compound is identical in both markets. " +
+        "Nothing in the chemistry accounted for the gap.";
+
+    var verdictLine;
+    if (rulings.length === 0) {
+      verdictLine = "No case has been decided yet.";
+    } else if (granted === 0) {
+      verdictLine = "You intervened every time. In all " + rulings.length + " cases you refused the " +
+        "monopoly and let competitors in, which is the most access-forward term the bench allows.";
+    } else if (opened === 0) {
+      verdictLine = "You upheld the patent holder every time. All " + rulings.length + " monopolies " +
+        "stand, and the incentive to invent is intact, but almost no one downstream can pay.";
+    } else {
+      verdictLine = "You opened the market in " + opened + " of " + rulings.length + " cases and let " +
+        "the monopoly stand in " + (granted === 1 ? "one" : granted) + ". That mix is the trade-off " +
+        "this office actually lives with: every ruling bought access somewhere and cost incentive " +
+        "somewhere else.";
+    }
+
+    var marketOpen = /REJECT|CL|OPEN/i.test((($("val-monopoly-status") || {}).textContent || ""));
+    var standingLine = marketOpen
+      ? "The market you are handing on is open. Generic manufacturers can enter it, and the sections " +
+        "ahead will price it accordingly."
+      : "The market you are handing on is closed. One firm sets the price in it, and the sections " +
+        "ahead will price it accordingly.";
+
+    var ledger = rulings.map(function (r) {
+      return '<li class="mb-4 pb-4 border-b border-gray-700 last:border-0">' +
+        '<div class="flex flex-wrap items-baseline gap-x-3 mb-1">' +
+          '<span class="font-mono text-[10px] sm:text-xs text-gray-500">CASE 00' + r.num + '</span>' +
+          '<span class="font-bold text-sm sm:text-base">' + esc(r.title) + '</span>' +
+        '</div>' +
+        '<div class="font-mono text-[10px] sm:text-xs text-gray-500 mb-2">' + esc(r.drug) + '</div>' +
+        '<div class="text-xs sm:text-sm font-sans mb-2">' +
+          '<span class="uppercase tracking-wide font-bold ' +
+            (r.granted ? 'text-scrollRed' : 'text-voxYellow') + '">' +
+            'You ruled: ' + esc(r.action) + '</span>' +
+        '</div>' +
+        (r.outcome ? '<p class="font-serif text-xs sm:text-sm text-gray-300 leading-relaxed">' +
+          esc(r.outcome) + '</p>' : '') +
+      '</li>';
+    }).join("");
+
+    var wrap = document.createElement("div");
+    wrap.id = "term-dispatch";
+    wrap.className = "mb-16 sm:mb-24";
+    wrap.innerHTML =
+      '<h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">Dispatch: the record so far</h3>' +
+      '<p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">' +
+        'Before the economics catches up with you, read what you have actually done.</p>' +
+      '<div class="bg-brandDark text-white p-5 sm:p-8 rounded-xl shadow-2xl border-l-8 border-voxYellow">' +
+        '<p class="font-serif text-base sm:text-lg text-gray-200 leading-relaxed mb-4">' +
+          openingLine + '</p>' +
+        '<p class="font-serif text-base sm:text-lg text-gray-200 leading-relaxed mb-6">' +
+          'Then six companies came before you.</p>' +
+        '<h4 class="font-bold text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 mb-4 ' +
+          'border-b border-gray-700 pb-2">Your rulings</h4>' +
+        '<ul class="list-none p-0 m-0 mb-6">' + ledger + '</ul>' +
+        '<p class="font-serif text-base sm:text-lg text-gray-200 leading-relaxed mb-3">' +
+          verdictLine + '</p>' +
+        '<p class="font-serif text-base sm:text-lg text-gray-200 leading-relaxed mb-6">' +
+          standingLine + '</p>' +
+        '<div class="grid grid-cols-2 gap-4 sm:gap-6 mb-6">' +
+          '<div class="bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-700">' +
+            '<div class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Access</div>' +
+            '<div class="text-3xl sm:text-4xl font-mono font-bold text-green-400" ' +
+              'id="dispatch-access">' + Math.round(g.access) + '</div></div>' +
+          '<div class="bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-700">' +
+            '<div class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Innovation</div>' +
+            '<div class="text-3xl sm:text-4xl font-mono font-bold text-blue-400" ' +
+              'id="dispatch-innov">' + Math.round(g.innov) + '</div></div>' +
+        '</div>' +
+        '<button id="dispatch-next" class="w-full py-3 sm:py-4 bg-voxYellow text-brandDark font-bold ' +
+          'uppercase tracking-wide text-sm sm:text-base rounded hover:bg-yellow-300 transition">' +
+          'Walk out to the market floor &rarr;</button>' +
+      '</div>';
+
+    secs[1].insertAdjacentElement("afterend", wrap);
+    $("dispatch-next").addEventListener("click", function () {
+      toast("Level 3: shift the value toward patients.");
+      goToSection(2);
+    });
+    return wrap;
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function showDispatch() {
+    var d = buildDispatch();
+    if (!d) return;
+    d.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function directorAdvance(idx) {
+    if (idx === 0) {
+      // module 1 done. If the player is still inside the molecule scene, the
+      // handoff happens when that scene closes (interlude:end); otherwise
+      // (2D fallback path) walk them to the bench from here.
+      if (!document.querySelector(".il-overlay")) {
+        toast("Objective met. The bench awaits…");
+        setTimeout(enterCourtroom, 900);
+      }
+    } else if (idx === 1) {
+      // all six cases ruled. Inside the courtroom the handoff waits for the
+      // scene to close; on the 2D fallback path, go straight to the dispatch.
+      if (!document.querySelector(".il-overlay")) {
+        toast("Your rulings are on the record.");
+        setTimeout(showDispatch, 600);
+      }
+    } else if (idx >= 2 && idx <= 8) {
+      // on-page objectives: walk the player to the next section
+      toast("Objective met. Next: level " + (idx + 2) + ".");
+      setTimeout(function () { goToSection(idx + 1); }, 700);
+    }
+    // idx 9 ends in the report card.
+  }
+
+  function directorInit() {
+    // when a 3D scene closes, decide where the player goes next
+    document.addEventListener("interlude:end", function (ev) {
+      if (!ev.detail) return;
+
+      if (ev.detail.id === "molecule") {
+        if (g.done[0]) {
+          g.viaMoleculeScene = true;   // the dispatch narrates it in first person
+          // identity proven -> the law is what set that price, so: the bench
+          toast("Chemistry settled. Now the law that set the price.");
+          setTimeout(enterCourtroom, 800);
+        } else {
+          toast("The samples are still sealed. Return to the bench when ready.");
+          goToSection(0);
+        }
+        return;
+      }
+
+      if (ev.detail.id === "courtroom") {
+        if (g.done[1]) {
+          // both embodied modules are behind them: read the term back first
+          toast("Your rulings are on the record.");
+          setTimeout(showDispatch, 500);
+        } else {
+          toast("The bench will wait. Return when you are ready.");
+        }
+      }
+    });
+
+    // if the player scrolls into a 3D module's section with its objective
+    // still open, the game re-enters that scene once (a later skip sticks)
+    var secs = document.querySelectorAll("main > section");
+    function reopenOnScroll(sectionIdx, levelIdx, enter) {
+      var used = false;
+      if (!secs[sectionIdx] || !("IntersectionObserver" in window)) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting || used) return;
+          if (g.started && !g.done[levelIdx] && !document.querySelector(".il-overlay")) {
+            used = true;
+            enter();
+          }
+        });
+      }, { threshold: 0.3 });
+      io.observe(secs[sectionIdx]);
+    }
+    reopenOnScroll(0, 0, enterMolecule);
+    reopenOnScroll(1, 1, enterCourtroom);
   }
 
   // -------- consequence helpers (read from the DOM, not internals) --------
@@ -168,6 +421,16 @@
         if (isNaN(num)) return;
         if (!g.ruledCases[num]) {
           g.ruledCases[num] = isGrant ? "monopoly" : "open";
+          // keep a record of the decision so the term can be narrated back
+          var txt = function (id) { var e = $(id); return e ? e.textContent.trim() : ""; };
+          g.rulings[num] = {
+            num: num,
+            title: txt("case-title"),
+            drug: txt("case-drug").replace(/^Drug:\s*/i, ""),
+            granted: isGrant,
+            action: isGrant ? "Granted the monopoly" : txt("btn-reject"),
+            outcome: txt("ruling-outcome")
+          };
           if (isGrant) { g.access = clamp(g.access - 3); g.innov = clamp(g.innov + 5); }
           else { g.access = clamp(g.access + 7); g.innov = clamp(g.innov - 1); }
           updateHUD();
@@ -315,6 +578,10 @@
       m.setAttribute("hidden", "");
       m.remove();
       g.started = true;
+      // the game leads from the first moment, and it opens in 3D: two sealed
+      // samples on the synthesis bench rather than a control to fiddle with
+      toast("First objective: two samples. Prove they are the same drug.");
+      setTimeout(enterMolecule, 500);
     });
   }
 
@@ -356,6 +623,7 @@
     buildGoalCards();
     wrapGlobals();
     attachListeners();
+    directorInit();
     showIntro();
   }
 

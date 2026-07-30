@@ -37,16 +37,25 @@ const registry = new Map();
 let active = null; // current running session
 
 // ---------- shell ----------
-function buildOverlay(def) {
+function buildOverlay(def, params) {
   const o = document.createElement("div");
   o.className = "il-overlay";
   o.innerHTML =
     '<div class="il-head">' +
       '<span class="kicker">' + (def.kicker || "3D interlude") + '</span>' +
-      '<h2>' + (def.title || "") + '</h2>' +
-      '<span class="step">' + (def.step || "") + '</span>' +
+      '<h2>' + ((params && params.title) || def.title || "") + '</h2>' +
+      '<span class="step">' + ((params && params.step) || def.step || "") + '</span>' +
     '</div>' +
-    '<div class="il-stage"><div class="il-hint"></div></div>' +
+    '<div class="il-stage">' +
+      '<aside class="il-brief" hidden>' +
+        '<div class="il-brief-head">' +
+          '<span class="il-brief-label">Brief</span>' +
+          '<button class="il-brief-toggle" type="button">Hide</button>' +
+        '</div>' +
+        '<div class="il-brief-body"></div>' +
+      '</aside>' +
+      '<div class="il-hint"></div>' +
+    '</div>' +
     '<div class="il-foot">' +
       '<span class="status">Goal not met yet</span>' +
       '<span class="spacer"></span>' +
@@ -57,12 +66,12 @@ function buildOverlay(def) {
   return o;
 }
 
-function play(id) {
+function play(id, params) {
   const def = registry.get(id);
   if (!def) { console.warn("[interludes] unknown interlude:", id); return; }
   if (active) active.close(false); // only one at a time; close the prior session
 
-  const overlay = buildOverlay(def);
+  const overlay = buildOverlay(def, params);
   const stage = overlay.querySelector(".il-stage");
   const hintEl = overlay.querySelector(".il-hint");
   const statusEl = overlay.querySelector(".status");
@@ -89,10 +98,12 @@ function play(id) {
   const pointer = new THREE.Vector2();
   const keys = Object.create(null);
   let completed = false;
+  let actionHandler = null; // when set, the footer button runs this instead of closing
 
   const ctx = {
     THREE, scene, camera, renderer, container: stage,
     assets: def.assets || {},
+    params: params || {},
     pickables: [],
     pointer, raycaster, keys,
     complete() {
@@ -102,7 +113,47 @@ function play(id) {
       statusEl.classList.add("done");
       goBtn.disabled = false;
     },
-    setHint(t) { hintEl.textContent = t || ""; }
+    setHint(t) { hintEl.textContent = t || ""; },
+    // Show the page's own text for whatever the player is acting on, so the
+    // scene is never a decision made without the evidence. Text only (set via
+    // textContent), never markup. Pass nothing to hide the panel.
+    setBrief(parts) {
+      const panel = overlay.querySelector(".il-brief");
+      const body = overlay.querySelector(".il-brief-body");
+      const label = overlay.querySelector(".il-brief-label");
+      if (!parts) { panel.hidden = true; return; }
+      panel.hidden = false;
+      label.textContent = parts.label || "Brief";
+      body.innerHTML = "";
+      const add = (cls, text) => {
+        if (!text) return;
+        const p = document.createElement("p");
+        p.className = cls;
+        p.textContent = text;
+        body.appendChild(p);
+      };
+      add("il-brief-claim", parts.claim);
+      add("il-brief-context", parts.context);
+      add("il-brief-outcome", parts.outcome);
+      body.scrollTop = 0;
+    },
+    setStatus(t, done) {
+      statusEl.textContent = t || "";
+      statusEl.classList.toggle("done", !!done);
+    },
+    setTitle(title, step) {
+      const h = overlay.querySelector("h2"), s = overlay.querySelector(".step");
+      if (h && title != null) h.textContent = title;
+      if (s && step != null) s.textContent = step;
+    },
+    // take over the footer button for scene-internal steps ("Next case", ...).
+    // fn === null restores the default behavior (close the interlude).
+    setAction(label, fn) {
+      goBtn.textContent = label || "Continue";
+      goBtn.disabled = false;
+      actionHandler = fn || null;
+    },
+    finish() { endSession(true); }
   };
   ctx.setHint(def.instructions || "");
 
@@ -122,6 +173,10 @@ function play(id) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    // let the scene refit its framing to the new aspect
+    if (instance && instance.onResize) {
+      try { instance.onResize(w, h); } catch (e) { console.error(e); }
+    }
   }
   resize();
   window.addEventListener("resize", resize);
@@ -182,12 +237,28 @@ function play(id) {
   function endSession(finished) {
     if (finished && def.onComplete) { try { def.onComplete(); } catch (e) {} }
     teardown();
+    // let the page (the game director) react to the scene ending
+    document.dispatchEvent(new CustomEvent("interlude:end", {
+      detail: { id, finished: !!finished }
+    }));
   }
 
-  goBtn.addEventListener("click", () => endSession(true));
+  goBtn.addEventListener("click", () => {
+    if (actionHandler) { const fn = actionHandler; fn(); }
+    else endSession(true);
+  });
   skipBtn.addEventListener("click", () => endSession(false));
 
-  active = { id, close: endSession };
+  // let the player fold the brief away to see the whole scene
+  const briefPanel = overlay.querySelector(".il-brief");
+  const briefToggle = overlay.querySelector(".il-brief-toggle");
+  briefToggle.addEventListener("click", () => {
+    const collapsed = briefPanel.classList.toggle("collapsed");
+    briefToggle.textContent = collapsed ? "Read brief" : "Hide";
+  });
+
+  active = { id, close: endSession,
+             _internals: { ctx, get instance() { return instance; }, camera, scene } };
 }
 
 function close(finished) { if (active) active.close(finished); }
@@ -197,7 +268,9 @@ window.Interludes = {
   register(id, def) { registry.set(id, def); },
   has(id) { return registry.has(id); },
   play,
-  close
+  close,
+  // dev/testing accessor: internals of the running session (null when idle)
+  debug() { return active ? { id: active.id, ...active._internals } : null; }
 };
 
 // ============================================================
@@ -259,11 +332,6 @@ window.Interludes.register("harness-test", {
   }
 });
 
-// temporary on-screen trigger so the harness is testable on its own
-window.addEventListener("DOMContentLoaded", () => {
-  const b = document.createElement("button");
-  b.id = "il-test-trigger";
-  b.textContent = "▶ Test 3D interlude";
-  b.addEventListener("click", () => window.Interludes.play("harness-test"));
-  document.body.appendChild(b);
-});
+// (the temporary on-screen test trigger was removed once real interludes
+// were wired into the game flow; play("harness-test") remains available
+// from the console for harness debugging)

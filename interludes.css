@@ -4,12 +4,16 @@
    objectives. One shared shell; each interlude fills the canvas.
    ============================================================ */
 
+/* Starts below the fixed game HUD so the Access / Innovation meters stay
+   visible while a 3D scene is running. The player should never lose sight
+   of the two quantities their decisions are moving. */
 .il-overlay {
-  position: fixed; inset: 0; z-index: 130;
+  position: fixed; top: 76px; left: 0; right: 0; bottom: 0; z-index: 130;
   background: radial-gradient(ellipse at 50% 30%, #1b2030 0%, #0b0d12 75%);
   display: flex; flex-direction: column;
   font-family: 'Work Sans', system-ui, sans-serif; color: #fff;
 }
+@media (max-width: 720px) { .il-overlay { top: 104px; } }
 .il-overlay[hidden] { display: none; }
 
 .il-head {
@@ -23,6 +27,59 @@
 
 .il-stage { position: relative; flex: 1; min-height: 0; }
 .il-stage canvas { display: block; width: 100%; height: 100%; outline: none; }
+
+/* ---- case brief: the page's own text, inside the scene ---- */
+.il-brief {
+  position: absolute; top: 14px; left: 14px; z-index: 5;
+  width: 320px; max-width: calc(100% - 28px);
+  background: rgba(10, 12, 18, .82);
+  border: 1px solid rgba(255,255,255,.14);
+  border-left: 3px solid #fffb00;
+  border-radius: 8px;
+  backdrop-filter: blur(3px);
+}
+.il-brief[hidden] { display: none; }
+.il-brief-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px 8px 12px;
+}
+.il-brief-label {
+  font-size: 10px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: #fffb00;
+}
+.il-brief-toggle {
+  margin-left: auto; background: transparent; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.22); border-radius: 5px;
+  color: #cbd2da; font: 600 11px 'Work Sans', system-ui, sans-serif;
+  padding: 3px 8px;
+}
+.il-brief-toggle:hover { color: #fff; border-color: rgba(255,255,255,.45); }
+.il-brief-body {
+  padding: 0 12px 12px; max-height: 46vh; overflow-y: auto;
+}
+.il-brief.collapsed .il-brief-body { display: none; }
+.il-brief-body p { margin: 0 0 10px; }
+.il-brief-claim {
+  font: italic 400 14px/1.5 Merriweather, Georgia, serif;
+  color: #f2ede2;
+  border-left: 2px solid rgba(255,251,0,.5);
+  padding-left: 10px;
+}
+.il-brief-context {
+  font: 400 12.5px/1.55 'Work Sans', system-ui, sans-serif;
+  color: #9aa3af;
+}
+.il-brief-outcome {
+  font: 400 13px/1.55 Merriweather, Georgia, serif;
+  color: #b8e6c8;
+  border-left: 2px solid #3fae6b;
+  padding-left: 10px;
+}
+
+@media (max-width: 780px) {
+  .il-brief { width: auto; right: 14px; }
+  .il-brief-body { max-height: 30vh; }
+}
 
 .il-hint {
   position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
@@ -46,6 +103,16 @@
 .il-btn.ghost:hover { color: #fff; }
 .il-btn.go { background: #3fae6b; color: #fff; }
 .il-btn.go:disabled { background: #2b2f38; color: #6b7280; cursor: not-allowed; }
+
+/* section entry button for an embodied interlude */
+.il-enter {
+  width: 100%; margin-top: 10px;
+  padding: 12px 16px; border-radius: 6px; cursor: pointer;
+  border: 2px dashed #fffb00; background: rgba(255, 251, 0, 0.08);
+  color: #fffb00; font: 700 13px 'Work Sans', system-ui, sans-serif;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.il-enter:hover { background: rgba(255, 251, 0, 0.18); }
 
 /* temporary harness-test trigger (removed once interludes are wired to sections) */
 #il-test-trigger {
