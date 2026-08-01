@@ -1,0 +1,68 @@
+{
+  "name": "one-molecule-two-markets",
+  "productName": "One Molecule, Two Markets",
+  "version": "1.0.0",
+  "description": "Condition B: gamified 3D interactive artifact on the economics of generic drugs.",
+  "main": "electron-main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64",
+    "dist:dir": "electron-builder --win --x64 --dir"
+  },
+  "devDependencies": {
+    "electron": "^40.6.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "in.spv7799.onemolecule",
+    "productName": "One Molecule Two Markets",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron-main.js",
+      "preload.js",
+      "index-gamified.html",
+      "script.js",
+      "game.js",
+      "interludes.js",
+      "interlude-molecule.js",
+      "interlude-courtroom.js",
+      "interlude-equilibrium.js",
+      "interlude-market.js",
+      "interlude-ward.js",
+      "interlude-globe.js",
+      "interlude-wage.js",
+      "interlude-antitrust.js",
+      "interlude-race.js",
+      "interlude-oecd.js",
+      "interlude-reckoning.js",
+      "interlude-dispatch.js",
+      "style.css",
+      "game.css",
+      "interludes.css",
+      "vendor/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

@@ -15,6 +15,10 @@ let glViewer = null;
 // --- 1. SYNTHESIS LOGIC & WEBGL MOLECULE (Gleevac) ---
 function initWebGLViewer() {
     let container = document.getElementById("molecule-container");
+    // Skip when the container is not laid out. In Condition B the page is
+    // hidden and the molecule is a 3D scene instead, so building a viewer
+    // here would render into a zero-size canvas and spam WebGL errors.
+    if (!container || container.offsetParent === null) return;
     glViewer = $3Dmol.createViewer(container, { backgroundColor: "transparent" });
 
     // CID 5291 is Imanitib (Gleevac)

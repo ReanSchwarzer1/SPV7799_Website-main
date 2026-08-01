@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Price of Life: One Molecule, Two Markets (Gamified)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.0/3Dmol-min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,300&family=Work+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Libraries are vendored locally so the packaged app runs with no
+         internet connection, which matters for offline data collection. -->
+    <script src="vendor/tailwind.js"></script>
+    <script src="vendor/chart.umd.js"></script>
+    <script src="vendor/3Dmol-min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="game.css">
     <link rel="stylesheet" href="interludes.css">
     <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" } }
+    { "imports": { "three": "./vendor/three.module.min.js" } }
     </script>
     <script>
         tailwind.config = {
@@ -25,7 +26,7 @@
         }
     </script>
 </head>
-<body class="antialiased bg-brandGray text-brandDark">
+<body class="antialiased bg-brandGray text-brandDark gamified">
 
     <header class="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-8 sm:pb-12 border-b-4 border-brandDark">
         <p class="text-xs sm:text-sm font-bold uppercase tracking-widest text-scrollRed mb-3 sm:mb-4">Interactive Explainer</p>
@@ -752,6 +753,16 @@
     <script type="module" src="interludes.js"></script>
     <script type="module" src="interlude-molecule.js"></script>
     <script type="module" src="interlude-courtroom.js"></script>
+    <script type="module" src="interlude-dispatch.js"></script>
+    <script type="module" src="interlude-market.js"></script>
+    <script type="module" src="interlude-equilibrium.js"></script>
+    <script type="module" src="interlude-ward.js"></script>
+    <script type="module" src="interlude-globe.js"></script>
+    <script type="module" src="interlude-wage.js"></script>
+    <script type="module" src="interlude-antitrust.js"></script>
+    <script type="module" src="interlude-race.js"></script>
+    <script type="module" src="interlude-oecd.js"></script>
+    <script type="module" src="interlude-reckoning.js"></script>
     <script>
     // The 3D layer uses ES modules, which browsers refuse to load from a
     // file:// origin. If this page was opened by double-clicking the file,

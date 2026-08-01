@@ -5,7 +5,16 @@
    #d92525, voxYellow #fffb00, green access, blue innovation).
    ============================================================ */
 
-body.gamified { padding-top: 76px; }
+/* Condition B is the game and nothing else. The original page is kept in the
+   DOM because the scenes read their case text, prices and market state from
+   it and drive its logic, but it is never shown to the player. */
+body.gamified > header,
+body.gamified > main { display: none !important; }
+body.gamified {
+  padding-top: 0;
+  background: radial-gradient(ellipse at 50% 30%, #1b2030 0%, #0b0d12 75%);
+  min-height: 100vh;
+}
 
 /* ---- top HUD ---- */
 #game-hud {
@@ -59,7 +68,18 @@ body.gamified { padding-top: 76px; }
 .game-modal .kicker { font-size:11px; font-weight:700; text-transform:uppercase;
   letter-spacing:.12em; color:#d92525; margin:0 0 10px; }
 .game-modal p { font-size:15px; line-height:1.55; color:#374151; margin:0 0 12px; }
-.game-modal .obj { background:#f4f4f4; border-left:4px solid #3fae6b; padding:10px 14px; border-radius:6px; margin:0 0 16px; font-size:14px; }
+.game-modal .obj { background:#f4f4f4; border-left:4px solid #3fae6b; padding:10px 14px; border-radius:6px; margin:0 0 10px; font-size:14px; }
+.game-modal .ctrl {
+  background:#f4f4f4; border-left:4px solid #4f86c6; padding:10px 14px;
+  border-radius:6px; margin:0 0 16px; font-size:14px; line-height:1.5;
+}
+.game-modal .ctrl b, .game-modal .obj b { color:#1a1a1a; }
+/* what an earlier decision has done to this module */
+.game-modal .carried {
+  background:#fff8e1; border-left:4px solid #d9a441; padding:10px 14px;
+  border-radius:6px; margin:0 0 10px; font-size:14px; line-height:1.5;
+}
+.game-modal .carried b { color:#7a5c10; }
 .game-modal button.start {
   background:#1a1a1a; color:#fff; border:0; border-radius:8px;
   padding:12px 22px; font:inherit; font-weight:700; cursor:pointer;

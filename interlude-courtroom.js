@@ -125,8 +125,9 @@
         }
 
         var disposables = [];
-        function mat(opts) { var m = new THREE.MeshStandardMaterial(opts); disposables.push(m); return m; }
-        function geo(g) { disposables.push(g); return g; }
+        function keep(o) { disposables.push(o); return o; }
+        function mat(opts) { return keep(new THREE.MeshStandardMaterial(opts)); }
+        function geo(g) { return keep(g); }
 
         // ---- static set: table + sound block ----
         var table = new THREE.Mesh(
@@ -143,12 +144,13 @@
         // ---- paper label textures (runtime canvas; swap for real assets later) ----
         function paperTexture(heading, body) {
           var c = document.createElement("canvas");
-          c.width = 512; c.height = 640;
-          var g = c.getContext("2d");
+          var _S = ctx.texScale, _W = 512, _H = 640;
+          c.width = _W * _S; c.height = _H * _S;
+          var g = c.getContext("2d"); g.scale(_S, _S);
           g.fillStyle = "#" + A.paper.color.toString(16).padStart(6, "0");
-          g.fillRect(0, 0, c.width, c.height);
+          g.fillRect(0, 0, _W, _H);
           g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = 6;
-          g.strokeRect(14, 14, c.width - 28, c.height - 28);
+          g.strokeRect(14, 14, _W - 28, _H - 28);
           g.fillStyle = "#" + A.paper.ink.toString(16).padStart(6, "0");
           g.font = "bold 44px Georgia, serif"; g.textAlign = "center";
           var words = heading.toUpperCase().split(" "), line = "", y = 130, lines = [];
@@ -157,12 +159,12 @@
             else line += " " + w;
           });
           lines.push(line.trim());
-          lines.forEach(function (l) { g.fillText(l, c.width / 2, y, c.width - 80); y += 56; });
+          lines.forEach(function (l) { g.fillText(l, _W / 2, y, _W - 80); y += 56; });
           if (body) {
             g.font = "italic 24px Georgia, serif";
-            g.fillText(body, c.width / 2, c.height - 60, c.width - 80);
+            g.fillText(body, _W / 2, _H - 60, _W - 80);
           }
-          var tx = new THREE.CanvasTexture(c);
+          var tx = ctx.tune(new THREE.CanvasTexture(c));
           disposables.push(tx);
           return tx;
         }
@@ -220,15 +222,87 @@
         highlight();
         ctx.setStatus("Case in session", false);
 
-        // the player must be able to read what they are ruling on
-        function showBrief() {
-          ctx.setBrief({
-            label: current.label,
-            claim: current.claim ? "“" + current.claim + "”" : "",
-            context: current.context
-          });
+        // The case reaches the player as an object on the bench, not as a panel
+        // over the scene: a physical case file they pick up, read, and put down.
+        function docTexture() {
+          var c = document.createElement("canvas");
+          var _S = ctx.texScale, _W = 760, _H = 1000;
+          c.width = _W * _S; c.height = _H * _S;
+          var g = c.getContext("2d"); g.scale(_S, _S);
+          g.fillStyle = "#f4efe2"; g.fillRect(0, 0, _W, _H);
+          g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = 3;
+          g.strokeRect(26, 26, _W - 52, _H - 52);
+          g.fillStyle = "#8a1c1c";
+          g.font = "bold 26px Georgia, serif";
+          g.fillText(current.label.toUpperCase(), 56, 92);
+          g.fillStyle = "#15161a";
+          g.font = "bold 40px Georgia, serif";
+          var y = wrap(g, current.title, 56, 150, _W - 112, 46);
+          g.fillStyle = "#4a4f57";
+          g.font = "italic 24px Georgia, serif";
+          y = wrap(g, current.drug, 56, y + 26, _W - 112, 32);
+
+          g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(56, y + 24); g.lineTo(_W - 56, y + 24); g.stroke();
+
+          g.fillStyle = "#7a6320";
+          g.font = "bold 20px Georgia, serif";
+          g.fillText("THE CLAIM", 56, y + 66);
+          g.fillStyle = "#15161a";
+          g.font = "italic 26px Georgia, serif";
+          y = wrap(g, "“" + current.claim + "”", 56, y + 104, _W - 112, 34);
+
+          g.fillStyle = "#7a6320";
+          g.font = "bold 20px Georgia, serif";
+          g.fillText("THE LAW THAT APPLIES", 56, y + 56);
+          g.fillStyle = "#2c3038";
+          g.font = "24px Georgia, serif";
+          y = wrap(g, current.context, 56, y + 94, _W - 112, 32);
+
+          if (docOutcome) {
+            g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
+            g.beginPath(); g.moveTo(56, y + 22); g.lineTo(_W - 56, y + 22); g.stroke();
+            g.fillStyle = "#1d6b3a";
+            g.font = "bold 20px Georgia, serif";
+            g.fillText("ON THE RECORD", 56, y + 62);
+            g.fillStyle = "#22303a";
+            g.font = "23px Georgia, serif";
+            wrap(g, docOutcome, 56, y + 98, _W - 112, 30);
+          }
+          return keep(ctx.tune(new THREE.CanvasTexture(c)));
         }
-        showBrief();
+
+        function wrap(g, text, x, y, maxW, lh) {
+          var words = String(text || "").split(/\s+/), line = "";
+          for (var i = 0; i < words.length; i++) {
+            var test = line ? line + " " + words[i] : words[i];
+            if (g.measureText(test).width > maxW && line) {
+              g.fillText(line, x, y); line = words[i]; y += lh;
+            } else line = test;
+          }
+          if (line) { g.fillText(line, x, y); y += lh; }
+          return y;
+        }
+
+        var docFace = keep(new THREE.MeshStandardMaterial(
+          { color: 0xffffff, roughness: 0.85, map: docTexture() }));
+        var docEdge = keep(new THREE.MeshStandardMaterial({ color: 0xe6e0d2, roughness: 0.9 }));
+        var caseDoc = new THREE.Mesh(
+          keep(new THREE.BoxGeometry(1.5, 0.04, 2.0)),
+          [docEdge, docEdge, docFace, docEdge, docEdge, docEdge]);
+        var DOC_REST = new THREE.Vector3(0, A.table.h / 2 + 0.03, 1.35);
+        caseDoc.position.copy(DOC_REST);
+        scene.add(caseDoc);
+        ctx.pickables.push(caseDoc);
+
+        var docHeld = false, docOutcome = "";
+
+        function refreshDoc() {
+          docFace.map = docTexture();
+          docFace.needsUpdate = true;
+        }
+
+        ctx.setBrief(null);   // the paper carries the case; no panel over the scene
 
         function redress() {
           // dress the bench for the (new) current case
@@ -240,7 +314,9 @@
           papers.forEach(function (p) { p.scale.set(1, 1, 1); });
           state = "aim"; strikeT = 0; selected = 0;
           highlight();
-          showBrief();
+          docOutcome = "";
+          docHeld = false;
+          refreshDoc();
           ctx.setHint(INSTR);
           ctx.setStatus("Case in session", false);
           ctx.setAction("Continue", function () { /* disabled until ruled */ });
@@ -257,14 +333,11 @@
           ruledThisSession++;
           var out = document.getElementById("ruling-outcome");
           var verdict = out ? out.textContent.trim() : "";
-          // the brief becomes the record of what actually happened, in full,
-          // rather than a truncated line in the hint pill
-          ctx.setBrief({
-            label: "What actually happened",
-            claim: current.claim ? "“" + current.claim + "”" : "",
-            outcome: verdict || "Ruling registered."
-          });
-          ctx.setHint(isGrant ? "You granted the monopoly." : "You intervened in the market.");
+          // the record is written onto the case file itself
+          docOutcome = verdict || "Ruling registered.";
+          refreshDoc();
+          ctx.setHint((isGrant ? "You granted the monopoly. " : "You intervened in the market. ") +
+                      "Pick up the file to read what followed.");
 
           if (allCasesRuled()) {
             ctx.complete();                       // marks the goal, enables button
@@ -292,6 +365,20 @@
         return {
           update: function (dt) {
             bob += dt;
+
+            // The case file lifts toward the reader when picked up. The printed
+            // face is the box's +Y side, so it must tip POSITIVELY about X to
+            // turn that face toward a camera sitting at +Z; a negative angle
+            // shows the blank underside instead.
+            var wantPos = docHeld
+              ? new THREE.Vector3(0, 1.15, 2.35)
+              : DOC_REST;
+            var wantRotX = docHeld ? 1.02 : 0;
+            caseDoc.position.lerp(wantPos, Math.min(1, dt * 7));
+            caseDoc.rotation.x += (wantRotX - caseDoc.rotation.x) * Math.min(1, dt * 7);
+            caseDoc.scale.setScalar(
+              caseDoc.scale.x + ((docHeld ? 1.45 : 1) - caseDoc.scale.x) * Math.min(1, dt * 7));
+
             var targetX = papers[selected].position.x;
 
             if (state === "aim") {
@@ -331,7 +418,17 @@
           },
 
           onPointerDown: function (hit) {
-            if (state !== "aim" || !hit) return;
+            if (!hit) return;
+            // the file can be picked up and put down at any time
+            if (hit.object === caseDoc) {
+              docHeld = !docHeld;
+              ctx.setHint(docHeld
+                ? "Click the file again to set it down."
+                : INSTR);
+              return;
+            }
+            if (docHeld) { docHeld = false; ctx.setHint(INSTR); return; }
+            if (state !== "aim") return;
             var i = papers.indexOf(hit.object);
             if (i >= 0) beginStrike(i);
           },
@@ -354,23 +451,7 @@
       });
     };
 
-    // resume affordance inside the section, for players who skip out mid-way.
-    // the PRIMARY path into the courtroom is the director's auto-launch.
-    function injectResumeButton() {
-      var host = document.getElementById("ruling-buttons");
-      if (!host || document.getElementById("btn-courtroom")) return;
-      var b = document.createElement("button");
-      b.id = "btn-courtroom";
-      b.className = "il-enter";
-      b.textContent = "Return to the bench";
-      b.addEventListener("click", function () { window.launchCourtroom(); });
-      host.appendChild(b);
-    }
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", injectResumeButton);
-    } else {
-      injectResumeButton();
-    }
+    // No entry button is injected into the page. The game director opens this
+    // scene, and re-opens it if the player leaves with cases still undecided.
   });
 })();

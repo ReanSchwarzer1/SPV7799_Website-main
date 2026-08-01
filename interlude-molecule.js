@@ -1,30 +1,30 @@
 /* ============================================================
-   interlude-molecule.js — the synthesis bench (module 1)
+   interlude-molecule.js — the comparison bench (module 1)
    Condition B embodied layer.
 
-   The player is handed two sealed samples: one bought in the US
-   monopoly market, one from an Indian generic maker. The task is
-   the chemist's own test for "same compound": rotate one sample
-   until it superimposes on the other. Once they match, the price
-   tags drop, and the gap is the lesson — identical molecule,
-   wildly different price, because price tracks market power and
-   law rather than chemistry.
+   Two acts, both done with the hands:
 
-   Geometry is the real imatinib structure: heavy-atom coordinates
-   and bonds extracted from PubChem CID 5291 (3D conformer,
-   C29H31N7O -> 37 heavy atoms, 41 bonds) and embedded so the
-   scene works offline. Hydrogens are omitted for legibility.
+   ACT 1 "are they the same drug?"  The player physically drags
+   the US sample across and drops it onto the Indian sample. The
+   two structures superimpose, flash, and fuse: one compound.
 
-   Interaction: drag with the mouse to rotate the sample under
-   examination; arrow keys nudge it. Everything visual lives in
-   `assets` so materials, textures and shaders can be swapped
-   per element later without touching the interaction logic.
+   ACT 2 "then why the price?"  A single banknote for one US pill
+   appears. Drag it into the dispenser and both market tubes fill
+   at once: one pill on the left, a cascade of about a hundred and
+   twenty on the right, for the same money.
+
+   All context is diegetic: labels, stamps and readouts live on
+   objects in the scene rather than in a panel over it.
+
+   Geometry is the real imatinib structure, heavy atoms and bonds
+   from PubChem CID 5291 (C29H31N7O, 37 heavy atoms, 41 bonds),
+   embedded so the app runs offline. Hydrogens omitted.
+   Prices are the artifact's own figures: $179.93 and ~$1.50.
    ============================================================ */
 
 (function () {
   "use strict";
 
-  // --- real imatinib heavy-atom structure, PubChem CID 5291 (3D) ---
   var ATOMS =
     "O,-0.828,0.249,-1.042;N,6.458,0.266,-0.655;N,8.515,-0.162,1.331;N,-0.107,-1.833,-0.233;" +
     "N,-4.945,-1.888,-0.270;N,-4.375,0.358,0.104;N,-6.608,-0.258,-0.560;N,-2.852,4.834,0.299;" +
@@ -43,388 +43,400 @@
     "25,26,2;29,30,1;29,31,1;30,33,1;30,34,2;31,32,2;33,35,2;35,36,1";
 
   function parseAtoms(s) {
-    return s.split(";").map(function (r) {
-      var p = r.split(",");
-      return { el: p[0], x: +p[1], y: +p[2], z: +p[3] };
-    });
+    return s.split(";").map(function (r) { var p = r.split(",");
+      return { el: p[0], x: +p[1], y: +p[2], z: +p[3] }; });
   }
   function parseBonds(s) {
-    return s.split(";").map(function (r) {
-      var p = r.split(",");
-      return { a: +p[0], b: +p[1], order: +p[2] };
-    });
+    return s.split(";").map(function (r) { var p = r.split(",");
+      return { a: +p[0], b: +p[1] }; });
   }
 
   function whenReady(fn) {
     if (window.Interludes) return fn();
-    var tries = 0;
-    var t = setInterval(function () {
+    var n = 0, t = setInterval(function () {
       if (window.Interludes) { clearInterval(t); fn(); }
-      else if (++tries > 100) { clearInterval(t); console.warn("[molecule] Interludes never appeared"); }
+      else if (++n > 100) clearInterval(t);
     }, 30);
   }
 
   whenReady(function () {
 
     window.Interludes.register("molecule", {
-      kicker: "The synthesis bench",
+      kicker: "The comparison bench",
       title: "Two samples, one molecule",
       step: "Imatinib · Gleevec",
-      instructions: "Drag left or right to spin the US sample. Line its yellow marker up with the other one to prove the two are the same compound.",
+      instructions: "Drag the red sample across and drop it onto the green one.",
 
       assets: {
-        scale: 0.17,                       // structure units -> scene units
-        atom: {
-          radius: { C: 0.30, N: 0.32, O: 0.32 },
-          color:  { C: 0.0, N: 0.0, O: 0.0 } // filled per-sample from tint below
-        },
-        bond:  { radius: 0.085, color: 0x9aa3af },
-        sample: {
-          us:      { tint: 0xd4573f, label: "US MONOPOLY", price: "$179.93", per: "per pill" },
-          generic: { tint: 0x3fae6b, label: "INDIAN GENERIC", price: "~$1.50", per: "per pill" }
-        },
-        plinth: { r: 1.55, h: 0.16, color: 0x1e222b },
-        tag:    { w: 2.0, h: 0.9 },
-        // a bright marker fixed to each sample, so rotational alignment is
-        // something the player can see rather than something they must infer
-        key:    { length: 0.55, radius: 0.17, dist: 1.95, color: 0xfffb00 },
-        // Deliberately forgiving. The point of this scene is the price gap,
-        // not a dexterity test: the samples differ by a single axis of spin,
-        // and anything roughly facing the right way counts. Below assistWithin
-        // the sample eases itself the rest of the way home.
-        startOffsetDeg: 135,
-        matchToleranceDeg: 26,
-        assistWithinDeg: 50,
-        camera: { elevationDeg: 12, margin: 1.18, lookAt: [0, 0.1, 0] }
+        scale: 0.16,
+        atomRadius: { C: 0.30, N: 0.32, O: 0.32 },
+        elementColor: { C: 0xc9ced6, N: 0x5b7fd4, O: 0xd4573f },
+        bond:   { radius: 0.085, color: 0x9aa3af },
+        us:      { tint: 0xd4573f, name: "UNITED STATES", price: 179.93, pills: 1 },
+        india:   { tint: 0x3fae6b, name: "INDIA", price: 1.50, pills: 120 },
+        plinth: { r: 1.5, h: 0.18, color: 0x171b23 },
+        tube:   { r: 0.62, h: 3.1, color: 0x8fb6d8 },
+        pill:   { r: 0.11, len: 0.26 },
+        note:   { w: 1.5, h: 0.72 },
+        snapDistance: 1.9,          // how close the drop has to be: generous
+        camera: { elevationDeg: 14, margin: 1.14, lookAt: [0, 0.2, 0] }
       },
 
       build: function (ctx) {
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var atoms = parseAtoms(ATOMS), bonds = parseBonds(BONDS);
-        var disposables = [];
-        function keep(o) { disposables.push(o); return o; }
+        var junk = [];
+        function keep(o) { junk.push(o); return o; }
 
-        var ELEMENT_COLORS = { C: 0xc9ced6, N: 0x5b7fd4, O: 0xd4573f };
+        var LX = -3.1, RX = 3.1;
 
-        // ---- build one ball-and-stick molecule as a group ----
+        // ---------- diegetic signage ----------
+        function signTexture(lines) {
+          var c = document.createElement("canvas");
+          var _S = ctx.texScale, _W = 512, _H = 256;
+          c.width = _W * _S; c.height = _H * _S;
+          var g = c.getContext("2d"); g.scale(_S, _S);
+          g.clearRect(0, 0, _W, _H);
+          g.fillStyle = "rgba(8,10,15,0.9)";
+          g.fillRect(0, 0, _W, _H);
+          g.strokeStyle = lines.accent; g.lineWidth = 7;
+          g.strokeRect(4, 4, _W - 8, _H - 8);
+          g.textAlign = "center";
+          g.fillStyle = lines.accent;
+          g.font = "bold 36px system-ui, sans-serif";
+          g.fillText(lines.top || "", _W / 2, 62, _W - 40);
+          if (lines.big) {
+            g.fillStyle = "#fff";
+            g.font = "bold 88px system-ui, sans-serif";
+            g.fillText(lines.big, _W / 2, 158, _W - 40);
+          }
+          if (lines.sub) {
+            g.fillStyle = "#94a0b0";
+            g.font = "26px system-ui, sans-serif";
+            g.fillText(lines.sub, _W / 2, 216, _W - 40);
+          }
+          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+        }
+
+        function makeSign(x, y, lines, w, h) {
+          var m = new THREE.Mesh(
+            keep(new THREE.PlaneGeometry(w || 2.3, h || 1.15)),
+            keep(new THREE.MeshBasicMaterial({ map: signTexture(lines), transparent: true })));
+          m.position.set(x, y, 0);
+          scene.add(m);
+          return m;
+        }
+
+        // ---------- molecules ----------
         function buildMolecule(tint) {
-          var g = new THREE.Group();
-          var s = A.scale;
-          var mats = {};
+          var g = new THREE.Group(), s = A.scale, mats = {};
           ["C", "N", "O"].forEach(function (el) {
-            // element colour, pulled toward the sample tint so the two
-            // samples read as different vials of the same substance
-            var c = new THREE.Color(ELEMENT_COLORS[el]).lerp(new THREE.Color(tint), 0.35);
+            var col = new THREE.Color(A.elementColor[el]).lerp(new THREE.Color(tint), 0.4);
             mats[el] = keep(new THREE.MeshStandardMaterial(
-              { color: c, roughness: 0.35, metalness: 0.15 }));
+              { color: col, roughness: 0.35, metalness: 0.15 }));
           });
-          var sphere = keep(new THREE.SphereGeometry(1, 20, 14));
+          var sph = keep(new THREE.SphereGeometry(1, 18, 12));
           atoms.forEach(function (a) {
-            var m = new THREE.Mesh(sphere, mats[a.el] || mats.C);
+            var m = new THREE.Mesh(sph, mats[a.el] || mats.C);
             m.position.set(a.x * s, a.y * s, a.z * s);
-            var r = (A.atom.radius[a.el] || 0.3);
-            m.scale.setScalar(r);
+            m.scale.setScalar(A.atomRadius[a.el] || 0.3);
             g.add(m);
           });
-          var bondMat = keep(new THREE.MeshStandardMaterial(
+          var bm = keep(new THREE.MeshStandardMaterial(
             { color: A.bond.color, roughness: 0.5, metalness: 0.2 }));
-          var cyl = keep(new THREE.CylinderGeometry(A.bond.radius, A.bond.radius, 1, 10));
+          var cyl = keep(new THREE.CylinderGeometry(A.bond.radius, A.bond.radius, 1, 8));
           var up = new THREE.Vector3(0, 1, 0);
           bonds.forEach(function (b) {
             var pa = atoms[b.a], pb = atoms[b.b];
             if (!pa || !pb) return;
             var va = new THREE.Vector3(pa.x * s, pa.y * s, pa.z * s);
             var vb = new THREE.Vector3(pb.x * s, pb.y * s, pb.z * s);
-            var mid = va.clone().add(vb).multiplyScalar(0.5);
-            var dir = vb.clone().sub(va);
-            var len = dir.length();
-            var m = new THREE.Mesh(cyl, bondMat);
-            m.position.copy(mid);
+            var dir = vb.clone().sub(va), len = dir.length();
+            var m = new THREE.Mesh(cyl, bm);
+            m.position.copy(va).add(vb).multiplyScalar(0.5);
             m.scale.set(1, len, 1);
             m.quaternion.setFromUnitVectors(up, dir.clone().normalize());
             g.add(m);
           });
-
-          // alignment key: a bright pointer rigidly attached to the sample.
-          // when the two keys point the same way, the samples are aligned.
-          var keyMat = keep(new THREE.MeshStandardMaterial(
-            { color: A.key.color, roughness: 0.3, emissive: A.key.color, emissiveIntensity: 0.35 }));
-          var cone = new THREE.Mesh(
-            keep(new THREE.ConeGeometry(A.key.radius, A.key.length, 18)), keyMat);
-          cone.position.set(A.key.dist, 0, 0);
-          cone.rotation.z = -Math.PI / 2;      // point along +X
-          g.add(cone);
-          var stem = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(0.035, 0.035, A.key.dist * 0.5, 8)), keyMat);
-          stem.rotation.z = Math.PI / 2;
-          stem.position.set(A.key.dist - A.key.length / 2 - A.key.dist * 0.25, 0, 0);
-          g.add(stem);
           return g;
         }
 
-        // ---- label / price tag textures drawn at runtime ----
-        function tagTexture(lines, tint, big) {
-          var c = document.createElement("canvas");
-          c.width = 512; c.height = 232;
-          var g = c.getContext("2d");
-          g.fillStyle = "rgba(12,14,20,0.92)";
-          g.fillRect(0, 0, c.width, c.height);
-          g.strokeStyle = "#" + tint.toString(16).padStart(6, "0");
-          g.lineWidth = 8; g.strokeRect(4, 4, c.width - 8, c.height - 8);
-          g.textAlign = "center";
-          g.fillStyle = "#" + tint.toString(16).padStart(6, "0");
-          g.font = "bold 34px 'Work Sans', system-ui, sans-serif";
-          g.fillText(lines[0], c.width / 2, 62, c.width - 40);
-          if (lines[1]) {
-            g.fillStyle = "#ffffff";
-            g.font = "bold " + (big ? 86 : 54) + "px 'Work Sans', system-ui, sans-serif";
-            g.fillText(lines[1], c.width / 2, big ? 152 : 132, c.width - 40);
-          }
-          if (lines[2]) {
-            g.fillStyle = "#9aa3af";
-            g.font = "24px 'Work Sans', system-ui, sans-serif";
-            g.fillText(lines[2], c.width / 2, 200, c.width - 40);
-          }
-          var t = new THREE.CanvasTexture(c);
-          keep(t);
-          return t;
-        }
-
-        function makeTag(x, lines, tint, big) {
-          var m = keep(new THREE.MeshBasicMaterial(
-            { map: tagTexture(lines, tint, big), transparent: true }));
-          var mesh = new THREE.Mesh(
-            keep(new THREE.PlaneGeometry(A.tag.w, A.tag.h)), m);
-          mesh.position.set(x, 1.95, 0);
-          scene.add(mesh);
-          return mesh;
-        }
-
-        // ---- plinths ----
         function makePlinth(x, tint) {
           var p = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.plinth.r, A.plinth.r, A.plinth.h, 40)),
-            keep(new THREE.MeshStandardMaterial({ color: A.plinth.color, roughness: 0.6 })));
-          p.position.set(x, -1.5, 0);
+            keep(new THREE.CylinderGeometry(A.plinth.r, A.plinth.r, A.plinth.h, 36)),
+            keep(new THREE.MeshStandardMaterial({ color: A.plinth.color, roughness: 0.65 })));
+          p.position.set(x, -1.75, 0);
           scene.add(p);
           var ring = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(A.plinth.r, 0.022, 8, 48)),
-            keep(new THREE.MeshStandardMaterial({ color: tint, roughness: 0.4, metalness: 0.3 })));
+            keep(new THREE.TorusGeometry(A.plinth.r, 0.025, 8, 44)),
+            keep(new THREE.MeshStandardMaterial(
+              { color: tint, roughness: 0.4, emissive: tint, emissiveIntensity: 0.4 })));
           ring.rotation.x = Math.PI / 2;
-          ring.position.set(x, -1.5 + A.plinth.h / 2 + 0.01, 0);
+          ring.position.set(x, -1.75 + A.plinth.h / 2 + 0.01, 0);
           scene.add(ring);
-          return p;
         }
 
-        var LX = -2.15, RX = 2.15;
-        makePlinth(LX, A.sample.us.tint);
-        makePlinth(RX, A.sample.generic.tint);
+        makePlinth(LX, A.us.tint);
+        makePlinth(RX, A.india.tint);
 
-        // the sample under examination (left, US) and the reference (right)
-        var subject = buildMolecule(A.sample.us.tint);
-        var reference = buildMolecule(A.sample.generic.tint);
+        var subject = buildMolecule(A.us.tint);      // the one you drag
+        var target = buildMolecule(A.india.tint);    // the one you drop onto
         subject.position.set(LX, 0, 0);
-        reference.position.set(RX, 0, 0);
-        scene.add(subject); scene.add(reference);
+        target.position.set(RX, 0, 0);
+        subject.rotation.set(0.3, 0.9, 0.2);
+        target.rotation.set(0.3, 0.9, 0.2);
+        scene.add(subject); scene.add(target);
 
-        // an invisible grab sphere so the whole molecule is easy to pick up
+        var signL = makeSign(LX, 2.15, { top: A.us.name, sub: "sealed sample", accent: "#d4573f" });
+        var signR = makeSign(RX, 2.15, { top: A.india.name, sub: "sealed sample", accent: "#3fae6b" });
+
+        // grab handle for the draggable sample
         var grab = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(1.7, 16, 12)),
+          keep(new THREE.SphereGeometry(1.55, 14, 10)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         grab.position.copy(subject.position);
         scene.add(grab);
         ctx.pickables.push(grab);
 
-        // Both samples share one base tilt and differ ONLY by a spin about the
-        // world Y axis. That keeps the puzzle one-dimensional: dragging left or
-        // right is always the right move, and there is no orientation the player
-        // can get stuck in.
-        var BASE_TILT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.24, 0, 0.10));
-        var Y_AXIS = new THREE.Vector3(0, 1, 0);
-        reference.quaternion.copy(BASE_TILT);
-        subject.quaternion.copy(BASE_TILT).premultiply(
-          new THREE.Quaternion().setFromAxisAngle(Y_AXIS, A.startOffsetDeg * Math.PI / 180));
+        // ---------- act 2 props (hidden until act 1 is done) ----------
+        var act2 = new THREE.Group();
+        act2.visible = false;
+        scene.add(act2);
 
-        var labelL = makeTag(LX, [A.sample.us.label, "", "sealed sample"], A.sample.us.tint, false);
-        var labelR = makeTag(RX, [A.sample.generic.label, "", "sealed sample"], A.sample.generic.tint, false);
+        function makeTube(x, tint) {
+          var t = new THREE.Mesh(
+            keep(new THREE.CylinderGeometry(A.tube.r, A.tube.r, A.tube.h, 24, 1, true)),
+            keep(new THREE.MeshStandardMaterial({
+              color: A.tube.color, transparent: true, opacity: 0.18,
+              roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide })));
+          t.position.set(x, 0.05, 0);
+          act2.add(t);
+          var base = new THREE.Mesh(
+            keep(new THREE.CylinderGeometry(A.tube.r + 0.08, A.tube.r + 0.08, 0.12, 24)),
+            keep(new THREE.MeshStandardMaterial({ color: tint, roughness: 0.5 })));
+          base.position.set(x, 0.05 - A.tube.h / 2, 0);
+          act2.add(base);
+          return t;
+        }
+        var tubeL = makeTube(LX, A.us.tint);
+        var tubeR = makeTube(RX, A.india.tint);
 
-        // ---- state ----
-        var stage = "align";        // align -> revealed
-        var dragging = false;
-        var lastPointer = null;
+        var pillGeo = keep(new THREE.CapsuleGeometry(A.pill.r, A.pill.len, 4, 8));
+        var pillMatL = keep(new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.5 }));
+        var pillMatR = keep(new THREE.MeshStandardMaterial({ color: 0xd7f0e0, roughness: 0.5 }));
+        var pills = [];   // {mesh, targetY, vy}
 
-        function angleToMatch() {
-          // smallest rotation taking subject onto reference
-          var qd = reference.quaternion.clone().invert().multiply(subject.quaternion);
-          var w = Math.min(1, Math.abs(qd.w));
-          return 2 * Math.acos(w) * 180 / Math.PI;
+        function dropPills(x, count, mat) {
+          for (var i = 0; i < count; i++) {
+            var m = new THREE.Mesh(pillGeo, mat);
+            var a = Math.random() * Math.PI * 2, rr = Math.random() * (A.tube.r - 0.18);
+            m.position.set(x + Math.cos(a) * rr, 2.6 + i * 0.16, Math.sin(a) * rr);
+            m.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+            act2.add(m);
+            // stack height: pills settle in layers of ~9 per level
+            var level = Math.floor(i / 9);
+            pills.push({ mesh: m, targetY: 0.05 - A.tube.h / 2 + 0.16 + level * 0.2, vy: 0 });
+          }
         }
 
-        function brief(extra) {
-          ctx.setBrief({
-            label: "Sample dossier",
-            claim: "Imatinib (brand name Gleevec), C29H31N7O — used to treat chronic myeloid leukaemia and gastrointestinal stromal tumours.",
-            context: extra || ("Both vials hold the same compound. Structure shown is the real imatinib " +
-              "conformer from PubChem CID 5291, hydrogens omitted. Spin the left sample until its yellow " +
-              "marker points the same way as the right one; it will settle into place once you are close.")
-          });
+        // the banknote the player drags into the slot
+        function noteTexture() {
+          var c = document.createElement("canvas");
+          var _S = ctx.texScale, _W = 512, _H = 246;
+          c.width = _W * _S; c.height = _H * _S;
+          var g = c.getContext("2d"); g.scale(_S, _S);
+          g.fillStyle = "#e8e2cf"; g.fillRect(0, 0, _W, _H);
+          g.strokeStyle = "#5c6b4a"; g.lineWidth = 8; g.strokeRect(10, 10, _W - 20, _H - 20);
+          g.fillStyle = "#2f3a24"; g.textAlign = "center";
+          g.font = "bold 86px system-ui, sans-serif";
+          g.fillText("$179.93", _W / 2, 130);
+          g.font = "26px system-ui, sans-serif";
+          g.fillText("the price of ONE pill in the US", _W / 2, 186);
+          return keep(ctx.tune(new THREE.CanvasTexture(c)));
         }
-        brief();
-        ctx.setStatus("Samples not yet matched", false);
+        var note = new THREE.Mesh(
+          keep(new THREE.PlaneGeometry(A.note.w, A.note.h)),
+          keep(new THREE.MeshBasicMaterial({ map: noteTexture(), transparent: true,
+                                             side: THREE.DoubleSide })));
+        note.position.set(0, -1.15, 1.2);
+        act2.add(note);
 
-        function reveal() {
-          stage = "revealed";
-          // snap cleanly onto the reference so the match reads as exact
-          subject.quaternion.copy(reference.quaternion);
-          labelL.material.map = tagTexture(
-            [A.sample.us.label, A.sample.us.price, A.sample.us.per], A.sample.us.tint, true);
-          labelL.material.needsUpdate = true;
-          labelR.material.map = tagTexture(
-            [A.sample.generic.label, A.sample.generic.price, A.sample.generic.per],
-            A.sample.generic.tint, true);
-          labelR.material.needsUpdate = true;
+        var slot = new THREE.Mesh(
+          keep(new THREE.BoxGeometry(1.75, 0.16, 0.5)),
+          keep(new THREE.MeshStandardMaterial({ color: 0x2b3240, roughness: 0.6,
+                                                emissive: 0xfffb00, emissiveIntensity: 0.18 })));
+        slot.position.set(0, 0.55, 0);
+        act2.add(slot);
+        var slotSign = makeSign(0, 1.5, { top: "INSERT NOTE", sub: "buy in both markets",
+                                          accent: "#fffb00" }, 2.6, 1.0);
+        slotSign.visible = false;
 
-          ctx.setBrief({
-            label: "What the samples are worth",
-            claim: "Same molecule. $179.93 a pill in the United States, about $1.50 in India.",
-            outcome: "Novartis raised the US price through the 2000s while holding the patent. In 2013 " +
-              "the Indian Supreme Court refused a fresh patent under Section 3(d) of the Patents Act, " +
-              "so generic manufacturers kept producing it. Nothing about the chemistry differs. The " +
-              "price difference is market power and law."
-          });
-          ctx.setHint("Same compound. Roughly a hundredfold difference in price.");
-          ctx.setStatus("Identity confirmed", true);
+        // ---------- state ----------
+        var act = 1;                 // 1 = compare, 2 = buy, 3 = done
+        var dragging = null;         // 'sample' | 'note' | null
+        var dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        var hitPoint = new THREE.Vector3();
+        var flash = 0;
 
-          // keep the page's own state in step: this is module 1's objective,
-          // and completing it lets the director carry the player onward
+        ctx.setBrief(null);          // this scene carries its own signage
+        ctx.setStatus("Samples not compared", false);
+        ctx.setHint("Drag the red sample across and drop it onto the green one.");
+
+        function pointerToWorld() {
+          ctx.raycaster.setFromCamera(ctx.pointer, ctx.camera);
+          return ctx.raycaster.ray.intersectPlane(dragPlane, hitPoint) ? hitPoint.clone() : null;
+        }
+
+        function mergeSamples() {
+          act = 2;
+          subject.position.copy(target.position);
+          subject.rotation.copy(target.rotation);
+          grab.visible = false;
+          ctx.pickables.length = 0;
+          flash = 1;
+
+          signL.material.map = signTexture(
+            { top: "IDENTICAL", sub: "same compound, both vials", accent: "#fffb00" });
+          signL.material.needsUpdate = true;
+          signR.material.map = signTexture(
+            { top: "IMATINIB", sub: "C29H31N7O · PubChem CID 5291", accent: "#3fae6b" });
+          signR.material.needsUpdate = true;
+
+          // hand the bench over to act 2
+          setTimeout(function () {
+            if (act !== 2) return;
+            subject.visible = false; target.visible = false;
+            signL.visible = false; signR.visible = false;
+            act2.visible = true;
+            slotSign.visible = true;
+            ctx.pickables.push(note);
+            ctx.setStatus("Same molecule. Now the price.", false);
+            ctx.setHint("Drag the banknote into the slot.");
+            if (typeof ctx.onLayoutChange === "function") ctx.onLayoutChange();
+          }, 1100);
+        }
+
+        function buy() {
+          act = 3;
+          note.visible = false;
+          dropPills(LX, A.us.pills, pillMatL);
+          dropPills(RX, A.india.pills, pillMatR);
+
+          makeSign(LX, 2.15, { top: A.us.name, big: String(A.us.pills),
+                               sub: "pill for $179.93", accent: "#d4573f" });
+          makeSign(RX, 2.15, { top: A.india.name, big: String(A.india.pills),
+                               sub: "pills for the same $179.93", accent: "#3fae6b" });
+          slotSign.visible = false;
+
+          ctx.setStatus("Identical drug. 1 pill against " + A.india.pills + ".", true);
+          ctx.setHint("Same molecule, same money, a hundredfold difference in medicine.");
+
+          // keep the page in step; this is module 1's objective
           if (typeof window.setSynthesis === "function") {
-            try { window.setSynthesis("alternative"); } catch (e) { console.error(e); }
+            try { window.setSynthesis("alternative"); } catch (e) {}
           }
           ctx.complete();
           ctx.setAction("Take it to the bench", null);
         }
 
-        // horizontal drag spins the sample about world Y; that single axis is
-        // all the task needs, so vertical movement is ignored on purpose
-        function rotateSubject(dx) {
-          if (stage !== "align") return;
-          subject.quaternion.premultiply(
-            new THREE.Quaternion().setFromAxisAngle(Y_AXIS, dx * 0.012));
-          reportAlignment();
+        function fitCamera() {
+          var cam = ctx.camera;
+          var el = A.camera.elevationDeg * Math.PI / 180;
+          var dir = new THREE.Vector3(0, Math.sin(el), Math.cos(el)).normalize();
+          var look = new THREE.Vector3().fromArray(A.camera.lookAt);
+          var box = new THREE.Box3();
+          scene.traverse(function (o) {
+            if (o.isMesh && o.visible && o.parent && o.parent.visible) box.expandByObject(o);
+          });
+          if (box.isEmpty()) return;
+          var corners = [];
+          for (var i = 0; i < 8; i++) corners.push(new THREE.Vector3(
+            (i & 1) ? box.max.x : box.min.x, (i & 2) ? box.max.y : box.min.y,
+            (i & 4) ? box.max.z : box.min.z));
+          var dist = box.getBoundingSphere(new THREE.Sphere()).radius * 2;
+          for (var p = 0; p < 6; p++) {
+            cam.position.copy(look).addScaledVector(dir, dist);
+            cam.lookAt(look); cam.updateMatrixWorld(true); cam.updateProjectionMatrix();
+            var worst = 0;
+            for (var c = 0; c < corners.length; c++) {
+              var v = corners[c].clone().project(cam);
+              worst = Math.max(worst, Math.abs(v.x), Math.abs(v.y));
+            }
+            if (worst < 0.0001) break;
+            dist *= worst * A.camera.margin;
+          }
+          cam.position.copy(look).addScaledVector(dir, dist);
+          cam.lookAt(look); cam.updateProjectionMatrix();
         }
-
-        function reportAlignment() {
-          var a = angleToMatch();
-          if (a <= A.matchToleranceDeg) { reveal(); return true; }
-          ctx.setStatus(a <= A.assistWithinDeg
-            ? "Close — keep turning, it will settle"
-            : "Off by " + Math.round(a) + "°", false);
-          return false;
-        }
+        ctx.onLayoutChange = fitCamera;
 
         return {
           update: function (dt) {
-            if (stage === "align") {
-              // the reference stays put: it is the thing being matched against
-              var k = ctx.keys, step = 5;
-              if (k.ArrowLeft)  rotateSubject(-step);
-              if (k.ArrowRight) rotateSubject(step);
-
-              // magnetic assist. Once the player is roughly facing the right
-              // way the sample eases the rest of the way in by itself, so the
-              // scene never turns into a precision contest.
-              var a = angleToMatch();
-              if (a > A.matchToleranceDeg && a <= A.assistWithinDeg) {
-                subject.quaternion.rotateTowards(reference.quaternion, dt * 1.6);
-                reportAlignment();
+            if (act === 1) {
+              subject.rotation.y += dt * 0.35;
+              target.rotation.y += dt * 0.35;
+              grab.position.copy(subject.position);
+            }
+            if (flash > 0) {
+              // the fused sample swells and settles, so the merge reads as an event
+              flash = Math.max(0, flash - dt * 1.6);
+              var s = 1 + flash * 0.22;
+              subject.scale.setScalar(s);
+              target.scale.setScalar(s);
+            }
+            // pills fall and settle
+            for (var i = 0; i < pills.length; i++) {
+              var p = pills[i];
+              if (p.mesh.position.y > p.targetY) {
+                p.vy -= 9.8 * dt * 0.35;
+                p.mesh.position.y += p.vy * dt;
+                p.mesh.rotation.x += dt * 1.2;
+                if (p.mesh.position.y <= p.targetY) { p.mesh.position.y = p.targetY; p.vy = 0; }
               }
-            } else {
-              // both samples turn together, in lockstep, once matched
-              var q2 = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, dt * 0.3, 0));
-              subject.quaternion.multiply(q2);
-              reference.quaternion.multiply(q2);
             }
           },
 
-          onPointerDown: function (hit, ev) {
-            if (stage !== "align" || !hit) return;
-            dragging = true;
-            lastPointer = { x: ev.clientX, y: ev.clientY };
+          onPointerDown: function (hit) {
+            if (!hit) return;
+            if (act === 1 && hit.object === grab) dragging = "sample";
+            else if (act === 2 && hit.object === note) dragging = "note";
           },
 
-          onPointerMove: function (hit, ev) {
-            if (!dragging || stage !== "align") {
-              if (stage === "align") ctx.renderer.domElement.style.cursor = hit ? "grab" : "default";
+          onPointerMove: function (hit) {
+            if (!dragging) {
+              ctx.renderer.domElement.style.cursor = hit ? "grab" : "default";
               return;
             }
             ctx.renderer.domElement.style.cursor = "grabbing";
-            if (lastPointer) rotateSubject(ev.clientX - lastPointer.x);
-            lastPointer = { x: ev.clientX, y: ev.clientY };
+            var w = pointerToWorld();
+            if (!w) return;
+            if (dragging === "sample") {
+              subject.position.set(w.x, w.y, 0);
+              var d = subject.position.distanceTo(target.position);
+              ctx.setStatus(d <= A.snapDistance ? "Release to compare"
+                                                : "Bring the samples together", false);
+              if (d <= A.snapDistance * 0.55) { dragging = null; mergeSamples(); }
+            } else if (dragging === "note") {
+              note.position.set(w.x, w.y, 1.2);
+              if (note.position.distanceTo(slot.position) <= 1.25) { dragging = null; buy(); }
+            }
           },
 
           onPointerUp: function () {
-            dragging = false;
-            lastPointer = null;
-            if (ctx.renderer.domElement) ctx.renderer.domElement.style.cursor = "default";
+            if (dragging === "sample") {
+              var d = subject.position.distanceTo(target.position);
+              if (d <= A.snapDistance) { dragging = null; mergeSamples(); return; }
+            }
+            dragging = null;
+            ctx.renderer.domElement.style.cursor = "default";
           },
 
-          onResize: function () {
-            var cam = ctx.camera;
-            var el = A.camera.elevationDeg * Math.PI / 180;
-            var dir = new THREE.Vector3(0, Math.sin(el), Math.cos(el)).normalize();
-            var lookAt = new THREE.Vector3(A.camera.lookAt[0], A.camera.lookAt[1], A.camera.lookAt[2]);
-            var box = new THREE.Box3();
-            scene.traverse(function (o) { if (o.isMesh && o.visible) box.expandByObject(o); });
-            if (box.isEmpty()) return;
-            var corners = [];
-            for (var i = 0; i < 8; i++) {
-              corners.push(new THREE.Vector3(
-                (i & 1) ? box.max.x : box.min.x,
-                (i & 2) ? box.max.y : box.min.y,
-                (i & 4) ? box.max.z : box.min.z));
-            }
-            var dist = box.getBoundingSphere(new THREE.Sphere()).radius * 2;
-            for (var pass = 0; pass < 6; pass++) {
-              cam.position.copy(lookAt).addScaledVector(dir, dist);
-              cam.lookAt(lookAt); cam.updateMatrixWorld(true); cam.updateProjectionMatrix();
-              var worst = 0;
-              for (var c = 0; c < corners.length; c++) {
-                var p = corners[c].clone().project(cam);
-                worst = Math.max(worst, Math.abs(p.x), Math.abs(p.y));
-              }
-              if (worst < 0.0001) break;
-              dist *= worst * A.camera.margin;
-            }
-            cam.position.copy(lookAt).addScaledVector(dir, dist);
-            cam.lookAt(lookAt); cam.updateProjectionMatrix();
-          },
-
-          dispose: function () {
-            disposables.forEach(function (d) { try { d.dispose(); } catch (e) {} });
-          }
+          onResize: fitCamera,
+          dispose: function () { junk.forEach(function (d) { try { d.dispose(); } catch (e) {} }); }
         };
       }
     });
 
     window.launchMolecule = function () { window.Interludes.play("molecule"); };
-
-    // resume affordance for a player who skipped out; the primary path in
-    // is the director launching the scene at the start of the term
-    function injectResume() {
-      var host = document.querySelector("#molecular-storyteller .bg-white.text-brandDark");
-      if (!host || document.getElementById("btn-molecule")) return;
-      var b = document.createElement("button");
-      b.id = "btn-molecule";
-      b.className = "il-enter";
-      b.textContent = "Return to the synthesis bench";
-      b.addEventListener("click", function () { window.launchMolecule(); });
-      host.appendChild(b);
-    }
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", injectResume);
-    } else {
-      injectResume();
-    }
   });
 })();

@@ -100,11 +100,171 @@ function play(id, params) {
   let completed = false;
   let actionHandler = null; // when set, the footer button runs this instead of closing
 
+  // ---- shared high-DPI canvas textures -------------------------------
+  // Every scene used to build its own fixed-size canvas, which went soft on
+  // high-density displays and blurred badly on anything viewed at an angle.
+  // One implementation here, supersampled and anisotropically filtered, keeps
+  // text crisp everywhere.
+  const maxAniso = renderer.capabilities.getMaxAnisotropy
+    ? renderer.capabilities.getMaxAnisotropy() : 1;
+  const texScale = Math.min(4, Math.max(2, (window.devicePixelRatio || 1) * 2));
+
+  // apply the same filtering to a texture a scene built for itself
+  function tune(t) {
+    t.anisotropy = maxAniso;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.generateMipmaps = true;
+    t.needsUpdate = true;
+    return t;
+  }
+
+  function canvasTexture(w, h, draw) {
+    const c = document.createElement("canvas");
+    c.width = Math.round(w * texScale);
+    c.height = Math.round(h * texScale);
+    const g = c.getContext("2d");
+    g.scale(texScale, texScale);
+    draw(g, w, h);                       // draw in logical units
+    const t = new THREE.CanvasTexture(c);
+    t.anisotropy = maxAniso;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.generateMipmaps = true;
+    t.needsUpdate = true;
+    return t;
+  }
+
+  // the readout card every gameplay scene uses
+  function labelTexture(l) {
+    const W = 512, H = 256;
+    return canvasTexture(W, H, (g) => {
+      g.clearRect(0, 0, W, H);
+      g.textAlign = "center";
+      if (l.box) {
+        g.fillStyle = "rgba(8,10,15,.92)";
+        g.fillRect(0, 0, W, H);
+        g.strokeStyle = l.accent || "#9aa6b4";
+        g.lineWidth = 6;
+        g.strokeRect(3, 3, W - 6, H - 6);
+      }
+      g.fillStyle = l.accent || "#9aa6b4";
+      g.font = "bold " + (l.topSize || 31) + "px system-ui, sans-serif";
+      if (l.top) g.fillText(l.top, W / 2, l.big ? 56 : 92, W - 26);
+      if (l.big) {
+        g.fillStyle = l.bigColor || "#fff";
+        g.font = "bold " + (l.bigSize || 82) + "px system-ui, sans-serif";
+        g.fillText(l.big, W / 2, 156, W - 26);
+      }
+      if (l.sub) {
+        g.fillStyle = "#94a0b0";
+        g.font = "23px system-ui, sans-serif";
+        g.fillText(l.sub, W / 2, l.big ? 212 : 138, W - 26);
+      }
+    });
+  }
+
+  // Registered labels billboard toward the camera and are pushed apart in
+  // screen space, so readouts stop landing on top of each other and on the
+  // objects they describe.
+  const labels = [];
+  function makeLabel(x, y, z, l, w, h, opts) {
+    const o = opts || {};
+    const tex = labelTexture(l);
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(w || 2.7, h || 1.35),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false }));
+    mesh.position.set(x, y, z);
+    mesh.renderOrder = o.renderOrder != null ? o.renderOrder : 5;
+    scene.add(mesh);
+    const rec = {
+      mesh,
+      home: new THREE.Vector3(x, y, z),
+      offset: new THREE.Vector3(),
+      want: new THREE.Vector3(),
+      w: w || 2.7, h: h || 1.35,
+      billboard: o.billboard !== false,
+      priority: o.priority || 0,
+      setText(nl) {
+        mesh.material.map = labelTexture(nl);
+        mesh.material.needsUpdate = true;
+      }
+    };
+    labels.push(rec);
+    mesh.userData.label = rec;
+    return mesh;
+  }
+
+  // Screen-space separation. Relaxation in aspect-corrected NDC: overlapping
+  // pairs push each other apart along whichever axis needs least travel, run
+  // to convergence, then the result is eased in along the camera's own axes so
+  // it reads as the label politely stepping aside.
+  let sepTimer = 0;
+  const _right = new THREE.Vector3(), _up = new THREE.Vector3(), _fwd = new THREE.Vector3();
+
+  function camDist(L) { return camera.position.distanceTo(L.home) || 1; }
+  function worldPerNdcY(L) {
+    return camDist(L) * Math.tan((camera.fov * Math.PI / 180) / 2);
+  }
+
+  function resolveLabelOverlap() {
+    for (const L of labels) L.want.set(0, 0, 0);
+    const aspect = camera.aspect || 1;
+    const items = [];
+    for (const L of labels) {
+      if (!L.mesh.visible) continue;
+      const p = L.home.clone().project(camera);
+      if (p.z > 1) continue;
+      const wy = worldPerNdcY(L);
+      items.push({ L, wy, x: p.x * aspect, y: p.y,
+                   hx: (L.w / 2) / wy, hy: (L.h / 2) / wy, dx: 0, dy: 0 });
+    }
+    for (let pass = 0; pass < 10; pass++) {
+      let moved = false;
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          const A = items[i], B = items[j];
+          const dx = (B.x + B.dx) - (A.x + A.dx);
+          const dy = (B.y + B.dy) - (A.y + A.dy);
+          const ox = A.hx + B.hx - Math.abs(dx);
+          const oy = A.hy + B.hy - Math.abs(dy);
+          if (ox <= 0 || oy <= 0) continue;
+          moved = true;
+          if (oy <= ox) {
+            const s = (oy / 2 + 0.006) * (dy >= 0 ? 1 : -1);
+            A.dy -= s; B.dy += s;
+          } else {
+            const s = (ox / 2 + 0.006) * (dx >= 0 ? 1 : -1);
+            A.dx -= s; B.dx += s;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+    camera.matrixWorld.extractBasis(_right, _up, _fwd);
+    for (const o of items) {
+      // aspect-corrected ndc -> world, applied along the camera's screen axes
+      o.L.want.copy(_right).multiplyScalar(o.dx * o.wy)
+              .addScaledVector(_up, o.dy * o.wy);
+    }
+  }
+
+  function updateLabels(dt) {
+    sepTimer -= dt;
+    if (sepTimer <= 0) { sepTimer = 0.12; resolveLabelOverlap(); }
+    for (const L of labels) {
+      if (L.billboard) L.mesh.quaternion.copy(camera.quaternion);
+      L.offset.lerp(L.want, Math.min(1, dt * 5));
+      L.mesh.position.copy(L.home).add(L.offset);
+    }
+  }
+
   const ctx = {
     THREE, scene, camera, renderer, container: stage,
     assets: def.assets || {},
     params: params || {},
     pickables: [],
+    canvasTexture, labelTexture, makeLabel, tune, texScale,
     pointer, raycaster, keys,
     complete() {
       if (completed) return;
@@ -113,7 +273,15 @@ function play(id, params) {
       statusEl.classList.add("done");
       goBtn.disabled = false;
     },
-    setHint(t) { hintEl.textContent = t || ""; },
+    setHint(t) {
+      const next = t || "";
+      if (hintEl.textContent === next) return;
+      hintEl.textContent = next;
+      // retrigger the attention flash so a new instruction is noticed
+      hintEl.classList.remove("changed");
+      void hintEl.offsetWidth;
+      hintEl.classList.add("changed");
+    },
     // Show the page's own text for whatever the player is acting on, so the
     // scene is never a decision made without the evidence. Text only (set via
     // textContent), never markup. Pass nothing to hide the panel.
@@ -215,6 +383,7 @@ function play(id, params) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     instance.update && instance.update(dt);
+    updateLabels(dt);
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   }
@@ -229,6 +398,13 @@ function play(id, params) {
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
     try { instance.dispose && instance.dispose(); } catch (e) { /* ignore */ }
+    // free the shared labels this scene created
+    for (const L of labels) {
+      if (L.mesh.material.map) L.mesh.material.map.dispose();
+      L.mesh.material.dispose();
+      L.mesh.geometry.dispose();
+    }
+    labels.length = 0;
     renderer.dispose();
     overlay.remove();
     active = null;
@@ -258,7 +434,7 @@ function play(id, params) {
   });
 
   active = { id, close: endSession,
-             _internals: { ctx, get instance() { return instance; }, camera, scene } };
+             _internals: { ctx, get instance() { return instance; }, camera, scene, labels } };
 }
 
 function close(finished) { if (active) active.close(finished); }
