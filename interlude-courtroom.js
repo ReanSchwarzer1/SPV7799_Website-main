@@ -49,6 +49,12 @@
     };
   }
 
+  function caseNumber() {
+    var e = document.getElementById("case-number");
+    var n = e ? parseInt(String(e.textContent).replace(/\D/g, ""), 10) : NaN;
+    return isNaN(n) ? 0 : n;
+  }
+
   function allCasesRuled() {
     var card = document.getElementById("goal-card-1");
     return !!(card && card.classList.contains("done"));
@@ -223,86 +229,238 @@
         ctx.setStatus("Case in session", false);
 
         // The case reaches the player as an object on the bench, not as a panel
-        // over the scene: a physical case file they pick up, read, and put down.
-        function docTexture() {
+        // over the scene: a two-page file that lies closed until it is opened.
+        // Opening runs in two beats. The folder first lifts and turns toward the
+        // reader, then the covers swing apart to a full spread, so the whole case
+        // is legible at once instead of being scrolled through.
+        var PAGE_W = 1.5, PAGE_H = 2.0, PAGE_T = 0.016;
+        // The open file is parked in front of the camera and sized to the frame
+        // rather than pinned to a world position. A fixed spot cannot survive the
+        // range of window shapes this runs in, and sitting too near the lens
+        // keystones the pages badly. Holding it at a distance and scaling to fit
+        // keeps the spread square to the reader on any viewport.
+        var OPEN_DIST = 4.6;          // far enough that perspective stays gentle
+        var OPEN_TILT = -0.10;        // a touch of lean, still square to the reader
+        var FIT_H = 0.80, FIT_W = 0.94;
+        var REST_TILT = -Math.PI / 2; // lying flat on the bench
+        var _camDir = new THREE.Vector3(), _openPos = new THREE.Vector3();
+        var _restQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(REST_TILT, 0, 0));
+        var _openQ = new THREE.Quaternion(), _tiltQ = new THREE.Quaternion();
+        var _tiltE = new THREE.Euler(OPEN_TILT, 0, 0);
+        var _camUp = new THREE.Vector3();
+
+        function pageCanvas(draw) {
           var c = document.createElement("canvas");
           var _S = ctx.texScale, _W = 760, _H = 1000;
           c.width = _W * _S; c.height = _H * _S;
           var g = c.getContext("2d"); g.scale(_S, _S);
           g.fillStyle = "#f4efe2"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = 3;
-          g.strokeRect(26, 26, _W - 52, _H - 52);
-          g.fillStyle = "#8a1c1c";
-          g.font = "bold 26px Georgia, serif";
-          g.fillText(current.label.toUpperCase(), 56, 92);
-          g.fillStyle = "#15161a";
-          g.font = "bold 40px Georgia, serif";
-          var y = wrap(g, current.title, 56, 150, _W - 112, 46);
-          g.fillStyle = "#4a4f57";
-          g.font = "italic 24px Georgia, serif";
-          y = wrap(g, current.drug, 56, y + 26, _W - 112, 32);
-
-          g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
-          g.beginPath(); g.moveTo(56, y + 24); g.lineTo(_W - 56, y + 24); g.stroke();
-
-          g.fillStyle = "#7a6320";
-          g.font = "bold 20px Georgia, serif";
-          g.fillText("THE CLAIM", 56, y + 66);
-          g.fillStyle = "#15161a";
-          g.font = "italic 26px Georgia, serif";
-          y = wrap(g, "“" + current.claim + "”", 56, y + 104, _W - 112, 34);
-
-          g.fillStyle = "#7a6320";
-          g.font = "bold 20px Georgia, serif";
-          g.fillText("THE LAW THAT APPLIES", 56, y + 56);
-          g.fillStyle = "#2c3038";
-          g.font = "24px Georgia, serif";
-          y = wrap(g, current.context, 56, y + 94, _W - 112, 32);
-
-          if (docOutcome) {
-            g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
-            g.beginPath(); g.moveTo(56, y + 22); g.lineTo(_W - 56, y + 22); g.stroke();
-            g.fillStyle = "#1d6b3a";
-            g.font = "bold 20px Georgia, serif";
-            g.fillText("ON THE RECORD", 56, y + 62);
-            g.fillStyle = "#22303a";
-            g.font = "23px Georgia, serif";
-            wrap(g, docOutcome, 56, y + 98, _W - 112, 30);
-          }
+          g.strokeStyle = "rgba(0,0,0,.16)"; g.lineWidth = 3;
+          g.strokeRect(24, 24, _W - 48, _H - 48);
+          draw(g, _W, _H);
           return keep(ctx.tune(new THREE.CanvasTexture(c)));
         }
 
-        function wrap(g, text, x, y, maxW, lh) {
+        function rule(g, y, W) {
+          g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(58, y); g.lineTo(W - 58, y); g.stroke();
+        }
+
+        // left page: who is asking, and what they are asking for
+        function leftPageTexture() {
+          return pageCanvas(function (g, W) {
+            g.fillStyle = "#8a1c1c";
+            g.font = "bold 29px Georgia, serif";
+            g.fillText(current.label.toUpperCase(), 58, 100);
+            g.fillStyle = "#15161a";
+            g.font = "bold 50px Georgia, serif";
+            var y = wrap(g, current.title, 58, 170, W - 116, 57);
+            g.fillStyle = "#4a4f57";
+            g.font = "italic 28px Georgia, serif";
+            y = wrap(g, current.drug, 58, y + 26, W - 116, 36);
+            rule(g, y + 26, W);
+            g.fillStyle = "#7a6320";
+            g.font = "bold 25px Georgia, serif";
+            g.fillText("THE CLAIM", 58, y + 76);
+            g.fillStyle = "#15161a";
+            g.font = "italic 32px Georgia, serif";
+            wrap(g, "“" + current.claim + "”", 58, y + 124, W - 116, 42);
+          });
+        }
+
+        // right page: the law it runs into, and afterwards what actually happened
+        function rightPageTexture() {
+          return pageCanvas(function (g, W) {
+            g.fillStyle = "#7a6320";
+            g.font = "bold 25px Georgia, serif";
+            g.fillText("THE LAW THAT APPLIES", 58, 100);
+            g.fillStyle = "#2c3038";
+            g.font = "32px Georgia, serif";
+            var y = wrap(g, current.context, 58, 152, W - 116, 42);
+            if (docOutcome) {
+              rule(g, y + 30, W);
+              g.fillStyle = "#1d6b3a";
+              g.font = "bold 25px Georgia, serif";
+              g.fillText("ON THE RECORD", 58, y + 82);
+              g.fillStyle = "#111318";
+              g.font = "30px Georgia, serif";
+              wrap(g, docOutcome, 58, y + 130, W - 116, 40);
+            }
+          });
+        }
+
+        // the outside of the folder, seen while it lies closed on the bench
+        function coverTexture() {
+          return pageCanvas(function (g, W, H) {
+            g.textAlign = "center";
+            g.fillStyle = "#8a1c1c";
+            g.font = "bold 30px Georgia, serif";
+            g.fillText(current.label.toUpperCase(), W / 2, 300);
+            g.fillStyle = "#15161a";
+            g.font = "bold 48px Georgia, serif";
+            wrap(g, current.title, 0, 400, W, 58, W / 2);
+            g.fillStyle = "#6b6250";
+            g.font = "italic 30px Georgia, serif";
+            g.fillText("Click the file to open it", W / 2, H - 200);
+            g.textAlign = "left";
+          });
+        }
+
+        function wrap(g, text, x, y, maxW, lh, centerAt) {
           var words = String(text || "").split(/\s+/), line = "";
+          function put(t) { g.fillText(t, centerAt != null ? centerAt : x, y); }
           for (var i = 0; i < words.length; i++) {
             var test = line ? line + " " + words[i] : words[i];
             if (g.measureText(test).width > maxW && line) {
-              g.fillText(line, x, y); line = words[i]; y += lh;
+              put(line); line = words[i]; y += lh;
             } else line = test;
           }
-          if (line) { g.fillText(line, x, y); y += lh; }
+          if (line) { put(line); y += lh; }
           return y;
         }
 
-        var docFace = keep(new THREE.MeshStandardMaterial(
-          { color: 0xffffff, roughness: 0.85, map: docTexture() }));
-        var docEdge = keep(new THREE.MeshStandardMaterial({ color: 0xe6e0d2, roughness: 0.9 }));
-        var caseDoc = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(1.5, 0.04, 2.0)),
-          [docEdge, docEdge, docFace, docEdge, docEdge, docEdge]);
+        var edgeMat = keep(new THREE.MeshStandardMaterial({ color: 0xe6e0d2, roughness: 0.9 }));
+        // The pages turn to face the camera while the key light stays off to one
+        // side, which drains the paper to grey. Letting the page carry its own
+        // texture as emissive keeps it cream and readable at any angle without
+        // going fully unlit and flat.
+        function faceMat(tex) {
+          return keep(new THREE.MeshStandardMaterial({
+            color: 0xffffff, roughness: 0.9, map: tex,
+            emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.5 }));
+        }
+        function setFace(mat, tex) {
+          mat.map = tex; mat.emissiveMap = tex; mat.needsUpdate = true;
+        }
+        var leftFaceMat  = faceMat(leftPageTexture());
+        var rightFaceMat = faceMat(rightPageTexture());
+        var coverMat     = faceMat(coverTexture());
+
+        // BoxGeometry face order is [+x, -x, +y, -y, +z, -z]
+        function pageMesh(front, back) {
+          return new THREE.Mesh(
+            keep(new THREE.BoxGeometry(PAGE_W, PAGE_H, PAGE_T)),
+            [edgeMat, edgeMat, edgeMat, edgeMat, front, back]);
+        }
+
+        var bookRoot = new THREE.Group();
+        var spine = new THREE.Group();
+        var leftPivot = new THREE.Group();
+        var rightPivot = new THREE.Group();
+
+        var leftPage = pageMesh(leftFaceMat, coverMat);   // its back is the cover
+        leftPage.position.x = -PAGE_W / 2;
+        leftPivot.add(leftPage);
+
+        var rightPage = pageMesh(rightFaceMat, edgeMat);
+        rightPage.position.x = PAGE_W / 2;
+        rightPivot.add(rightPage);
+
+        spine.add(leftPivot); spine.add(rightPivot);
+        bookRoot.add(spine);
+
         var DOC_REST = new THREE.Vector3(0, A.table.h / 2 + 0.03, 1.35);
-        caseDoc.position.copy(DOC_REST);
-        scene.add(caseDoc);
-        ctx.pickables.push(caseDoc);
+        bookRoot.position.copy(DOC_REST);
+        bookRoot.rotation.x = REST_TILT;
+        scene.add(bookRoot);
+        ctx.pickables.push(leftPage, rightPage);
 
         var docHeld = false, docOutcome = "";
+        var openT = 0;                 // 0 closed and flat, 1 open and facing the reader
+
+        function smooth(x) {
+          x = Math.max(0, Math.min(1, x));
+          return x * x * (3 - 2 * x);
+        }
 
         function refreshDoc() {
-          docFace.map = docTexture();
-          docFace.needsUpdate = true;
+          setFace(leftFaceMat, leftPageTexture());
+          setFace(rightFaceMat, rightPageTexture());
+          setFace(coverMat, coverTexture());
         }
 
         ctx.setBrief(null);   // the paper carries the case; no panel over the scene
+
+        // The bench lets the player walk back through cases they have already
+        // seen, re-read the file, and change a ruling they did not mean to make.
+        // Anything already on the record is reversed through the game layer so
+        // the meters and the term record stay honest.
+        function ruledRecord() {
+          return (typeof window.GameRulingFor === "function")
+            ? window.GameRulingFor(caseNumber()) : null;
+        }
+
+        function armGavel() {
+          state = "aim"; strikeT = 0;
+          papers.forEach(function (p) { p.scale.set(1, 1, 1); });
+          highlight();
+        }
+
+        function changeRuling() {
+          var n = caseNumber();
+          if (typeof window.GameUndoRuling !== "function" || !window.GameUndoRuling(n)) return;
+          docOutcome = "";
+          refreshDoc();
+          armGavel();
+          ctx.setStatus("Ruling withdrawn — rule again", false);
+          ctx.setHint("The earlier ruling is off the record. " + INSTR);
+          refreshFooter();
+        }
+
+        // present a case that is already on the record: the outcome is printed
+        // on the file, and the footer offers the correction rather than a gavel.
+        function showRuledState() {
+          var rec = ruledRecord();
+          if (!rec) return false;
+          docOutcome = rec.outcome || "Ruling registered.";
+          refreshDoc();
+          ctx.setStatus("Already ruled: " + (rec.action || "decided"), false);
+          ctx.setHint("You have ruled on this case. Pick up the file to re-read it, " +
+                      "or change the ruling.");
+          ctx.setAction("Next case", function () {
+            if (typeof window.nextCase === "function") {
+              try { window.nextCase(); } catch (e) { console.error(e); }
+            }
+            redress();
+          });
+          return true;
+        }
+
+        function refreshFooter() {
+          var rec = ruledRecord();
+          var n = caseNumber();
+          var btns = [];
+          // going back is only offered where there is something behind you
+          if (n > 1 && typeof window.prevCase === "function") {
+            btns.push({ label: "◀ Previous case", onClick: function () {
+              try { window.prevCase(); } catch (e) { console.error(e); }
+              redress();
+            } });
+          }
+          // a ruling already on the record can be withdrawn and made again
+          if (rec) btns.push({ label: "Change this ruling", onClick: changeRuling });
+          ctx.setAux(btns);
+        }
 
         function redress() {
           // dress the bench for the (new) current case
@@ -314,15 +472,21 @@
           papers.forEach(function (p) { p.scale.set(1, 1, 1); });
           state = "aim"; strikeT = 0; selected = 0;
           highlight();
-          docOutcome = "";
           docHeld = false;
-          refreshDoc();
-          ctx.setHint(INSTR);
-          ctx.setStatus("Case in session", false);
-          ctx.setAction("Continue", function () { /* disabled until ruled */ });
-          // setAction enables the button; re-disable until the next ruling
-          var go = document.querySelector('.il-overlay [data-act="go"]');
-          if (go) go.disabled = true;
+
+          if (showRuledState()) {
+            /* the player walked back onto a case they already decided */
+          } else {
+            docOutcome = "";
+            refreshDoc();
+            ctx.setHint(INSTR);
+            ctx.setStatus("Case in session", false);
+            ctx.setAction("Continue", function () { /* disabled until ruled */ });
+            // setAction enables the button; re-disable until the next ruling
+            var go = document.querySelector('.il-overlay [data-act="go"]');
+            if (go) go.disabled = true;
+          }
+          refreshFooter();
         }
 
         function registerRuling(idx) {
@@ -337,7 +501,9 @@
           docOutcome = verdict || "Ruling registered.";
           refreshDoc();
           ctx.setHint((isGrant ? "You granted the monopoly. " : "You intervened in the market. ") +
-                      "Pick up the file to read what followed.");
+                      "Pick up the file to read what followed, or change the ruling if that " +
+                      "was not what you meant.");
+          refreshFooter();
 
           if (allCasesRuled()) {
             ctx.complete();                       // marks the goal, enables button
@@ -362,6 +528,11 @@
           highlight();
         }
 
+        // the scene can be entered on a case the player has already ruled, so the
+        // footer and the file are dressed from the record before the first frame
+        if (!showRuledState()) ctx.setHint(INSTR);
+        refreshFooter();
+
         return {
           update: function (dt) {
             bob += dt;
@@ -370,14 +541,31 @@
             // face is the box's +Y side, so it must tip POSITIVELY about X to
             // turn that face toward a camera sitting at +Z; a negative angle
             // shows the blank underside instead.
-            var wantPos = docHeld
-              ? new THREE.Vector3(0, 1.15, 2.35)
-              : DOC_REST;
-            var wantRotX = docHeld ? 1.02 : 0;
-            caseDoc.position.lerp(wantPos, Math.min(1, dt * 7));
-            caseDoc.rotation.x += (wantRotX - caseDoc.rotation.x) * Math.min(1, dt * 7);
-            caseDoc.scale.setScalar(
-              caseDoc.scale.x + ((docHeld ? 1.45 : 1) - caseDoc.scale.x) * Math.min(1, dt * 7));
+            // Opening runs in two overlapping beats so it reads as a folder
+            // being picked up and then opened, rather than one blended morph.
+            openT += ((docHeld ? 1 : 0) - openT) * Math.min(1, dt * 5.5);
+            var lift = smooth(openT / 0.62);            // rise and turn to face the reader
+            var fold = smooth((openT - 0.34) / 0.66);   // covers swing apart
+
+            var cam = ctx.camera;
+            cam.getWorldDirection(_camDir);
+            _openPos.copy(cam.position).addScaledVector(_camDir, OPEN_DIST);
+            var vh = 2 * Math.tan(cam.fov * Math.PI / 360) * OPEN_DIST;
+            var vw = vh * cam.aspect;
+            var fit = Math.min(vh * FIT_H / PAGE_H, vw * FIT_W / (PAGE_W * 2));
+            // lift it clear of the hint pill along the camera's own up axis
+            _camUp.set(0, 1, 0).applyQuaternion(cam.quaternion);
+            _openPos.addScaledVector(_camUp, vh * 0.05);
+
+            bookRoot.position.lerpVectors(DOC_REST, _openPos, lift);
+            _tiltQ.setFromEuler(_tiltE);
+            _openQ.copy(cam.quaternion).multiply(_tiltQ);
+            bookRoot.quaternion.copy(_restQ).slerp(_openQ, lift);
+            bookRoot.scale.setScalar(1 + (fit - 1) * lift);
+            // closed, the left leaf lies folded over the right one; open, it swings
+            // out to a flat spread, and the spine slides so the stack stays centred
+            leftPivot.rotation.y = -Math.PI * (1 - fold);
+            spine.position.x = -(PAGE_W / 2) * (1 - fold);
 
             var targetX = papers[selected].position.x;
 
@@ -420,10 +608,10 @@
           onPointerDown: function (hit) {
             if (!hit) return;
             // the file can be picked up and put down at any time
-            if (hit.object === caseDoc) {
+            if (hit.object === leftPage || hit.object === rightPage) {
               docHeld = !docHeld;
               ctx.setHint(docHeld
-                ? "Click the file again to set it down."
+                ? "Click the file again to close it and rule."
                 : INSTR);
               return;
             }

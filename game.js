@@ -264,9 +264,10 @@
     globe: {
       kicker: "Module 6 · The trade globe",
       title: "Where the medicine went",
-      body: "Cheap medicine is worth nothing where it cannot arrive. This globe runs from 2000 " +
-            "to 2024, and the routes out of India open one by one as the years pass: Africa " +
-            "first, then Europe, then North America.",
+      body: "Infrastructure often dictates medical access. The functional value of any drug is " +
+            "strictly zero if it cannot physically reach the patient who needs it. This globe " +
+            "runs from 2000 to 2024, and the routes out of India open one by one as the years " +
+            "pass: Africa first, then Europe, then North America.",
       objective: "Run the timeline to 2012 or later, and inspect one destination market.",
       controls: "<b>Drag the yellow handle</b> along the timeline. <b>Click a glowing marker</b> " +
                 "on the globe to inspect that market. Drag empty space to spin the globe, and " +
@@ -462,6 +463,37 @@
   // means the generic never exists downstream; competitors admitted on the
   // floor arrive as supply in the clearing house; the price the market
   // settled at is the price the health budget has to pay.
+  // ---- rulings: read one back, or undo a mis-click ----------------------
+  // The bench lets a player walk back through the cases they have already
+  // ruled on. Undo reverses the exact meter movement the ruling applied and
+  // clears the record, so re-ruling scores the new choice cleanly instead of
+  // being swallowed by the "already ruled" guard.
+  window.GameRulingFor = function (num) {
+    num = parseInt(num, 10);
+    return g.rulings[num] || null;
+  };
+
+  window.GameUndoRuling = function (num) {
+    num = parseInt(num, 10);
+    var rec = g.rulings[num];
+    if (!rec) return false;
+    g.access = clamp(g.access - (rec.dA || 0));
+    g.innov = clamp(g.innov - (rec.dI || 0));
+    delete g.rulings[num];
+    delete g.ruledCases[num];
+    // the sixth ruling closes the term; undoing it must reopen the term so the
+    // corrected ruling can close it again
+    if (g.done[1]) {
+      g.done[1] = false;
+      var card = $("goal-card-1");
+      if (card) card.classList.remove("done");
+      var fb = $("goal-fb-1");
+      if (fb) fb.innerHTML = "";
+    }
+    updateHUD();
+    return true;
+  };
+
   window.GameInherit = function () {
     var cl = g.rulings[3];                     // case 3 is Bayer v Natco, the licence
     var lbl = $("val-monopoly-status");
@@ -776,8 +808,13 @@
             action: isGrant ? "Granted the monopoly" : txt("btn-reject"),
             outcome: txt("ruling-outcome")
           };
+          // remember what was actually applied (clamping can swallow part of a
+          // delta) so a mis-click can be reversed exactly rather than approximately
+          var beforeA = g.access, beforeI = g.innov;
           if (isGrant) { g.access = clamp(g.access - 3); g.innov = clamp(g.innov + 5); }
           else { g.access = clamp(g.access + 7); g.innov = clamp(g.innov - 1); }
+          g.rulings[num].dA = g.access - beforeA;
+          g.rulings[num].dI = g.innov - beforeI;
           updateHUD();
         }
         var ruled = Object.keys(g.ruledCases).length;

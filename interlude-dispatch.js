@@ -15,6 +15,12 @@
 (function () {
   "use strict";
 
+  /* The record rooms present cards and meters, not physical objects. A hard
+     key throws rectangles across walls that are already almost black, which
+     reads as a rendering fault rather than as light. They get an even,
+     presentational rig with no cast shadows. */
+  var PRESENTATION_LIGHT = { hemi: 1.0, key: 0.55, rim: 0.26, shadows: false };
+
   function whenReady(fn) {
     if (window.Interludes) return fn();
     var n = 0, t = setInterval(function () {
@@ -39,6 +45,7 @@
   whenReady(function () {
 
     window.Interludes.register("dispatch", {
+      lighting: PRESENTATION_LIGHT,
       kicker: "The record room",
       title: "What you have done so far",
       step: "End of the first two modules",
@@ -126,7 +133,7 @@
           g.font = "bold " + (expanded ? 40 : 27) + "px Georgia, serif";
           var y = wrapText(g, r.title, pad, expanded ? 128 : 92, _W - pad * 2,
                            expanded ? 46 : 32, expanded ? 3 : 2);
-          g.fillStyle = "#5a6069";
+          g.fillStyle = "#3a4048";
           g.font = "italic " + (expanded ? 24 : 17) + "px Georgia, serif";
           y = wrapText(g, r.drug, pad, y + (expanded ? 16 : 8), _W - pad * 2,
                        expanded ? 30 : 22, 2);
@@ -142,9 +149,9 @@
             g.fillStyle = "#7a6320";
             g.font = "bold 22px Georgia, serif";
             g.fillText("WHAT FOLLOWED", pad, y + 58);
-            g.fillStyle = "#22303a";
-            g.font = "25px Georgia, serif";
-            wrapText(g, r.outcome, pad, y + 96, _W - pad * 2, 33);
+            g.fillStyle = "#111318";
+            g.font = "27px Georgia, serif";
+            wrapText(g, r.outcome, pad, y + 96, _W - pad * 2, 35);
           } else if (!expanded) {
             g.fillStyle = "#7b828c";
             g.font = "italic 16px system-ui, sans-serif";
@@ -326,6 +333,7 @@
        page state so every figure is the model's own, not a retelling.
        ---------------------------------------------------------- */
     window.Interludes.register("dispatch-market", {
+      lighting: PRESENTATION_LIGHT,
       kicker: "The record room",
       title: "What the market did",
       step: "After the floor and the clearing house",
@@ -442,15 +450,15 @@
           g.fillStyle = "#15161a";
           g.font = "bold " + (expanded ? 92 : 84) + "px system-ui, sans-serif";
           g.fillText(cd.v, pad, expanded ? 182 : 168);
-          g.fillStyle = "#5a6069";
+          g.fillStyle = "#3a4048";
           g.font = "italic " + (expanded ? 25 : 21) + "px Georgia, serif";
           var y = wrapText(g, cd.s, pad, expanded ? 234 : 218, _W - pad * 2,
                            expanded ? 32 : 27, 2);
           if (expanded) {
             g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
             g.beginPath(); g.moveTo(pad, y + 16); g.lineTo(_W - pad, y + 16); g.stroke();
-            g.fillStyle = "#22303a"; g.font = "25px Georgia, serif";
-            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 33);
+            g.fillStyle = "#111318"; g.font = "27px Georgia, serif";
+            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 35);
           } else {
             g.fillStyle = "#7b828c"; g.font = "italic 17px system-ui, sans-serif";
             g.fillText("click to read", pad, _H - 34);
@@ -608,6 +616,7 @@
        number is read from the live page model.
        ---------------------------------------------------------- */
     window.Interludes.register("dispatch-reach", {
+      lighting: PRESENTATION_LIGHT,
       kicker: "The record room",
       title: "What the medicine reached",
       step: "After the ward and the globe",
@@ -708,15 +717,15 @@
           g.fillStyle = "#15161a";
           g.font = "bold " + (expanded ? 84 : 76) + "px system-ui, sans-serif";
           g.fillText(cd.v, pad, expanded ? 182 : 168);
-          g.fillStyle = "#5a6069";
+          g.fillStyle = "#3a4048";
           g.font = "italic " + (expanded ? 25 : 21) + "px Georgia, serif";
           var y = wrapText(g, cd.s, pad, expanded ? 234 : 218, _W - pad * 2,
                            expanded ? 32 : 27, 2);
           if (expanded) {
             g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
             g.beginPath(); g.moveTo(pad, y + 16); g.lineTo(_W - pad, y + 16); g.stroke();
-            g.fillStyle = "#22303a"; g.font = "25px Georgia, serif";
-            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 33);
+            g.fillStyle = "#111318"; g.font = "27px Georgia, serif";
+            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 35);
           } else {
             g.fillStyle = "#7b828c"; g.font = "italic 17px system-ui, sans-serif";
             g.fillText("click to read", pad, _H - 34);
@@ -869,6 +878,7 @@
        Shown after modules 7 and 8, before module 9.
        ---------------------------------------------------------- */
     window.Interludes.register("dispatch-power", {
+      lighting: PRESENTATION_LIGHT,
       kicker: "The record room",
       title: "What the price cost, and who held it",
       step: "After the wage floor and the concentration room",
@@ -980,15 +990,15 @@
           g.fillStyle = "#15161a";
           g.font = "bold " + (expanded ? 84 : 74) + "px system-ui, sans-serif";
           g.fillText(cd.v, pad, expanded ? 182 : 168);
-          g.fillStyle = "#5a6069";
+          g.fillStyle = "#3a4048";
           g.font = "italic " + (expanded ? 25 : 21) + "px Georgia, serif";
           var y = wrapText(g, cd.s, pad, expanded ? 234 : 218, _W - pad * 2,
                            expanded ? 32 : 27, 2);
           if (expanded) {
             g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
             g.beginPath(); g.moveTo(pad, y + 16); g.lineTo(_W - pad, y + 16); g.stroke();
-            g.fillStyle = "#22303a"; g.font = "25px Georgia, serif";
-            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 33);
+            g.fillStyle = "#111318"; g.font = "27px Georgia, serif";
+            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 35);
           } else {
             g.fillStyle = "#7b828c"; g.font = "italic 17px system-ui, sans-serif";
             g.fillText("click to read", pad, _H - 34);

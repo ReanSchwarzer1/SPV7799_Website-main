@@ -16,6 +16,15 @@ const { app, BrowserWindow, protocol, net, globalShortcut } = require("electron"
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
+/* Chromium throttles, and eventually freezes, the render loop of a window it
+   considers backgrounded or occluded. For a study session that is unacceptable:
+   a participant who alt-tabs for a moment would come back to a stalled scene.
+   It also makes frame-time measurement meaningless, since requestAnimationFrame
+   simply stops firing. Both are disabled here, and backgroundThrottling is
+   turned off on the window itself. */
+app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
+app.commandLine.appendSwitch("disable-renderer-backgrounding");
+
 const ROOT = __dirname;
 const START_PAGE = "index-gamified.html";
 
@@ -47,7 +56,8 @@ function createWindow() {
       preload: path.join(ROOT, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      backgroundThrottling: false
     }
   });
 

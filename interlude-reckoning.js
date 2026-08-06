@@ -48,6 +48,11 @@
       step: "Everything you decided",
       instructions: "Drag to turn the ring. Click a stone to read that decision.",
 
+      /* The far side of the ring recedes into the page rather than ending at a
+         hard silhouette, which gives the monument somewhere to stand. Density is
+         deliberately low: the stones carry text the player has to read. */
+      fog: { color: 0x0e111a, density: 0.02 },
+
       assets: {
         ring:   { radius: 7.4, stoneW: 2.9, stoneH: 2.1 },
         column: { r: 1.25, strata: 0.52, gap: 0.06 },
@@ -172,8 +177,8 @@
           g.fillStyle = "#6b6250";
           g.font = "bold " + (open ? 21 : 18) + "px system-ui, sans-serif";
           g.fillText("WHAT IT PRODUCED", pad, y + 52);
-          g.fillStyle = "#22303a";
-          g.font = (open ? 27 : 22) + "px Georgia, serif";
+          g.fillStyle = "#111318";
+          g.font = (open ? 28 : 23) + "px Georgia, serif";
           wrap(g, m.out, pad, y + 90, _W - pad * 2, open ? 34 : 28, open ? 6 : 3);
           if (!open) {
             g.fillStyle = "#7b828c"; g.font = "italic 16px system-ui, sans-serif";

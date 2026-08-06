@@ -114,6 +114,9 @@
 .il-foot .status { font-size: 13px; color: #9aa3af; }
 .il-foot .status.done { color: #3fae6b; font-weight: 700; }
 .il-foot .spacer { flex: 1; }
+/* scene-supplied extra buttons (going back through cases, withdrawing a ruling) */
+.il-aux { display: flex; gap: 8px; }
+.il-aux:empty { display: none; }
 .il-btn {
   border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-weight: 700;
   cursor: pointer;

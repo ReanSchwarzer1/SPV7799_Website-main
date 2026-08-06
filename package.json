@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "electron": "^40.6.1",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "three": "^0.160.1"
   },
   "build": {
     "appId": "in.spv7799.onemolecule",

@@ -36,6 +36,106 @@ import * as THREE from "three";
 const registry = new Map();
 let active = null; // current running session
 
+/* ------------------------------------------------------------------
+   Quality tiers.
+
+   Sessions run on machines we do not control. A study that stutters is
+   worse than one that looks plain, so every visual upgrade added from
+   here on is gated on a tier, and the tier can drop itself if the frame
+   budget is missed for a sustained period.
+
+   high   shadows + post-processing + full shadow map
+   medium shadows, no post-processing
+   low    no shadows, no post-processing
+   ------------------------------------------------------------------ */
+let Interludes_postDefault = false;   // Phase 3 flips this to true
+
+/* Participants sit with this for half an hour and some are motion sensitive.
+   Camera kicks and any rapid flashing check this before they run. */
+let reducedMotionOverride = null;      // null = follow the OS setting
+function prefersReducedMotion() {
+  if (reducedMotionOverride !== null) return reducedMotionOverride;
+  try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch (e) { return false; }
+}
+
+const TIERS = ["low", "medium", "high"];
+const QUALITY_KEY = "il.quality";
+
+const Quality = {
+  tier: "high",
+  locked: false,          // true when the user picked a tier by hand
+  budgetMs: 1000 / 50,    // aim for 50fps before considering a downgrade
+
+  get shadows() { return this.tier !== "low"; },
+  get post() { return this.tier === "high"; },
+  get shadowMapSize() { return this.tier === "high" ? 2048 : 1024; },
+
+  set(tier, byUser) {
+    if (TIERS.indexOf(tier) < 0) return;
+    this.tier = tier;
+    if (byUser) {
+      this.locked = true;
+      try { localStorage.setItem(QUALITY_KEY, tier); } catch (e) { /* private mode */ }
+    }
+    document.dispatchEvent(new CustomEvent("interlude:quality", { detail: { tier } }));
+  },
+
+  downgrade() {
+    const i = TIERS.indexOf(this.tier);
+    if (this.locked || i <= 0) return false;
+    this.set(TIERS[i - 1], false);
+    console.info("[interludes] frame budget missed, dropping to", this.tier);
+    return true;
+  },
+
+  restore() {
+    try {
+      const saved = localStorage.getItem(QUALITY_KEY);
+      if (saved && TIERS.indexOf(saved) >= 0) { this.tier = saved; this.locked = true; }
+    } catch (e) { /* private mode */ }
+  }
+};
+Quality.restore();
+
+/* Rolling frame meter. Read over the debugger as window.__ilPerf during
+   verification runs; also feeds the adaptive downgrade above. */
+const Perf = {
+  scene: null, frames: 0, ms: 0, fps: 0,
+  _acc: 0, _n: 0, _overBudget: 0, _samples: [],
+  reset(scene) {
+    this.scene = scene; this.frames = 0; this.ms = 0; this.fps = 0;
+    this._acc = 0; this._n = 0; this._overBudget = 0; this._samples = [];
+  },
+  sample(dtMs) {
+    this.frames++; this._acc += dtMs; this._n++;
+    if (this._samples.length < 600) this._samples.push(dtMs);
+    if (this._n >= 30) {                       // report about twice a second
+      this.ms = this._acc / this._n;
+      this.fps = 1000 / this.ms;
+      this._acc = 0; this._n = 0;
+      // three consecutive slow windows before acting, so a single hitch
+      // (a scene building, a texture upload) never triggers a downgrade
+      if (this.ms > Quality.budgetMs) {
+        if (++this._overBudget >= 3) { this._overBudget = 0; Quality.downgrade(); }
+      } else this._overBudget = 0;
+      if (typeof window !== "undefined") {
+        window.__ilPerf = {
+          scene: this.scene, fps: +this.fps.toFixed(1), ms: +this.ms.toFixed(2),
+          frames: this.frames, tier: Quality.tier,
+          median: this.median(), p95: this.percentile(95)
+        };
+      }
+    }
+  },
+  median() { return this.percentile(50); },
+  percentile(p) {
+    if (!this._samples.length) return 0;
+    const a = this._samples.slice().sort((x, y) => x - y);
+    return +a[Math.min(a.length - 1, Math.floor(a.length * p / 100))].toFixed(2);
+  }
+};
+
 // ---------- shell ----------
 function buildOverlay(def, params) {
   const o = document.createElement("div");
@@ -59,6 +159,7 @@ function buildOverlay(def, params) {
     '<div class="il-foot">' +
       '<span class="status">Goal not met yet</span>' +
       '<span class="spacer"></span>' +
+      '<span class="il-aux"></span>' +
       '<button class="il-btn ghost" data-act="skip">Skip</button>' +
       '<button class="il-btn go" data-act="go" disabled>Continue</button>' +
     '</div>';
@@ -70,6 +171,8 @@ function play(id, params) {
   const def = registry.get(id);
   if (!def) { console.warn("[interludes] unknown interlude:", id); return; }
   if (active) active.close(false); // only one at a time; close the prior session
+  // a build that threw can leave its overlay behind with no session to close it
+  document.querySelectorAll(".il-overlay").forEach((el) => el.remove());
 
   const overlay = buildOverlay(def, params);
   const stage = overlay.querySelector(".il-stage");
@@ -77,10 +180,15 @@ function play(id, params) {
   const statusEl = overlay.querySelector(".status");
   const goBtn = overlay.querySelector('[data-act="go"]');
   const skipBtn = overlay.querySelector('[data-act="skip"]');
+  const auxWrap = overlay.querySelector('.il-aux');
 
   // renderer / scene / camera
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // shadowMap.enabled must be set before materials compile; it is not toggled
+  // again during a session, only chosen per tier when the session starts
+  renderer.shadowMap.enabled = Quality.shadows;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   stage.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -88,17 +196,148 @@ function play(id, params) {
   camera.position.set(0, 1.4, 6);
   camera.lookAt(0, 0, 0); // frame the scene origin so screen-center rays hit centered objects
 
-  // default lighting (interludes can add more)
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x404060, 0.9));
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
-  key.position.set(4, 8, 6);
+  /* Standard three point rig.
+
+     Every scene file declares zero lights of its own, so this is the only
+     lighting in the application. A scene can nudge it through def.lighting
+     without having to build a rig from scratch. Total illumination is kept
+     close to the old two light setup so existing scenes do not shift in
+     brightness; the difference is direction and the shadowing key. */
+  const L = Object.assign({
+    hemi: 0.72,                       // soft ambient fill
+    key: 1.0,                         // the shadow caster
+    rim: 0.34,                        // cool separation from behind
+    // a high key keeps shadows short. Long raking shadows look dramatic but
+    // they fall across the printed labels the player has to read.
+    keyDir: [3.2, 11.5, 5.2],
+    rimDir: [-5, 3.5, -6],
+    keyColor: 0xffffff,
+    rimColor: 0xbcd0ff,
+    skyColor: 0xffffff,
+    groundColor: 0x404060
+  }, def.lighting || {});
+
+  scene.add(new THREE.HemisphereLight(L.skyColor, L.groundColor, L.hemi));
+
+  const key = new THREE.DirectionalLight(L.keyColor, L.key);
+  key.position.set(L.keyDir[0], L.keyDir[1], L.keyDir[2]);
+  // a scene can opt out: presentational rooms have nothing physical to ground,
+  // and their shadows land on near-black surfaces as unexplained dark shapes
+  key.castShadow = Quality.shadows && L.shadows !== false;
+  if (key.castShadow) {
+    key.shadow.mapSize.set(Quality.shadowMapSize, Quality.shadowMapSize);
+    // thin boxes (papers, cards, plaques) acne badly; normalBias does more
+    // of the work here than a constant depth bias would
+    key.shadow.bias = -0.0004;
+    key.shadow.normalBias = 0.018;
+  }
   scene.add(key);
+  scene.add(key.target);
+
+  const rim = new THREE.DirectionalLight(L.rimColor, L.rim);
+  rim.position.set(L.rimDir[0], L.rimDir[1], L.rimDir[2]);
+  scene.add(rim);
+
+  /* Fog is opt in per scene: def.fog = { color, density }. The backbuffer is
+     transparent and the overlay behind it is a radial gradient running from
+     #1b2030 to #0b0d12, so the default fog colour sits in that range and
+     geometry recedes into the page rather than into a grey haze. */
+  if (def.fog) {
+    scene.fog = new THREE.FogExp2(
+      def.fog.color != null ? def.fog.color : 0x12151f,
+      def.fog.density != null ? def.fog.density : 0.035);
+  }
+
+  /* Shadow participation is assigned by walking the graph rather than by
+     hand editing twelve scene files. Unlit billboards (labels, record cards,
+     plaques) opt out entirely: they are MeshBasicMaterial, they ignore
+     lighting, and letting them cast would drop hard rectangles across the
+     scene. Large flat geometry receives but does not cast, so floors and
+     table tops do not waste shadow map area on themselves. */
+  const _bbSize = new THREE.Vector3();
+  function applyShadowFlags(root) {
+    root.traverse(function (o) {
+      if (!o.isMesh || !o.geometry) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      const unlit = mats.length > 0 && mats.every(function (m) { return m && m.isMeshBasicMaterial; });
+      if (unlit) {
+        /* Readable surfaces are exempt from fog. Labels, readouts, record
+           cards and plaques are unlit billboards carrying text the player has
+           to read; letting atmosphere wash them out trades comprehension for
+           mood, and this is a study instrument first. */
+        mats.forEach(function (m) { if (m && m.fog) { m.fog = false; m.needsUpdate = true; } });
+        o.castShadow = false; o.receiveShadow = false;
+        return;
+      }
+      if (!Quality.shadows) return;
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      o.geometry.boundingBox.getSize(_bbSize);
+      const wide = _bbSize.x * o.scale.x > 6 || _bbSize.z * o.scale.z > 6;
+      const flat = _bbSize.y * o.scale.y < 0.7;
+      o.castShadow = !(wide && flat);
+      o.receiveShadow = true;
+    });
+  }
+
+  /* The shadow camera is fitted to what actually casts, so small scenes get
+     a tight, sharp map instead of a blurry one stretched over empty space. */
+  const _sbox = new THREE.Box3(), _sc = new THREE.Vector3(), _ss = new THREE.Vector3();
+  const _keyDir = new THREE.Vector3();
+  function fitShadowCamera() {
+    if (!key.castShadow) return;
+    _sbox.makeEmpty();
+    scene.traverse(function (o) { if (o.isMesh && o.castShadow) _sbox.expandByObject(o); });
+    if (_sbox.isEmpty()) return;
+    _sbox.getCenter(_sc); _sbox.getSize(_ss);
+    const r = Math.max(_ss.x, _ss.y, _ss.z) * 0.72 + 1;
+    _keyDir.set(L.keyDir[0], L.keyDir[1], L.keyDir[2]).normalize();
+    key.position.copy(_sc).addScaledVector(_keyDir, r * 2.6);
+    key.target.position.copy(_sc);
+    key.target.updateMatrixWorld();
+    const c = key.shadow.camera;
+    c.left = -r; c.right = r; c.top = r; c.bottom = -r;
+    c.near = 0.1; c.far = r * 6;
+    c.updateProjectionMatrix();
+  }
+
+  /* Camera offset layer.
+
+     Scenes own their own framing: each one writes camera.position directly
+     from its fitCamera()/frameScene(). Anything that wants to nudge the
+     camera (a gavel strike, an eased sweep between scenes) therefore cannot
+     write to camera.position, because the scene's next fit would overwrite
+     it. Instead the offset is applied around the render call and removed
+     immediately after, so the scene's own transform is never disturbed. */
+  const camOffset = new THREE.Vector3();
+  const _camSaved = new THREE.Vector3();
+  let shakeLeft = 0, shakeDur = 0, shakeAmp = 0;
+
+  function updateCamOffset(dt) {
+    camOffset.set(0, 0, 0);
+    if (shakeLeft > 0) {
+      shakeLeft = Math.max(0, shakeLeft - dt);
+      const k = shakeDur > 0 ? shakeLeft / shakeDur : 0;
+      const a = shakeAmp * k * k;                       // quadratic decay
+      // shake across the camera's own screen axes, not world axes
+      camOffset.set((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a, 0)
+               .applyQuaternion(camera.quaternion);
+    }
+  }
 
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const keys = Object.create(null);
   let completed = false;
+  // Declared here, not next to buildComposer(), because resize() runs during
+  // setup and reads `composer`. A `let` further down leaves it in the temporal
+  // dead zone at that point and play() aborts before the render loop starts.
+  let composer = null, composerState = "idle";   // idle | loading | ready | failed
+  // master switch for the composer. Off by default until Phase 3 lands real
+  // passes; flipped at runtime via Interludes.setPost() during verification.
+  let postEnabled = Interludes_postDefault;
   let actionHandler = null; // when set, the footer button runs this instead of closing
+  // optional extra footer buttons, used by scenes that need steps of their own
+  // (walking back through cases, withdrawing a ruling)
 
   // ---- shared high-DPI canvas textures -------------------------------
   // Every scene used to build its own fixed-size canvas, which went soft on
@@ -173,7 +412,8 @@ function play(id, params) {
     const tex = labelTexture(l);
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(w || 2.7, h || 1.35),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false }));
+      // fog:false so a readout never fades into the atmosphere, whenever it is made
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
     mesh.position.set(x, y, z);
     mesh.renderOrder = o.renderOrder != null ? o.renderOrder : 5;
     scene.add(mesh);
@@ -266,6 +506,18 @@ function play(id, params) {
     pickables: [],
     canvasTexture, labelTexture, makeLabel, tune, texScale,
     pointer, raycaster, keys,
+    quality: Quality,
+    // scenes that add geometry after build call this so the new objects both
+    // cast shadows and fall inside the fitted shadow camera
+    refitLights() { applyShadowFlags(scene); fitShadowCamera(); },
+    // a decaying camera kick, in world units, applied around the draw only.
+    // Scenes call this; they must never write camera.position for effects.
+    shake(amplitude, seconds) {
+      if (prefersReducedMotion()) return;
+      shakeAmp = Math.max(shakeAmp, amplitude || 0.06);
+      shakeDur = seconds || 0.15;
+      shakeLeft = shakeDur;
+    },
     complete() {
       if (completed) return;
       completed = true;
@@ -321,6 +573,22 @@ function play(id, params) {
       goBtn.disabled = false;
       actionHandler = fn || null;
     },
+    // extra footer buttons. Pass an array of { label, onClick }; pass nothing
+    // (or an empty array) to clear them.
+    setAux(list) {
+      if (!auxWrap) return;
+      auxWrap.textContent = "";
+      (list || []).forEach((item) => {
+        if (!item || !item.label) return;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "il-btn ghost";
+        b.textContent = item.label;
+        b.addEventListener("click", () => { if (item.onClick) item.onClick(); });
+        auxWrap.appendChild(b);
+      });
+    },
+    clearAux() { if (auxWrap) auxWrap.textContent = ""; },
     finish() { endSession(true); }
   };
   ctx.setHint(def.instructions || "");
@@ -334,11 +602,21 @@ function play(id, params) {
     return;
   }
 
+  /* World matrices must be current before anything measures the scene.
+     A scene's own frameScene() builds its bounding box with expandByObject,
+     which reads world matrices; if they are stale the box comes out wrong and
+     the camera fits to it. This used to happen only as a side effect of the
+     shadow fit, which made framing differ between quality tiers. */
+  scene.updateMatrixWorld(true);
+  applyShadowFlags(scene);
+  fitShadowCamera();
+
   // sizing
   function resize() {
     const r = stage.getBoundingClientRect();
     const w = Math.max(1, r.width), h = Math.max(1, r.height);
     renderer.setSize(w, h, false);
+    if (composer) { composer.setSize(w, h); composer.setPixelRatio(renderer.getPixelRatio()); }
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     // let the scene refit its framing to the new aspect
@@ -377,20 +655,73 @@ function play(id, params) {
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
 
+  /* Post-processing.
+
+     The composer is built lazily and only on the high tier. It is loaded
+     with a dynamic import so that a missing or broken addon can never stop
+     the scene rendering: on any failure we log once and stay on the direct
+     path. Phase 3 adds the actual effect passes; for now the chain is
+     RenderPass -> OutputPass, which should be visually identical to
+     renderer.render() and exists to prove the plumbing. */
+  function buildComposer() {
+    if (composerState !== "idle") return;
+    composerState = "loading";
+    Promise.all([
+      import("three/addons/postprocessing/EffectComposer.js"),
+      import("three/addons/postprocessing/RenderPass.js"),
+      import("three/addons/postprocessing/OutputPass.js")
+    ]).then(([{ EffectComposer }, { RenderPass }, { OutputPass }]) => {
+      const c = new EffectComposer(renderer);
+      c.addPass(new RenderPass(scene, camera));
+      c.addPass(new OutputPass());
+      const r = stage.getBoundingClientRect();
+      c.setSize(Math.max(1, r.width), Math.max(1, r.height));
+      c.setPixelRatio(renderer.getPixelRatio());
+      composer = c;
+      composerState = "ready";
+    }).catch((e) => {
+      composerState = "failed";
+      console.warn("[interludes] post-processing unavailable, staying on direct render", e);
+    });
+  }
+
+  function usePost() {
+    return Quality.post && postEnabled && composerState === "ready" && composer;
+  }
+
+  function renderFrame() {
+    if (usePost()) composer.render();
+    else renderer.render(scene, camera);
+  }
+
   // animation loop
   let raf = 0, last = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dtMs = now - last;
+    const dt = Math.min(0.05, dtMs / 1000);
     last = now;
     instance.update && instance.update(dt);
     updateLabels(dt);
-    renderer.render(scene, camera);
+    updateCamOffset(dt);
+
+    // apply the offset only for the draw, then put the camera back exactly
+    // where the scene left it
+    _camSaved.copy(camera.position);
+    camera.position.add(camOffset);
+    renderFrame();
+    camera.position.copy(_camSaved);
+
+    Perf.sample(dtMs);
     raf = requestAnimationFrame(frame);
   }
+  Perf.reset(id);
   raf = requestAnimationFrame(frame);
+  if (Quality.post && postEnabled) buildComposer();
 
   function teardown() {
     cancelAnimationFrame(raf);
+    if (composer) { try { composer.dispose(); } catch (e) { /* older builds */ } composer = null; }
+    composerState = "idle";
     window.removeEventListener("resize", resize);
     renderer.domElement.removeEventListener("pointerdown", onDown);
     renderer.domElement.removeEventListener("pointermove", onMove);
@@ -446,7 +777,21 @@ window.Interludes = {
   play,
   close,
   // dev/testing accessor: internals of the running session (null when idle)
-  debug() { return active ? { id: active.id, ...active._internals } : null; }
+  debug() { return active ? { id: active.id, ...active._internals } : null; },
+
+  // ---- Phase 0 controls: quality, post-processing, motion, metering ----
+  quality(tier) {
+    if (tier) Quality.set(tier, true);
+    return { tier: Quality.tier, locked: Quality.locked,
+             shadows: Quality.shadows, post: Quality.post,
+             shadowMapSize: Quality.shadowMapSize };
+  },
+  setPost(on) { Interludes_postDefault = !!on; return Interludes_postDefault; },
+  reducedMotion(v) {
+    if (v !== undefined) reducedMotionOverride = (v === null ? null : !!v);
+    return prefersReducedMotion();
+  },
+  perf() { return (typeof window !== "undefined" && window.__ilPerf) || null; }
 };
 
 // ============================================================

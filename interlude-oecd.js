@@ -159,9 +159,21 @@
               sub: s.volume.toFixed(1) + "% of scripts, " + s.value.toFixed(1) + "% of spend",
               accent: "#fffb00", box: true, bigSize: 72 });
           readout.material.needsUpdate = true;
+          if (solved) {
+            // The answer is already on the record. Inspecting another system is
+            // still useful for comparison, but the plaque must not offer a fresh
+            // "lock in" it will refuse, and it must keep naming the real answer
+            // rather than the pedestal the player happens to be standing at.
+            plaque.material.map = plaqueTex("CORRECT: " + pods[answerIdx].sys.name,
+                                            "the widest gap in the hall", "#3fae6b");
+            plaque.material.needsUpdate = true;
+            ctx.setHint("Comparing " + s.name + ". " + pods[answerIdx].sys.name +
+                        " still holds the widest gap. Close your term when you are ready.");
+            return;
+          }
           plaque.material.map = plaqueTex("LOCK IN " + s.name, "is this the widest gap?", "#fffb00");
           plaque.material.needsUpdate = true;
-          if (!solved) ctx.setHint("Compare the towers. Lock in when you think you have the widest gap.");
+          ctx.setHint("Compare the towers. Lock in when you think you have the widest gap.");
         }
 
         function lockIn() {
