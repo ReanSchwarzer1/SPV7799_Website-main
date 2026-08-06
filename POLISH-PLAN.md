@@ -48,7 +48,7 @@ Phase 0 and it gates roughly two thirds of the pipeline.
 |---|---|---|---|
 | **0** | Foundations, addons, perf harness, safety rails | — | **COMPLETE** (devlog 12) |
 | **1** | Light, shadow, atmosphere | 0 | **COMPLETE** (devlog 13) |
-| **2** | Materials and PBR | 1 | — |
+| **2** | Materials and PBR | 1 | **MOSTLY DONE** (devlog 14) |
 | **3** | Post-processing stack | 0, 1, 2 | — |
 | **4** | Kinesthetics and game feel | 0 | Partly with 2–3 |
 | **5** | Transitions and flow | 0, 4 | — |
@@ -130,7 +130,7 @@ inside frame budget on all tiers.
 
 ---
 
-## Phase 2 — Materials and PBR
+## Phase 2 — Materials and PBR  [courtroom + antitrust done; consistency sweep outstanding]
 
 No external texture assets exist and none should be introduced if avoidable, so maps are
 **generated procedurally on canvas** at load, the same technique the labels already use.
@@ -252,13 +252,17 @@ Independent of the render stack. Can start as soon as the asset question is answ
 
 ## Decisions needed before Phase 0 closes
 
-**1. Audio assets.** Three routes:
+**1. Audio assets.** DECIDED: **hybrid**. Procedural synthesis for impacts, meters and
+chimes; sourced CC0 recordings only for the market floor and reckoning ambiences, whose
+licences must be documented for a published artifact.
+
+Three routes were considered:
 
 | Route | Pros | Cons |
 |---|---|---|
 | **Procedural (WebAudio synthesis)** | No licensing, tiny footprint, fully offline, deterministic, I can build it end to end | Less "real" than recorded foley |
 | **Sourced CC0 foley** | Authentic texture | Someone must find, audit licences and download; adds MBs; licence provenance must be documented for a published artifact |
-| **Hybrid** *(recommended)* | Procedural for impacts, meters and chimes; sourced only for the two ambiences that genuinely need recordings | Small sourcing task remains |
+| **Hybrid** — **CHOSEN** | Procedural for impacts, meters and chimes; sourced only for the two ambiences that genuinely need recordings | Small sourcing task remains |
 
 **2. Selective bloom risk.** Accept the two-pass layer approach with a fallback, or go
 straight to the cheaper emissive-glow alternative?

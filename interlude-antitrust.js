@@ -79,7 +79,20 @@
         }
         function curveY(n) { return (innovationOf(n) / 100) * A.hill.h - 1.1; }
 
-        var hillMat = mat({ color: A.hill.color, roughness: 0.7 });
+        /* The inverted-U reads better as a physical diorama than as a chart,
+           so the hill is polished stone: veined normal and roughness maps plus
+           a light clearcoat. The maps tile across the 57 segments the curve is
+           built from, which is why they are generated once here rather than
+           per segment. */
+        var marbleH = ctx.surfaces.marble(1);
+        var marbleN = ctx.normalTexture("marble", 512, 512, marbleH, 1.1, 3, 1);
+        var marbleR = ctx.grayTexture("marbleR", 512, 512, marbleH, 3, 1);
+        var hillMat = keep(new THREE.MeshPhysicalMaterial({
+          color: A.hill.color, roughness: 0.42, metalness: 0.05,
+          normalMap: marbleN,
+          normalScale: new THREE.Vector2(0.45, 0.45),
+          roughnessMap: marbleR,
+          clearcoat: 0.4, clearcoatRoughness: 0.22 }));
         var peakMat = mat({ color: A.hill.peak, roughness: 0.5,
                             emissive: A.hill.peak, emissiveIntensity: 0.3 });
         var segGeo = keep(new THREE.BoxGeometry(1, A.hill.thickness, 0.5));
@@ -109,8 +122,11 @@
         // ---------- the ball ----------
         var ball = new THREE.Mesh(
           keep(new THREE.SphereGeometry(A.ball.r, 22, 16)),
-          mat({ color: A.ball.color, roughness: 0.25,
-                emissive: A.ball.color, emissiveIntensity: 0.5 }));
+          keep(new THREE.MeshStandardMaterial({
+            color: A.ball.color, roughness: 0.16, metalness: 0.85,
+            // kept emissive so it still reads against the dark hall, but far
+            // lower than before: the metal response now does most of the work
+            emissive: A.ball.color, emissiveIntensity: 0.22 })));
         scene.add(ball);
 
         // ---------- firms on the floor ----------

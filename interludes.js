@@ -238,6 +238,33 @@ function play(id, params) {
   rim.position.set(L.rimDir[0], L.rimDir[1], L.rimDir[2]);
   scene.add(rim);
 
+  /* Image based lighting.
+
+     Metalness, clearcoat and low roughness describe how a surface reflects its
+     surroundings. With three direct lights and nothing else there are no
+     surroundings, so a metal renders black and a clearcoat has nothing to
+     catch. Every material change in Phase 2 was invisible until this existed.
+
+     RoomEnvironment is a small procedural box of emissive panels; PMREM
+     prefilters it into the roughness mipmaps three.js samples. It is built
+     once per session and applied as scene.environment, so it lights materials
+     without ever being visible as a background. */
+  let envRT = null;
+  import("three/addons/environments/RoomEnvironment.js").then(({ RoomEnvironment }) => {
+    if (!renderer) return;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const room = new RoomEnvironment();
+    envRT = pmrem.fromScene(room, 0.04);
+    scene.environment = envRT.texture;
+    // modest: these scenes are lit for reading, not for showroom reflections
+    scene.environmentIntensity = def.envIntensity != null ? def.envIntensity : 0.38;
+    room.dispose && room.dispose();
+    pmrem.dispose();
+  }).catch((e) => {
+    console.warn("[interludes] environment map unavailable, materials stay direct-lit", e);
+  });
+
   /* Fog is opt in per scene: def.fog = { color, density }. The backbuffer is
      transparent and the overlay behind it is a radial gradient running from
      #1b2030 to #0b0d12, so the default fog colour sits in that range and
@@ -266,7 +293,10 @@ function play(id, params) {
            to read; letting atmosphere wash them out trades comprehension for
            mood, and this is a study instrument first. */
         mats.forEach(function (m) { if (m && m.fog) { m.fog = false; m.needsUpdate = true; } });
-        o.castShadow = false; o.receiveShadow = false;
+        // an unlit mesh can still be a solid object worth grounding: shadow
+        // casting reads depth, not shading, so a scene may opt back in
+        o.castShadow = o.userData.forceCast === true;
+        o.receiveShadow = false;
         return;
       }
       if (!Quality.shadows) return;
@@ -373,6 +403,115 @@ function play(id, params) {
     t.needsUpdate = true;
     return t;
   }
+
+  /* ---- procedural surface maps -------------------------------------
+     No texture assets exist and none are being introduced: the build is
+     self-contained and every surface so far is drawn on a canvas. These
+     generate height, normal and roughness maps at load.
+
+     Results are cached for the life of the session, because scenes rebuild
+     often (the courtroom redresses on every case) and a 512x512 normal map
+     is a quarter of a million pixels of JavaScript. */
+  const procCache = new Map();
+
+  function procCanvas(w, h, draw) {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    if (draw) draw(c.getContext("2d"), w, h);
+    return c;
+  }
+
+  function repeatTex(tex, rx, ry) {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(rx || 1, ry || rx || 1);
+    return tune(tex);
+  }
+
+  // write a grayscale field from a per-pixel function returning 0..1
+  function field(g, w, h, fn) {
+    const img = g.createImageData(w, h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let v = fn(x, y);
+        v = v < 0 ? 0 : v > 1 ? 1 : v;
+        const b = (v * 255) | 0, i = (y * w + x) * 4;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = b;
+        img.data[i + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+  }
+
+  // grayscale map, used for roughness
+  function grayTexture(key, w, h, fn, rx, ry) {
+    const k = "g:" + key;
+    if (procCache.has(k)) return procCache.get(k);
+    const t = repeatTex(new THREE.CanvasTexture(
+      procCanvas(w, h, (g) => field(g, w, h, fn))), rx, ry);
+    procCache.set(k, t);
+    return t;
+  }
+
+  /* Tangent space normal map derived from the same height function, by
+     central differences. Sampling wraps, so a tiled surface has no seam. */
+  function normalTexture(key, w, h, fn, strength, rx, ry) {
+    const k = "n:" + key;
+    if (procCache.has(k)) return procCache.get(k);
+    const H = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) H[y * w + x] = fn(x, y);
+    const at = (x, y) => H[(((y % h) + h) % h) * w + (((x % w) + w) % w)];
+    const s = strength == null ? 2 : strength;
+    const out = procCanvas(w, h);
+    const g = out.getContext("2d");
+    const img = g.createImageData(w, h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const dx = (at(x + 1, y) - at(x - 1, y)) * s;
+        const dy = (at(x, y + 1) - at(x, y - 1)) * s;
+        const len = Math.sqrt(dx * dx + dy * dy + 1);
+        const i = (y * w + x) * 4;
+        img.data[i]     = ((-dx / len) * 0.5 + 0.5) * 255;
+        img.data[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255;
+        img.data[i + 2] = ((1 / len) * 0.5 + 0.5) * 255;
+        img.data[i + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    const t = repeatTex(new THREE.CanvasTexture(out), rx, ry);
+    procCache.set(k, t);
+    return t;
+  }
+
+  /* Height functions. All are periodic in x and y so they tile cleanly. */
+  const TAU = Math.PI * 2;
+  const surfaces = {
+    // fine tooth of thick paper: white noise, no structure
+    paper(amp) {
+      const a = amp == null ? 0.5 : amp;
+      return () => 0.5 + (Math.random() - 0.5) * a;
+    },
+    // long grain with a slow wander across the plank
+    wood(rings, wobble) {
+      const r = rings || 11, wo = wobble == null ? 1.1 : wobble;
+      return (x, y) => {
+        const u = (x / 512) * TAU, v = (y / 512) * TAU;
+        const g1 = Math.sin(u * r + Math.sin(v * 2) * wo);
+        const g2 = Math.sin(u * r * 2.7 + Math.sin(v * 3) * 0.6) * 0.35;
+        return 0.5 + (g1 + g2) * 0.16 + (Math.random() - 0.5) * 0.05;
+      };
+    },
+    // turbulent veining for polished stone
+    marble(scale) {
+      const k = scale || 1;
+      return (x, y) => {
+        const u = (x / 512) * TAU * k, v = (y / 512) * TAU * k;
+        let t = Math.sin(u * 3 + Math.sin(v * 2) * 1.6);
+        t += 0.5 * Math.sin(u * 7 + Math.sin(v * 5) * 1.1);
+        t += 0.25 * Math.sin(u * 13 + v * 3);
+        return 0.5 + t * 0.15;
+      };
+    }
+  };
 
   // the readout card every gameplay scene uses
   function labelTexture(l) {
@@ -505,6 +644,8 @@ function play(id, params) {
     params: params || {},
     pickables: [],
     canvasTexture, labelTexture, makeLabel, tune, texScale,
+    // procedural surface maps: ctx.surfaces.wood(), then grayTexture/normalTexture
+    surfaces, grayTexture, normalTexture,
     pointer, raycaster, keys,
     quality: Quality,
     // scenes that add geometry after build call this so the new objects both
@@ -721,6 +862,7 @@ function play(id, params) {
   function teardown() {
     cancelAnimationFrame(raf);
     if (composer) { try { composer.dispose(); } catch (e) { /* older builds */ } composer = null; }
+    if (envRT) { try { envRT.dispose(); } catch (e) {} envRT = null; scene.environment = null; }
     composerState = "idle";
     window.removeEventListener("resize", resize);
     renderer.domElement.removeEventListener("pointerdown", onDown);

@@ -678,3 +678,100 @@ The pedestal name plates in the OECD hall overlap each other (UNITED KINGDOM / U
 STATES / JAPAN). Confirmed identical in the pre-Phase-1 capture, so it is not a
 regression from the framing fix. It belongs to the label relaxation system and is worth
 a targeted pass later.
+
+---
+
+## 14. Polish pipeline — Phase 2 (materials and PBR)
+
+### Procedural surface maps
+
+No texture assets exist and none were introduced. Height, normal and roughness maps are
+generated on a canvas at load, the same technique the labels already use, and cached for
+the life of the session because scenes rebuild often (the courtroom redresses on every
+case) and a 512x512 normal map is a quarter of a million pixels of JavaScript.
+
+Exposed to scenes as `ctx.surfaces`, `ctx.normalTexture()`, `ctx.grayTexture()`:
+
+- `surfaces.paper(amp)` — white noise, the fine tooth of thick stock
+- `surfaces.wood(rings, wobble)` — long grain with a slow wander across the plank
+- `surfaces.marble(scale)` — turbulent veining
+
+Normal maps are derived from the same height function by central differences, with
+wrapped sampling so a tiled surface has no seam.
+
+### Image based lighting — the piece that made the rest visible
+
+The first pass applied clearcoat to the bench and metalness to the antitrust ball, and
+the before and after screenshots were **indistinguishable**.
+
+Metalness, clearcoat and low roughness all describe how a surface reflects its
+surroundings. With three direct lights and nothing else there are no surroundings: a
+metal renders black, a clearcoat has nothing to catch. Every material change in this
+phase was invisible until an environment existed.
+
+`RoomEnvironment` was vendored (bringing the addon set to 15 modules) and prefiltered
+through `PMREMGenerator` into `scene.environment`. It lights materials without ever
+being visible as a background. Intensity defaults to 0.38, overridable per scene with
+`def.envIntensity` — these scenes are lit for reading, not for showroom reflections.
+
+### Applied
+
+**Courtroom.** The bench is `MeshPhysicalMaterial` with a wood normal and roughness map
+and `clearcoat 0.55`, so the off-axis key now catches varnish and the grain reads. The
+ruling papers keep a light paper tooth.
+
+**Antitrust.** The hill is polished stone, veined normal and roughness with a light
+clearcoat. The ball is `metalness 0.85, roughness 0.16`, with its old emissive dropped
+from 0.5 to 0.22 because the metal response now does most of the work.
+
+### The case file became unlit, deliberately
+
+Introducing IBL blew the case file out: the pages clipped to white and the print stopped
+being readable. Toning the diffuse down helped the closed cover and still failed once
+the file was open and facing the camera squarely.
+
+That fight had been running from both ends for a while. The pages originally read grey
+when they turned to face the camera, which is why they were given an `emissiveMap` at
+0.5; adding an environment pushed the same surface past clipping instead.
+
+The pages are now `MeshBasicMaterial`: the texture is shown exactly as drawn. This is
+not a retreat, it is the precedent already in the codebase — the record room cards have
+always been unlit and they are the most legible surfaces in the game.
+
+They still cast shadows, so the closed folder stays grounded on the bench. Shadow casting
+reads depth, not shading, so an unlit mesh can cast perfectly well. The harness now
+honours `mesh.userData.forceCast = true` to opt an unlit mesh back into casting, since
+the automatic pass otherwise excludes them.
+
+### An ordering bug caught before it shipped
+
+The bench was constructed at line 143 using `woodNormal`, which was declared with `var`
+at line 354. `var` hoists, so there was no error: `normalMap` would simply have been
+`undefined` and the map silently absent. The same class of failure as the Phase 0
+temporal dead zone bug, and equally invisible. Declarations were moved above first use
+and the ordering is now asserted when the change is applied.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| All 15 scenes build | yes, 0 console errors |
+| Frame budget | 120 fps, median 8.3 ms, p95 8.4 ms — unchanged since Phase 0 |
+| Case file legibility | restored to full contrast, confirmed open and closed |
+| Ruling paper legibility | restored after toning diffuse off pure white |
+| Condition A untouched | yes |
+
+Screenshots: `tools/verify-out-p2/`.
+
+### Not done in this phase
+
+The plan's third item, lifting the other ten scenes to a common material standard, has
+**not** been done. Only the courtroom and the antitrust room have real surfaces. The
+environment map applies everywhere, so nothing looks broken, but there is a visible
+quality gap between those two scenes and the rest. That sweep is still outstanding.
+
+### Audio decision recorded
+
+Hybrid, confirmed: procedural synthesis for impacts, meters and chimes; sourced CC0
+recordings only for the market floor and reckoning ambiences, whose licences must be
+documented for a published artifact.

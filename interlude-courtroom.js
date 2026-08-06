@@ -136,9 +136,24 @@
         function geo(g) { return keep(g); }
 
         // ---- static set: table + sound block ----
+        /* Surface maps. The paper gets a fine tooth so the key light breaks
+           across it instead of reading as flat card; the bench gets a long
+           grain plus a clearcoat so the off-axis key catches varnish. Both are
+           generated on a canvas and cached by the harness. */
+        var paperNormal = ctx.normalTexture("paper", 256, 256, ctx.surfaces.paper(0.55), 0.55, 3, 4);
+        var paperRough  = ctx.grayTexture("paperR", 256, 256, ctx.surfaces.paper(0.35), 3, 4);
+        var woodHeight  = ctx.surfaces.wood(11, 1.1);
+        var woodNormal  = ctx.normalTexture("wood", 512, 512, woodHeight, 1.5, 2, 1);
+        var woodRough   = ctx.grayTexture("woodR", 512, 512, woodHeight, 2, 1);
+
         var table = new THREE.Mesh(
           geo(new THREE.BoxGeometry(A.table.w, A.table.h, A.table.d)),
-          mat({ color: A.table.color, roughness: 0.65, metalness: 0.05 }));
+          keep(new THREE.MeshPhysicalMaterial({
+            color: A.table.color, roughness: 0.52, metalness: 0.04,
+            normalMap: woodNormal,
+            normalScale: new THREE.Vector2(0.5, 0.5),
+            roughnessMap: woodRough,
+            clearcoat: 0.55, clearcoatRoughness: 0.28 })));
         scene.add(table);
 
         var block = new THREE.Mesh(
@@ -176,8 +191,11 @@
         }
 
         function makePaper(x, heading, sub) {
-          var side = mat({ color: A.paper.color, roughness: 0.9 });
-          var top  = mat({ color: 0xffffff, roughness: 0.9, map: paperTexture(heading, sub) });
+          var side = mat({ color: A.paper.color, roughness: 0.94 });
+          var top  = mat({ color: 0xd8d8d8, roughness: 0.94,
+                           normalMap: paperNormal,
+                           normalScale: new THREE.Vector2(0.3, 0.3),
+                           map: paperTexture(heading, sub) });
           // BoxGeometry material order: +x,-x,+y(top),-y,+z,-z
           var p = new THREE.Mesh(
             geo(new THREE.BoxGeometry(A.paper.w, A.paper.t, A.paper.d)),
@@ -344,13 +362,18 @@
         // side, which drains the paper to grey. Letting the page carry its own
         // texture as emissive keeps it cream and readable at any angle without
         // going fully unlit and flat.
+        /* The case file is a reading surface, so it is unlit: the texture is
+           shown exactly as it was drawn. Every attempt to light it fought the
+           same battle from both ends, reading grey when it turned to face the
+           camera and clipping to white once image based lighting arrived. The
+           record room cards solved this long ago by being MeshBasicMaterial,
+           and they are the most legible surfaces in the game. The pages still
+           cast a shadow, because shadow casting reads depth, not shading. */
         function faceMat(tex) {
-          return keep(new THREE.MeshStandardMaterial({
-            color: 0xffffff, roughness: 0.9, map: tex,
-            emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.5 }));
+          return keep(new THREE.MeshBasicMaterial({ map: tex, fog: false }));
         }
         function setFace(mat, tex) {
-          mat.map = tex; mat.emissiveMap = tex; mat.needsUpdate = true;
+          mat.map = tex; mat.needsUpdate = true;
         }
         var leftFaceMat  = faceMat(leftPageTexture());
         var rightFaceMat = faceMat(rightPageTexture());
@@ -369,10 +392,12 @@
         var rightPivot = new THREE.Group();
 
         var leftPage = pageMesh(leftFaceMat, coverMat);   // its back is the cover
+        leftPage.userData.forceCast = true;                // still grounded on the bench
         leftPage.position.x = -PAGE_W / 2;
         leftPivot.add(leftPage);
 
         var rightPage = pageMesh(rightFaceMat, edgeMat);
+        rightPage.userData.forceCast = true;
         rightPage.position.x = PAGE_W / 2;
         rightPivot.add(rightPage);
 
