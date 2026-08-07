@@ -48,7 +48,7 @@ Phase 0 and it gates roughly two thirds of the pipeline.
 |---|---|---|---|
 | **0** | Foundations, addons, perf harness, safety rails | — | **COMPLETE** (devlog 12) |
 | **1** | Light, shadow, atmosphere | 0 | **COMPLETE** (devlog 13) |
-| **2** | Materials and PBR | 1 | **MOSTLY DONE** (devlog 14) |
+| **2** | Materials, geometry and art direction | 1 | **REOPENED AND EXPANDED** — see `PHASE-2-ART-DIRECTION.md` |
 | **3** | Post-processing stack | 0, 1, 2 | — |
 | **4** | Kinesthetics and game feel | 0 | Partly with 2–3 |
 | **5** | Transitions and flow | 0, 4 | — |
@@ -130,7 +130,17 @@ inside frame budget on all tiers.
 
 ---
 
-## Phase 2 — Materials and PBR  [courtroom + antitrust done; consistency sweep outstanding]
+## Phase 2 — Materials, geometry and art direction  [REOPENED]
+
+> The first pass added surface maps to two scenes and a global environment map. It was
+> not enough, and the environment over-lit scenes that were art-directed low-key. The
+> phase has been reopened and substantially expanded: the real problem is geometry
+> (roughly 132 raw primitives, zero chamfered edges, zero glass) rather than materials
+> alone, plus a lighting correction and a proper gavel strike animation.
+>
+> **Full plan: `PHASE-2-ART-DIRECTION.md`.** Sub-phases 2a to 2e.
+
+Original items, now folded into that document:
 
 No external texture assets exist and none should be introduced if avoidable, so maps are
 **generated procedurally on canvas** at load, the same technique the labels already use.
