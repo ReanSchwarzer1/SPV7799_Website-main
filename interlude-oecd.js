@@ -124,6 +124,10 @@
               keep(ctx.roundedBox(A.tower.w * 1.30, 0.09, A.tower.d * 1.30, 0.02)), trim);
             foot.position.set(x + offset, -1.36 + 0.045, 0);
             scene.add(foot);
+            // four bolts holding the foot plate to the pedestal
+            var fb = ctx.boltRing(A.tower.w * 0.55, 4, 0.028, trim);
+            fb.position.set(x + offset, -1.36 + 0.09, 0);
+            scene.add(fb);
             var cap = new THREE.Mesh(
               keep(ctx.roundedBox(A.tower.w * 1.16, 0.06, A.tower.d * 1.16, 0.018)), trim);
             cap.position.set(x + offset, -1.36 + h + 0.03, 0);

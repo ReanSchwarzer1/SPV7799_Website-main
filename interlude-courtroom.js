@@ -171,6 +171,18 @@
         lip.position.set(0, A.table.h / 2 - 0.045, A.table.d / 2 + 0.03);
         scene.add(lip);
 
+        /* micro-detail: a run of rivets along the moulded lip, and a rubber pad
+           under every leg so the bench sits on the floor rather than in it */
+        (function () {
+          var brass = ctx.material("brass"); keep(brass);
+          var rivets = ctx.rivetLine(A.table.w * 0.92, 18, 0.022, brass);
+          rivets.position.set(0, A.table.h / 2 - 0.045, A.table.d / 2 + 0.10);
+          scene.add(rivets);
+          var rubber = ctx.material("rubber", { color: 0x2a2c30 }); keep(rubber);
+          var pads = ctx.footPads(A.table.w - 0.56, A.table.d - 0.56, rubber, 0.11);
+          pads.position.y = -A.table.h / 2 - 0.93;
+          scene.add(pads);
+        })();
         var legGeo = keep(ctx.roundedBox(0.28, 0.9, 0.28, 0.035));
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) {
           var leg = new THREE.Mesh(legGeo, benchDark);

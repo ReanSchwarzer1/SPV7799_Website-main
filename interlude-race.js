@@ -166,6 +166,12 @@
                               slot.position.z + c[1] * A.slot.d * 0.44);
             scene.add(foot);
           });
+          // a small screwed plate on the face of the machine
+          var plate = ctx.nameplate(A.slot.w * 0.5, 0.18, slotSteel,
+                                    ctx.material("brass"));
+          plate.position.set(slot.position.x, slot.position.y - A.slot.h * 0.18,
+                             slot.position.z + A.slot.d * 0.52);
+          scene.add(plate);
         })();
         var envelope = new THREE.Mesh(
           keep(ctx.roundedBox(2.0, 0.08, 1.3)),

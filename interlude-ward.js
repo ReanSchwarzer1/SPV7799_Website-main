@@ -269,6 +269,8 @@
           var flange = new THREE.Mesh(
             keep(ctx.roundedBox(W * 1.30, 0.13, W * 1.30, 0.035)), towerTrim);
           flange.position.set(BX, BY + 0.065, 0); scene.add(flange);
+          var fb = ctx.boltRing(W * 0.52, 6, 0.032, towerTrim);
+          fb.position.set(BX, BY + 0.13, 0); scene.add(fb);
           var rim = new THREE.Mesh(
             keep(ctx.roundedBox(W * 1.16, 0.09, W * 1.16, 0.025)), towerTrim);
           rim.position.set(BX, BY + A.tower.maxH, 0); scene.add(rim);

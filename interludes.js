@@ -369,6 +369,82 @@ function play(id, params) {
     return g;
   }
 
+  /* ---- micro-detail ---------------------------------------------------
+     The small hardware that separates a modelled object from a shape: bolts
+     round a flange, rivets along a seam, feet under a leg, a nameplate screwed
+     to a face. Each is a shared geometry instanced many times, so a scene can
+     scatter dozens of them for almost nothing.
+
+     They matter at reading distance more than large forms do: the eye uses the
+     scale of small repeated parts to judge how big the whole thing is. */
+
+  // one hex-headed bolt with a washer under it
+  function boltHead(r, mat, washerMat) {
+    const g = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.94, r * 0.85, 6), mat);
+    head.position.y = r * 0.5;
+    g.add(head);
+    const washer = new THREE.Mesh(turnedCylinder(r * 1.5, r * 1.55, r * 0.28, r * 0.07, 24),
+                                  washerMat || mat);
+    g.add(washer);
+    return g;
+  }
+
+  /* A ring of bolts round a circular flange or hub. */
+  function boltRing(radius, count, size, mat, washerMat) {
+    const g = new THREE.Group();
+    const proto = boltHead(size, mat, washerMat);
+    for (let i = 0; i < count; i++) {
+      const b = proto.clone();
+      const a = (i / count) * Math.PI * 2;
+      b.position.set(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+      g.add(b);
+    }
+    return g;
+  }
+
+  /* A run of rivets along a seam, laid on the x axis and centred. */
+  function rivetLine(length, count, size, mat) {
+    const g = new THREE.Group();
+    const geo = new THREE.SphereGeometry(size, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55);
+    for (let i = 0; i < count; i++) {
+      const r = new THREE.Mesh(geo, mat);
+      r.position.x = -length / 2 + (i + 0.5) * (length / count);
+      g.add(r);
+    }
+    return g;
+  }
+
+  /* Rubber feet, so a heavy object sits on something rather than floating flush
+     against the floor. */
+  function footPads(w, d, mat, r) {
+    const g = new THREE.Group();
+    const rr = r || Math.min(w, d) * 0.06;
+    const geo = turnedCylinder(rr, rr * 1.12, rr * 0.7, rr * 0.2, 24);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach((c) => {
+      const f = new THREE.Mesh(geo, mat);
+      f.position.set(c[0] * (w / 2 - rr * 1.6), 0, c[1] * (d / 2 - rr * 1.6));
+      g.add(f);
+    });
+    return g;
+  }
+
+  /* A small plate screwed to a face, with four screws. Something to catch a
+     highlight and give the surface a sense of scale. */
+  function nameplate(w, h, plateMat, screwMat) {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(roundedBox(w, h, h * 0.14, h * 0.08), plateMat));
+    const sr = h * 0.10;
+    const sgeo = turnedCylinder(sr, sr, sr * 0.5, sr * 0.2, 16);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach((c) => {
+      const sc = new THREE.Mesh(sgeo, screwMat || plateMat);
+      sc.rotation.x = Math.PI / 2;
+      sc.position.set(c[0] * (w / 2 - sr * 2.2), c[1] * (h / 2 - sr * 2.0), h * 0.10);
+      g.add(sc);
+    });
+    return g;
+  }
+
   /* Weld duplicated vertices so smooth shading works across a surface rather
      than stopping at every triangle seam. */
   function smoothGeometry(geo, angleDeg) {
@@ -861,6 +937,7 @@ function play(id, params) {
     // procedural surface maps: ctx.surfaces.wood(), then grayTexture/normalTexture
     surfaces, grayTexture, normalTexture,
     roundedBox, smoothGeometry, turnedCylinder, plinth, fitTrim,
+    boltHead, boltRing, rivetLine, footPads, nameplate,
     material, tunedStandard, families: FAMILIES, wood, woodTones: WOOD_TONES,
     pointer, raycaster, keys,
     quality: Quality,

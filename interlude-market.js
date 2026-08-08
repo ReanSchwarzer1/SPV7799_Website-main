@@ -114,6 +114,10 @@
             keep(ctx.turnedCylinder(A.column.r * 1.55, A.column.r * 1.75, 0.16)), steel);
           flange.position.set(A.column.x, -1.72, 0);
           scene.add(flange);
+          // the flange is bolted down, so it has bolts in it
+          var bolts = ctx.boltRing(A.column.r * 1.42, 8, 0.045, steel);
+          bolts.position.set(A.column.x, -1.66, 0);
+          scene.add(bolts);
           var crown = new THREE.Mesh(
             keep(ctx.turnedCylinder(A.column.r * 1.12, A.column.r * 1.24, 0.12)), steel);
           crown.name = "columnCrown";
@@ -150,6 +154,10 @@
               keep(ctx.roundedBox(A.tank.w * 1.08, 0.06, A.tank.d * 1.08, 0.02)), steel);
             strap.position.set(cfg.x, -1.7 + A.tank.maxH * 0.45, 0);
             scene.add(strap);
+            // rivets along the strap band, front face only
+            var tr = ctx.rivetLine(A.tank.w * 0.9, 7, 0.026, steel);
+            tr.position.set(cfg.x, -1.7 + A.tank.maxH * 0.45, A.tank.d * 0.58);
+            scene.add(tr);
           })();
           var fill = new THREE.Mesh(
             keep(ctx.roundedBox(A.tank.w * 0.82, 1, A.tank.d * 0.82)),

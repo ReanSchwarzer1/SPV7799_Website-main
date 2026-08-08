@@ -225,6 +225,9 @@
             var plate = new THREE.Mesh(keep(ctx.roundedBox(1.72, 0.06, 0.98, 0.02)), steel);
             plate.position.copy(base.position); plate.position.y -= 0.16;
             scene.add(plate);
+            var pb = ctx.boltRing(0.62, 4, 0.030, steel);
+            pb.position.copy(plate.position); pb.position.y += 0.04;
+            scene.add(pb);
           })();
           var lever = new THREE.Mesh(
             keep(ctx.roundedBox(A.switchGeom.w, A.switchGeom.h, A.switchGeom.d)),
