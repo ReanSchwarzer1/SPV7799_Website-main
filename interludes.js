@@ -445,6 +445,217 @@ function play(id, params) {
     return g;
   }
 
+  /* ---- assemblies ------------------------------------------------------
+     Four objects kept turning up as a single primitive across the scenes: a
+     switch, an intake slot, a gauge and the mount under a spinning thing.
+     Defining them once, with the construction a real one has, means no scene
+     has to settle for a box and none of them drift apart. */
+
+  /* A heavy panel toggle. The paddle is returned separately because the scenes
+     animate its tilt to show state. */
+  function toggleSwitch(o) {
+    o = o || {};
+    const w = o.w || 0.55, h = o.h || 1.0, d = o.d || 0.34;
+    const paint = o.housingMat, steel = o.steelMat, paddleMat = o.paddleMat;
+    const g = new THREE.Group();
+
+    const housing = new THREE.Mesh(roundedBox(w * 2.6, h * 0.34, d * 2.3, w * 0.09), paint);
+    housing.position.y = h * 0.17;
+    g.add(housing);
+    const plate = new THREE.Mesh(roundedBox(w * 3.1, h * 0.07, d * 2.8, w * 0.05), steel);
+    g.add(plate);
+    const pb = boltRing(w * 1.25, 4, w * 0.055, steel);
+    pb.position.y = h * 0.04;
+    g.add(pb);
+
+    // raised bezel round the slot the paddle swings through
+    const bezel = new THREE.Mesh(
+      new THREE.TorusGeometry(w * 0.62, w * 0.09, 14, 48), steel);
+    bezel.rotation.x = Math.PI / 2;
+    bezel.position.y = h * 0.34;
+    g.add(bezel);
+    // pivot boss with a cheek either side, which is what the paddle turns on
+    [-1, 1].forEach((c) => {
+      const cheek = new THREE.Mesh(roundedBox(w * 0.22, h * 0.30, d * 0.5, w * 0.05), steel);
+      cheek.position.set(c * w * 0.72, h * 0.34, 0);
+      g.add(cheek);
+    });
+    const pin = new THREE.Mesh(turnedCylinder(w * 0.11, w * 0.11, w * 1.6, w * 0.03), steel);
+    pin.rotation.z = Math.PI / 2;
+    pin.position.y = h * 0.40;
+    g.add(pin);
+
+    // the paddle: a shank, a knurled grip band, a finger notch and a tip cap
+    const paddle = new THREE.Group();
+    paddle.position.y = h * 0.40;
+    g.add(paddle);
+    const shank = new THREE.Mesh(roundedBox(w, h * 0.72, d, w * 0.16), paddleMat);
+    shank.position.y = h * 0.36;
+    paddle.add(shank);
+    for (let i = 0; i < 7; i++) {
+      const knurl = new THREE.Mesh(roundedBox(w * 1.04, h * 0.028, d * 0.30, w * 0.012), steel);
+      knurl.position.set(0, h * 0.30 + i * h * 0.05, d * 0.42);
+      paddle.add(knurl);
+    }
+    const notch = new THREE.Mesh(
+      new THREE.TorusGeometry(w * 0.30, w * 0.07, 12, 32, Math.PI), steel);
+    notch.position.set(0, h * 0.66, d * 0.16);
+    paddle.add(notch);
+    const cap = new THREE.Mesh(turnedCylinder(w * 0.40, w * 0.46, h * 0.13, w * 0.09), steel);
+    cap.position.y = h * 0.76;
+    paddle.add(cap);
+    const collar2 = new THREE.Mesh(turnedCylinder(w * 0.44, w * 0.44, h * 0.07, w * 0.04), steel);
+    collar2.position.y = h * 0.10;
+    paddle.add(collar2);
+
+    // an indicator lamp in a bezel, and a screwed plate to letter
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(w * 0.13, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6),
+      o.lampMat || steel);
+    lamp.position.set(w * 1.02, h * 0.36, d * 1.0);
+    g.add(lamp);
+    const lampRing = new THREE.Mesh(
+      new THREE.TorusGeometry(w * 0.15, w * 0.035, 10, 28), steel);
+    lampRing.rotation.x = Math.PI / 2;
+    lampRing.position.set(w * 1.02, h * 0.34, d * 1.0);
+    g.add(lampRing);
+    const tag = nameplate(w * 1.5, h * 0.20, steel, paint);
+    tag.rotation.x = -Math.PI / 2;
+    tag.position.set(-w * 0.55, h * 0.35, d * 1.35);
+    g.add(tag);
+
+    return { group: g, paddle, lamp };
+  }
+
+  /* A machine intake: a throat you push something into, with the lead-in
+     bezel, guide rollers and bolted-down frame one actually has. */
+  function intakeSlot(o) {
+    o = o || {};
+    const w = o.w || 1.9, h = o.h || 0.22, d = o.d || 1.5;
+    const body = o.bodyMat, steel = o.steelMat;
+    const g = new THREE.Group();
+
+    g.add(new THREE.Mesh(roundedBox(w, h, d, h * 0.22), body));
+    // the throat itself, recessed, so the slot reads as an opening
+    const throat = new THREE.Mesh(roundedBox(w * 0.80, h * 0.9, d * 0.42, h * 0.14),
+                                  o.throatMat || body);
+    throat.position.set(0, h * 0.22, d * 0.16);
+    g.add(throat);
+    // lead-in bezel: two lips that chamfer down into the throat
+    [-1, 1].forEach((c) => {
+      const lip = new THREE.Mesh(roundedBox(w * 1.02, h * 0.55, d * 0.16, h * 0.16), steel);
+      lip.position.set(0, h * 0.50, d * (0.16 + c * 0.24));
+      lip.rotation.x = c * 0.32;
+      g.add(lip);
+    });
+    // guide rollers with end caps, either side of the mouth
+    [-1, 1].forEach((c) => {
+      const roller = new THREE.Mesh(turnedCylinder(h * 0.34, h * 0.34, w * 0.78, h * 0.08), steel);
+      roller.rotation.z = Math.PI / 2;
+      roller.position.set(0, h * 0.44, d * (0.16 + c * 0.13));
+      g.add(roller);
+      [-1, 1].forEach((e) => {
+        const endCap = new THREE.Mesh(turnedCylinder(h * 0.46, h * 0.46, h * 0.16, h * 0.05), steel);
+        endCap.rotation.z = Math.PI / 2;
+        endCap.position.set(e * w * 0.42, h * 0.44, d * (0.16 + c * 0.13));
+        g.add(endCap);
+      });
+    });
+    // side rails down the length, a base frame and feet
+    [-1, 1].forEach((c) => {
+      const rail = new THREE.Mesh(roundedBox(h * 0.34, h * 1.1, d * 0.92, h * 0.10), steel);
+      rail.position.set(c * w * 0.50, h * 0.30, 0);
+      g.add(rail);
+    });
+    const frame = new THREE.Mesh(roundedBox(w * 1.16, h * 0.5, d * 1.16, h * 0.14), steel);
+    frame.position.y = -h * 0.52;
+    g.add(frame);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach((c) => {
+      const foot = new THREE.Mesh(turnedCylinder(h * 0.32, h * 0.40, h * 0.45, h * 0.09), steel);
+      foot.position.set(c[0] * w * 0.48, -h * 0.90, c[1] * d * 0.44);
+      g.add(foot);
+      const b = boltHead(h * 0.13, steel);
+      b.position.set(c[0] * w * 0.50, h * 0.05, c[1] * d * 0.50);
+      g.add(b);
+    });
+    // two indicator lamps on the front apron
+    [-1, 1].forEach((c) => {
+      const lampRing = new THREE.Mesh(
+        new THREE.TorusGeometry(h * 0.22, h * 0.06, 10, 24), steel);
+      lampRing.position.set(c * w * 0.30, h * 0.10, d * 0.53);
+      g.add(lampRing);
+    });
+    return { group: g, throat };
+  }
+
+  /* The pedestal under something that spins: shaft, bearing housing on a
+     bolted flange, column, base and feet. Built along +Y from the floor up. */
+  function machineMount(o) {
+    o = o || {};
+    const r = o.r || 0.3, drop = o.drop || 2.0;
+    const paint = o.mat, steel = o.steelMat || o.mat;
+    const g = new THREE.Group();
+
+    const bearing = new THREE.Mesh(turnedCylinder(r * 0.9, r * 1.05, r * 1.1, r * 0.16), steel);
+    g.add(bearing);
+    const flange = new THREE.Mesh(turnedCylinder(r * 1.5, r * 1.5, r * 0.30, r * 0.09), paint);
+    flange.position.y = -r * 0.55;
+    g.add(flange);
+    const fb = boltRing(r * 1.15, 6, r * 0.14, steel);
+    fb.position.y = -r * 0.40;
+    g.add(fb);
+    const neck = new THREE.Mesh(turnedCylinder(r * 0.55, r * 0.80, drop * 0.42, r * 0.10), paint);
+    neck.position.y = -r * 0.7 - drop * 0.21;
+    g.add(neck);
+    const collar = new THREE.Mesh(turnedCylinder(r * 0.95, r * 0.95, r * 0.28, r * 0.08), steel);
+    collar.position.y = -r * 0.7 - drop * 0.42;
+    g.add(collar);
+    const column = new THREE.Mesh(turnedCylinder(r * 0.75, r * 1.15, drop * 0.52, r * 0.12), paint);
+    column.position.y = -r * 0.7 - drop * 0.70;
+    g.add(column);
+    const base = new THREE.Mesh(turnedCylinder(r * 1.9, r * 2.3, r * 0.55, r * 0.14), paint);
+    base.position.y = -drop + r * 0.28;
+    g.add(base);
+    const bb = boltRing(r * 1.6, 8, r * 0.13, steel);
+    bb.position.y = -drop + r * 0.55;
+    g.add(bb);
+    const feet = footPads(r * 4.2, r * 4.2, o.footMat || paint, r * 0.26);
+    feet.position.y = -drop;
+    g.add(feet);
+    return g;
+  }
+
+  /* A gauge track: the channel a meter bar runs in, with side rails, end caps
+     and graduations, so a bar is a reading rather than a coloured rectangle. */
+  function gaugeTrack(w, h, d, trackMat, steelMat, ticks) {
+    const g = new THREE.Group();
+    const back = new THREE.Mesh(roundedBox(w * 1.5, h * 1.04, d * 0.5, w * 0.16), trackMat);
+    back.position.z = -d * 0.7;
+    g.add(back);
+    [-1, 1].forEach((c) => {
+      const rail = new THREE.Mesh(roundedBox(w * 0.24, h * 1.04, d * 1.25, w * 0.09), steelMat);
+      rail.position.set(c * w * 0.80, 0, 0);
+      g.add(rail);
+    });
+    [-1, 1].forEach((c) => {
+      const cap = new THREE.Mesh(roundedBox(w * 1.9, h * 0.035, d * 1.5, w * 0.10), steelMat);
+      cap.position.y = c * h * 0.52;
+      g.add(cap);
+      const cb = boltRing(w * 0.66, 2, w * 0.10, steelMat);
+      cb.position.y = c * h * 0.53;
+      g.add(cb);
+    });
+    const n = ticks || 10;
+    for (let i = 0; i <= n; i++) {
+      const long = i % 5 === 0;
+      const t = new THREE.Mesh(
+        roundedBox(long ? w * 0.62 : w * 0.38, h * 0.006, d * 0.3, w * 0.04), steelMat);
+      t.position.set(w * 1.02, -h / 2 + (i / n) * h, 0);
+      g.add(t);
+    }
+    return g;
+  }
+
   /* Weld duplicated vertices so smooth shading works across a surface rather
      than stopping at every triangle seam. */
   function smoothGeometry(geo, angleDeg) {
@@ -938,6 +1149,7 @@ function play(id, params) {
     surfaces, grayTexture, normalTexture,
     roundedBox, smoothGeometry, turnedCylinder, plinth, fitTrim,
     boltHead, boltRing, rivetLine, footPads, nameplate,
+    toggleSwitch, intakeSlot, machineMount, gaugeTrack,
     material, tunedStandard, families: FAMILIES, wood, woodTones: WOOD_TONES,
     pointer, raycaster, keys,
     quality: Quality,

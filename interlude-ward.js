@@ -139,8 +139,12 @@
            meet the hub, a turned hub with a bolt circle and a nut, and a
            handle on a proper stem rather than a ball stuck to the rim. */
         var wheel = new THREE.Group();
-        var goldMat = mat({ color: A.wheel.color, roughness: 0.34, metalness: 0.45,
-                            emissive: A.wheel.color, emissiveIntensity: 0.22 });
+        /* Emissive 0.22 on every gold surface flattened the shading, which is
+           why a wheel with ten spokes and a bolt circle still read as plastic.
+           Cast brass gets its look from the specular break across roughness,
+           not from glowing, so the emissive comes off and metalness goes up. */
+        var goldMat = mat({ color: A.wheel.color, roughness: 0.29, metalness: 0.82,
+                            emissive: A.wheel.color, emissiveIntensity: 0.04 });
         var darkGold = mat({ color: 0xa87f2c, roughness: 0.5, metalness: 0.4 });
         var steelMat = ctx.material("machinedSteel", { color: 0x8f98a4 }); keep(steelMat);
 
@@ -220,6 +224,23 @@
         wheel.position.set(A.wheel.x, A.wheel.y, A.wheel.z);
         scene.add(wheel);
 
+        /* The wheel was hanging in the air. It now stands on a mount: bearing
+           housing on a bolted flange, neck, collar, column, base and feet. */
+        var mount = ctx.machineMount({
+          r: A.wheel.tube * 1.5, drop: A.wheel.y + 1.55,
+          mat: keep(ctx.material("paintedMetal", { color: 0x2c3340 })),
+          steelMat: steelMat,
+          footMat: keep(ctx.material("rubber", { color: 0x24262a }))
+        });
+        mount.position.set(A.wheel.x, A.wheel.y, A.wheel.z - A.wheel.tube * 1.2);
+        scene.add(mount);
+        var shaft = new THREE.Mesh(
+          keep(ctx.turnedCylinder(A.wheel.tube * 0.5, A.wheel.tube * 0.5,
+                                  A.wheel.tube * 2.4, A.wheel.tube * 0.12)), steelMat);
+        shaft.rotation.x = Math.PI / 2;
+        shaft.position.set(A.wheel.x, A.wheel.y, A.wheel.z - A.wheel.tube * 0.9);
+        scene.add(shaft);
+
         var wheelGrab = new THREE.Mesh(
           keep(ctx.turnedCylinder(A.wheel.r + 0.45, A.wheel.r + 0.45, 0.7)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
@@ -238,6 +259,16 @@
         var bedOn = mat({ color: A.bed.on, roughness: 0.4,
                           emissive: A.bed.on, emissiveIntensity: 0.5 });
         var bedOff = mat({ color: A.bed.off, roughness: 0.85 });
+        var frameMat = keep(ctx.material("machinedSteel", { color: 0x6f7883 }));
+        var pillowMat = keep(ctx.material("paper", { color: 0xd8dee6 }));
+        var frameGeo = keep(ctx.roundedBox(A.bed.len + A.bed.r * 2.2, A.bed.r * 0.42,
+                                           A.bed.r * 3.0, A.bed.r * 0.14));
+        var headGeo = keep(ctx.roundedBox(A.bed.r * 0.42, A.bed.r * 2.2, A.bed.r * 3.0,
+                                          A.bed.r * 0.14));
+        var footGeo = keep(ctx.roundedBox(A.bed.r * 0.42, A.bed.r * 1.4, A.bed.r * 3.0,
+                                          A.bed.r * 0.14));
+        var pillowGeo = keep(ctx.roundedBox(A.bed.len * 0.22, A.bed.r * 0.55,
+                                            A.bed.r * 2.2, A.bed.r * 0.22));
         var totalBeds = A.bed.cols * A.bed.rows;
         for (var r = 0; r < A.bed.rows; r++) {
           for (var c2 = 0; c2 < A.bed.cols; c2++) {
@@ -247,6 +278,24 @@
                             -2.15 + r * 0.5, -1.1 - r * 0.55);
             scene.add(m2);
             beds.push(m2);
+            /* A bare capsule is a lozenge, not a bed. Each one gets a frame
+               plate, a head and foot board and a pillow — all sharing four
+               geometries, so the whole ward costs four buffers rather than
+               one per bed. */
+            var fr = new THREE.Mesh(frameGeo, frameMat);
+            fr.position.set(m2.position.x, m2.position.y - A.bed.r * 1.05, m2.position.z);
+            scene.add(fr);
+            [-1, 1].forEach(function (e) {
+              var bd = new THREE.Mesh(e < 0 ? headGeo : footGeo, frameMat);
+              bd.position.set(m2.position.x + e * (A.bed.len * 0.5 + A.bed.r * 0.9),
+                              m2.position.y + (e < 0 ? A.bed.r * 0.5 : A.bed.r * 0.1),
+                              m2.position.z);
+              scene.add(bd);
+            });
+            var pw = new THREE.Mesh(pillowGeo, pillowMat);
+            pw.position.set(m2.position.x - A.bed.len * 0.36,
+                            m2.position.y + A.bed.r * 0.75, m2.position.z);
+            scene.add(pw);
           }
         }
         var wardLabel = makeLabel(0, 2.9, -2.4,

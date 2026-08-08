@@ -196,6 +196,27 @@
             color: A.ball.color, emissive: A.ball.color, emissiveIntensity: 0.18 })));
         scene.add(ball);
 
+        /* A perfect sphere is the one shape with no edge anywhere on it, so it
+           has nothing for the light to break on and reads as a dot. Two banding
+           hoops and a pair of polar bosses give it a machined look, and they
+           are parented to the ball so they travel with it. */
+        (function () {
+          var bandMat = keep(ctx.material("brass", { color: 0x8a6321 }));
+          [[0, 0], [Math.PI / 2, 0]].forEach(function (rot) {
+            var hoop = new THREE.Mesh(
+              keep(new THREE.TorusGeometry(A.ball.r * 1.01, A.ball.r * 0.09, 16, 96)), bandMat);
+            hoop.rotation.set(rot[0], rot[1], 0);
+            ball.add(hoop);
+          });
+          [-1, 1].forEach(function (c) {
+            var boss = new THREE.Mesh(
+              keep(ctx.turnedCylinder(A.ball.r * 0.30, A.ball.r * 0.36,
+                                      A.ball.r * 0.24, A.ball.r * 0.07)), bandMat);
+            boss.position.y = c * A.ball.r * 0.92;
+            ball.add(boss);
+          });
+        })();
+
         // ---------- firms on the floor ----------
         var firmMeshes = [];
         var fBody = keep(ctx.roundedBox(A.firm.w, A.firm.h, A.firm.d));

@@ -184,6 +184,11 @@
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
           back.position.set(x, 0.3, 0);
           scene.add(back);
+          var track = ctx.gaugeTrack(A.gauge.w, A.gauge.h, 0.12,
+            keep(ctx.material("paintedMetal", { color: 0x232a36 })),
+            keep(ctx.material("machinedSteel", { color: 0x8d97a6 })), 10);
+          track.position.set(x, 0.3, 0);
+          scene.add(track);
           /* Housing trim: a foot the gauge stands on, a capping plate, and two
              graduation bands up the face. Four more chamfered edges each, which
              is the difference between an instrument and a rectangle. */
@@ -499,6 +504,15 @@
         }
 
         function makeGauge(x, label, value, color) {
+          /* Three of the four record rooms drew the meter as a flat rectangle
+             behind a flat rectangle. ctx.gaugeTrack gives it the channel a real
+             gauge runs in: back panel, side rails, bolted end caps and
+             graduations, so the bar is a reading against a scale. */
+          var track = ctx.gaugeTrack(A.gauge.w, A.gauge.h, 0.12,
+            keep(ctx.material("paintedMetal", { color: 0x232a36 })),
+            keep(ctx.material("machinedSteel", { color: 0x8d97a6 })), 10);
+          track.position.set(x, 0.1, 0);
+          scene.add(track);
           var back = new THREE.Mesh(
             keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
@@ -764,6 +778,15 @@
         }
 
         function makeGauge(x, label, value, color) {
+          /* Three of the four record rooms drew the meter as a flat rectangle
+             behind a flat rectangle. ctx.gaugeTrack gives it the channel a real
+             gauge runs in: back panel, side rails, bolted end caps and
+             graduations, so the bar is a reading against a scale. */
+          var track = ctx.gaugeTrack(A.gauge.w, A.gauge.h, 0.12,
+            keep(ctx.material("paintedMetal", { color: 0x232a36 })),
+            keep(ctx.material("machinedSteel", { color: 0x8d97a6 })), 10);
+          track.position.set(x, 0.1, 0);
+          scene.add(track);
           var back = new THREE.Mesh(
             keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
@@ -1037,6 +1060,15 @@
         }
 
         function makeGauge(x, label, value, color) {
+          /* Three of the four record rooms drew the meter as a flat rectangle
+             behind a flat rectangle. ctx.gaugeTrack gives it the channel a real
+             gauge runs in: back panel, side rails, bolted end caps and
+             graduations, so the bar is a reading against a scale. */
+          var track = ctx.gaugeTrack(A.gauge.w, A.gauge.h, 0.12,
+            keep(ctx.material("paintedMetal", { color: 0x232a36 })),
+            keep(ctx.material("machinedSteel", { color: 0x8d97a6 })), 10);
+          track.position.set(x, 0.1, 0);
+          scene.add(track);
           var back = new THREE.Mesh(
             keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));

@@ -184,32 +184,25 @@
         /* the commit slot is a machine, so it gets a mouth, a frame and feet */
         var slotSteel = ctx.material("machinedSteel", { color: 0x8b949f });
         keep(slotSteel);
-        var slot = new THREE.Mesh(
-          keep(ctx.roundedBox(A.slot.w, A.slot.h, A.slot.d)),
-          mat({ color: A.slot.color, roughness: 0.7,
-                emissive: 0xfffb00, emissiveIntensity: 0.16 }));
-        slot.position.set(0, 0.11, 0.9);
-        scene.add(slot);
+        /* You push a stack of chips into this, so it should look like a thing
+           that takes something in: a recessed throat, a chamfered lead-in,
+           guide rollers with end caps, side rails, a bolted frame and lamps.
+           A flat box gave the player nothing to aim at. */
+        var slotUnit = ctx.intakeSlot({
+          w: A.slot.w, h: A.slot.h, d: A.slot.d,
+          bodyMat: mat({ color: A.slot.color, roughness: 0.7,
+                         emissive: 0xfffb00, emissiveIntensity: 0.10 }),
+          throatMat: mat({ color: 0x11151d, roughness: 0.95 }),
+          steelMat: keep(ctx.material("machinedSteel", { color: 0x8d97a6 }))
+        });
+        slotUnit.group.position.set(0, 0.11, 0.9);
+        scene.add(slotUnit.group);
+        var slot = slotUnit.group;
         makeLabel(0, 1.05, 0.55,
           { top: "COMMIT", sub: "your sealed bid", accent: "#fffb00", box: true }, 1.92, 0.96);
 
         // ---------- rival envelope ----------
         (function () {
-          var mouth = new THREE.Mesh(
-            keep(ctx.roundedBox(A.slot.w * 1.10, 0.09, A.slot.d * 0.36, 0.025)), slotSteel);
-          mouth.position.set(slot.position.x, slot.position.y + A.slot.h * 0.5, slot.position.z + A.slot.d * 0.30);
-          scene.add(mouth);
-          var frame = new THREE.Mesh(
-            keep(ctx.roundedBox(A.slot.w * 1.16, 0.10, A.slot.d * 1.16, 0.03)), slotSteel);
-          frame.position.set(slot.position.x, slot.position.y - A.slot.h * 0.52, slot.position.z);
-          scene.add(frame);
-          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
-            var foot = new THREE.Mesh(keep(ctx.turnedCylinder(0.07, 0.09, 0.10, 0.02)), slotSteel);
-            foot.position.set(slot.position.x + c[0] * A.slot.w * 0.48,
-                              slot.position.y - A.slot.h * 0.62,
-                              slot.position.z + c[1] * A.slot.d * 0.44);
-            scene.add(foot);
-          });
           // a small screwed plate on the face of the machine
           var plate = ctx.nameplate(A.slot.w * 0.5, 0.18, slotSteel,
                                     ctx.material("brass"));

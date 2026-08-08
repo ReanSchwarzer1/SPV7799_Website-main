@@ -160,6 +160,69 @@
                 emissive: 0xd4573f, emissiveIntensity: 0.25 }));
         bottle.position.set(6.4, 0.5, 0);
         scene.add(bottle);
+        /* A striped cylinder is not a bottle. It gets the parts one has: a
+           screw cap with a knurled skirt, the thread ring under it, a shoulder,
+           a recessed label panel with a border, and a base bead. */
+        (function () {
+          var capMat = keep(ctx.material("paintedMetal", { color: 0xc9ccd2 }));
+          var glassMat = keep(ctx.material("glass", {
+            color: 0xdfe6ee, transparent: true, opacity: 0.34, roughness: 0.08 }));
+          var BX = 6.4, BY = 0.5, BZ = 0;
+
+          var shoulder = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.30, 0.40, 0.16, 0.05)), glassMat);
+          shoulder.position.set(BX, BY + 0.46, BZ);
+          scene.add(shoulder);
+          var neck = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.28, 0.30, 0.12, 0.03)), glassMat);
+          neck.position.set(BX, BY + 0.58, BZ);
+          scene.add(neck);
+          for (var th = 0; th < 3; th++) {
+            var thread = new THREE.Mesh(
+              keep(new THREE.TorusGeometry(0.30, 0.020, 10, 64)), glassMat);
+            thread.rotation.x = Math.PI / 2;
+            thread.position.set(BX, BY + 0.54 + th * 0.045, BZ);
+            scene.add(thread);
+          }
+          var cap = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.35, 0.35, 0.26, 0.05)), capMat);
+          cap.position.set(BX, BY + 0.76, BZ);
+          scene.add(cap);
+          // knurled skirt on the cap, the part a hand grips
+          var kGeo = keep(ctx.roundedBox(0.030, 0.20, 0.045, 0.010));
+          for (var k = 0; k < 32; k++) {
+            var kn = new THREE.Mesh(kGeo, capMat);
+            var ka = (k / 32) * Math.PI * 2;
+            kn.position.set(BX + Math.cos(ka) * 0.355, BY + 0.76, BZ + Math.sin(ka) * 0.355);
+            kn.rotation.y = -ka;
+            scene.add(kn);
+          }
+          var capTop = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.30, 0.34, 0.05, 0.02)), capMat);
+          capTop.position.set(BX, BY + 0.91, BZ);
+          scene.add(capTop);
+          // a recessed label panel with a raised border round it
+          var panel = new THREE.Mesh(
+            keep(ctx.roundedBox(0.52, 0.44, 0.03, 0.02)),
+            keep(ctx.material("paper", { color: 0xe8e2cf })));
+          panel.position.set(BX, BY + 0.10, BZ + 0.40);
+          scene.add(panel);
+          [[0, 0.24], [0, -0.24]].forEach(function (o) {
+            var edge = new THREE.Mesh(
+              keep(ctx.roundedBox(0.58, 0.035, 0.05, 0.012)), capMat);
+            edge.position.set(BX + o[0], BY + 0.10 + o[1], BZ + 0.40);
+            scene.add(edge);
+          });
+          var bead = new THREE.Mesh(
+            keep(new THREE.TorusGeometry(0.40, 0.035, 12, 64)), capMat);
+          bead.rotation.x = Math.PI / 2;
+          bead.position.set(BX, BY - 0.36, BZ);
+          scene.add(bead);
+          var foot = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.42, 0.44, 0.07, 0.025)), capMat);
+          foot.position.set(BX, BY - 0.44, BZ);
+          scene.add(foot);
+        })();
         (function () {
           var capMat = mat({ color: 0xe8e8ea, roughness: 0.42 });
           var cap = new THREE.Mesh(keep(ctx.turnedCylinder(0.44, 0.46, 0.22, 0.03)), capMat);
@@ -211,30 +274,23 @@
 
         // ---------- the two switches ----------
         function makeSwitch(x, title) {
-          var base = new THREE.Mesh(
-            keep(ctx.roundedBox(1.5, 0.28, 0.8)),
-            mat({ color: 0x2a3140, roughness: 0.75 }));
-          base.position.set(x, 0.14, 2.9);
-          scene.add(base);
-          (function () {
-            var steel = ctx.material("machinedSteel", { color: 0x8a939f }); keep(steel);
-            var boss = new THREE.Mesh(keep(ctx.turnedCylinder(0.10, 0.10, 0.62, 0.02)), steel);
-            boss.rotation.z = Math.PI / 2;
-            boss.position.copy(base.position); boss.position.y += 0.10;
-            scene.add(boss);
-            var plate = new THREE.Mesh(keep(ctx.roundedBox(1.72, 0.06, 0.98, 0.02)), steel);
-            plate.position.copy(base.position); plate.position.y -= 0.16;
-            scene.add(plate);
-            var pb = ctx.boltRing(0.62, 4, 0.030, steel);
-            pb.position.copy(plate.position); pb.position.y += 0.04;
-            scene.add(pb);
-          })();
-          var lever = new THREE.Mesh(
-            keep(ctx.roundedBox(A.switchGeom.w, A.switchGeom.h, A.switchGeom.d)),
-            mat({ color: 0xd9a441, roughness: 0.35, metalness: 0.2,
-                  emissive: 0xd9a441, emissiveIntensity: 0.3 }));
-          lever.position.set(x, 0.62, 2.9);
-          scene.add(lever);
+          /* The lever was a single box standing on a box. ctx.toggleSwitch
+             builds the whole assembly — housing, bolted plate, bezel, pivot
+             cheeks and pin, and a paddle with a knurled grip, finger notch and
+             tip cap. The paddle comes back separately because the update loop
+             tilts it to show state and scales it to beckon. */
+          var sw = ctx.toggleSwitch({
+            w: A.switchGeom.w, h: A.switchGeom.h, d: A.switchGeom.d,
+            paddleMat: mat({ color: 0xd9a441, roughness: 0.35, metalness: 0.35,
+                             emissive: 0xd9a441, emissiveIntensity: 0.18 }),
+            housingMat: keep(ctx.material("paintedMetal", { color: 0x2a3140 })),
+            steelMat: keep(ctx.material("machinedSteel", { color: 0x8a939f })),
+            lampMat: mat({ color: 0xd9a441, roughness: 0.25,
+                           emissive: 0xd9a441, emissiveIntensity: 0.7 })
+          });
+          sw.group.position.set(x, 0.28, 2.9);
+          scene.add(sw.group);
+          var lever = sw.paddle;
           var hit = new THREE.Mesh(
             keep(ctx.roundedBox(1.7, 1.6, 1.2)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
@@ -360,8 +416,14 @@
         if (!genericExists) {
           // the switch is welded shut; say so, and give them a way out that is
           // honest about what they chose rather than a fake win
-          swDrug.lever.material.color.set(0x5b6270);
-          swDrug.lever.material.emissive.set(0x000000);
+          /* the paddle is an assembly now, so the dead-switch colour has to
+             reach every mesh in it rather than one material */
+          swDrug.lever.traverse(function (o) {
+            if (o.material && o.material.color) {
+              o.material.color.set(0x5b6270);
+              if (o.material.emissive) o.material.emissive.set(0x000000);
+            }
+          });
           swDrug.label.material.map = labelTex(
             { top: "WHICH MARKET", sub: "WELDED SHUT · no generic exists",
               accent: "#d4573f", box: true });

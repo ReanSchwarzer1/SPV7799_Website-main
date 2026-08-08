@@ -226,6 +226,56 @@
         knob.position.set(railL, A.rail.y + 0.28, A.rail.z);
         scene.add(knob);
         ctx.pickables.push(knob);
+        /* The year handle was a ball floating over the rail. Stem, collar,
+           carriage, bolts and a pointer, all parented to the knob so the whole
+           assembly slides as one when the player drags it. */
+        (function () {
+          var steel = keep(ctx.material("machinedSteel", { color: 0x8d97a6 }));
+          var stem = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.070, 0.095, 0.36, 0.025)), steel);
+          stem.position.y = -0.22;
+          knob.add(stem);
+          var collar = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.155, 0.155, 0.065, 0.022)), steel);
+          collar.position.y = -0.08;
+          knob.add(collar);
+          var carriage = new THREE.Mesh(keep(ctx.roundedBox(0.44, 0.13, 0.38, 0.04)), steel);
+          carriage.position.y = -0.38;
+          knob.add(carriage);
+          var cb = ctx.boltRing(0.14, 4, 0.025, steel);
+          cb.position.y = -0.32;
+          knob.add(cb);
+          var pointer = new THREE.Mesh(
+            keep(new THREE.ConeGeometry(0.075, 0.20, 32)), steel);
+          pointer.rotation.x = Math.PI / 2;
+          pointer.position.set(0, -0.38, 0.26);
+          knob.add(pointer);
+          var cap = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.11, 0.14, 0.05, 0.018)), steel);
+          cap.position.y = A.rail.knob * 0.84;
+          knob.add(cap);
+        })();
+
+        /* graduations along the year rail, so a drag has something to read
+           against instead of sliding along a blank bar */
+        (function () {
+          var steel = keep(ctx.material("machinedSteel", { color: 0x8d97a6 }));
+          var tGeo = keep(ctx.roundedBox(0.022, 0.11, 0.04, 0.007));
+          var tGeoL = keep(ctx.roundedBox(0.032, 0.18, 0.04, 0.007));
+          for (var g = 0; g <= 12; g++) {
+            var t = new THREE.Mesh(g % 4 === 0 ? tGeoL : tGeo, steel);
+            t.position.set(railL + (g / 12) * (railR - railL), A.rail.y + 0.03,
+                           A.rail.z + 0.16);
+            scene.add(t);
+          }
+          [railL, railR].forEach(function (rx) {
+            var stop = new THREE.Mesh(
+              keep(ctx.turnedCylinder(0.11, 0.13, 0.26, 0.03)), steel);
+            stop.rotation.z = Math.PI / 2;
+            stop.position.set(rx, A.rail.y, A.rail.z);
+            scene.add(stop);
+          });
+        })();
 
         var yearLabel = makeLabel(0, A.rail.y + 1.45, A.rail.z,
           { top: "YEAR", big: "2000", sub: "drag the handle forward",
