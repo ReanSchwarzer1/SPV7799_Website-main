@@ -85,10 +85,12 @@
         tube:   { r: 0.62, h: 3.1, color: 0x8fb6d8 },
         /* A pill at r 0.11 and length 0.26 is 0.48 end to end against a tube
            1.24 across, so barely two and a half fit side by side and a hundred
-           and twenty of them read as boulders. Sized against the tube instead:
-           about six across, which is what a capsule in a jar actually looks
-           like. Layers widen to match, so 120 still loads the tube. */
-        pill:   { r: 0.042, len: 0.105, perLevel: 15, levelGap: 0.115 },
+           and twenty of them read as boulders. At r 0.055 / len 0.13 a pill is
+           0.24 end to end, so about five fit across and each one reads as a
+           capsule. The layer count is tuned with it: ten per level at 0.16
+           apart puts 120 pills two thirds of the way up the tube, which keeps
+           the contrast against the single US pill without the boulders. */
+        pill:   { r: 0.055, len: 0.13, perLevel: 10, levelGap: 0.16 },
         note:   { w: 1.5, h: 0.72 },
         snapDistance: 1.9,          // how close the drop has to be: generous
         camera: { elevationDeg: 14, margin: 1.14, lookAt: [0, 0.2, 0] }
