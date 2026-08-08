@@ -1,15 +1,15 @@
 {
-  "when": "2026-08-06T15:09:33.259Z",
+  "when": "2026-08-08T21:01:01.556Z",
   "quality": {
     "tier": "high",
-    "locked": false,
+    "locked": true,
     "shadows": true,
     "post": true,
     "shadowMapSize": 2048
   },
   "post": false,
-  "settleMs": 1400,
-  "measureMs": 2200,
+  "settleMs": 1500,
+  "measureMs": 2500,
   "scenes": [
     {
       "scene": "molecule",

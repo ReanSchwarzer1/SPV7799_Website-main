@@ -94,6 +94,50 @@
                 emissive: 0xd9a441, emissiveIntensity: 0.4 }));
         prize.position.set(0, 0.16, -2.9);
         scene.add(prize);
+        /* The prize was a bare gold disc. It is now a struck medallion: a
+           bezel, a knurled edge, a raised inner boss with a rim, and a stepped
+           plinth with feet so it sits on the table rather than in it. */
+        (function () {
+          var gold = mat({ color: 0xd9a441, roughness: 0.22, metalness: 0.62,
+                           emissive: 0xd9a441, emissiveIntensity: 0.30 });
+          var deep = mat({ color: 0x8a6321, roughness: 0.36, metalness: 0.70 });
+          var PX = 0, PZ = -2.9, PY = 0.16;
+
+          var bezel = new THREE.Mesh(
+            keep(new THREE.TorusGeometry(0.755, 0.055, 20, 128)), deep);
+          bezel.rotation.x = Math.PI / 2;
+          bezel.position.set(PX, PY + 0.10, PZ);
+          scene.add(bezel);
+
+          var knurlGeo = keep(ctx.roundedBox(0.05, 0.26, 0.06, 0.014));
+          for (var kn = 0; kn < 48; kn++) {
+            var kk = new THREE.Mesh(knurlGeo, deep);
+            var ka = (kn / 48) * Math.PI * 2;
+            kk.position.set(PX + Math.cos(ka) * 0.775, PY, PZ + Math.sin(ka) * 0.775);
+            kk.rotation.y = -ka;
+            scene.add(kk);
+          }
+
+          var boss = new THREE.Mesh(keep(ctx.turnedCylinder(0.44, 0.50, 0.10, 0.03)), gold);
+          boss.position.set(PX, PY + 0.20, PZ);
+          scene.add(boss);
+          var bossRing = new THREE.Mesh(
+            keep(new THREE.TorusGeometry(0.40, 0.028, 16, 96)), deep);
+          bossRing.rotation.x = Math.PI / 2;
+          bossRing.position.set(PX, PY + 0.26, PZ);
+          scene.add(bossRing);
+
+          [[0.98, 0.12, -0.06], [1.12, 0.10, -0.17]].forEach(function (st) {
+            var step = new THREE.Mesh(
+              keep(ctx.turnedCylinder(st[0], st[0] * 1.05, st[1], 0.03)), deep);
+            step.position.set(PX, PY + st[2], PZ);
+            scene.add(step);
+          });
+          var pfeet = ctx.footPads(1.9, 1.9, ctx.material("rubber", { color: 0x24262a }), 0.09);
+          pfeet.position.set(PX, PY - 0.26, PZ);
+          scene.add(pfeet);
+        })();
+
         makeLabel(0, 1.5, -2.9,
           { top: "THE PATENT", big: "$1,000M", sub: "winner takes all",
             accent: "#d9a441", box: true, bigSize: 72 }, 2.72, 1.36);
@@ -178,6 +222,36 @@
           mat({ color: 0xe8e2cf, roughness: 0.85 }));
         envelope.position.set(0, 0.2, -1.15);
         scene.add(envelope);
+        /* A flat slab is not a sealed envelope. It gets a triangular flap, a
+           bound edge on each side, and a wax seal with a raised ring. */
+        (function () {
+          var shade = mat({ color: 0xd6cfb8, roughness: 0.92 });
+          var wax = mat({ color: 0x8e2b28, roughness: 0.42, metalness: 0.05 });
+          var EX = 0, EY = 0.2, EZ = -1.15;
+
+          var flap = new THREE.Mesh(
+            keep(new THREE.ConeGeometry(1.06, 0.62, 4, 1)), shade);
+          flap.rotation.set(Math.PI / 2, 0, Math.PI / 4);
+          flap.scale.set(1.34, 1, 0.62);
+          flap.position.set(EX, EY + 0.045, EZ - 0.02);
+          scene.add(flap);
+
+          [-1, 1].forEach(function (c) {
+            var band = new THREE.Mesh(keep(ctx.roundedBox(0.06, 0.10, 1.32, 0.02)), shade);
+            band.position.set(EX + c * 0.99, EY, EZ);
+            scene.add(band);
+          });
+
+          var seal = new THREE.Mesh(keep(ctx.turnedCylinder(0.20, 0.17, 0.07, 0.025)), wax);
+          seal.position.set(EX, EY + 0.10, EZ - 0.02);
+          scene.add(seal);
+          var sealRing = new THREE.Mesh(
+            keep(new THREE.TorusGeometry(0.145, 0.018, 12, 48)), wax);
+          sealRing.rotation.x = Math.PI / 2;
+          sealRing.position.set(EX, EY + 0.135, EZ - 0.02);
+          scene.add(sealRing);
+        })();
+
         var rivalLabel = makeLabel(0, 2.15, -1.15,
           { top: "FIRM B", sub: "sealed until you commit", accent: "#9aa6b4", box: true }, 2.40, 1.20);
 

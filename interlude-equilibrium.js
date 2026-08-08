@@ -65,6 +65,71 @@
           keep(ctx.roundedBox(GW + 1.3, GH + 1.3, 0.2)),
           ctx.wood("ash", { repeat: [3, 3] }));
         board.position.z = -0.35;
+        /* The board was a bare slab floating in the dark. It now has a mitred
+           moulding frame with corner blocks and bolts, a pen ledge along the
+           bottom on brackets, and an easel standing behind it. */
+        (function () {
+          var FW = GW + 1.3, FH = GH + 1.3, T = 0.16;
+          var frameWood = keep(ctx.wood("walnut", { repeat: [4, 1] }));
+          var trim = keep(ctx.material("brass"));
+
+          [FH / 2 + T, -FH / 2 - T].forEach(function (y) {
+            var m = new THREE.Mesh(
+              keep(ctx.roundedBox(FW + T * 2, T * 2, 0.34, 0.04)), frameWood);
+            m.position.set(0, y, -0.29);
+            scene.add(m);
+          });
+          [-FW / 2 - T, FW / 2 + T].forEach(function (x) {
+            var m = new THREE.Mesh(
+              keep(ctx.roundedBox(T * 2, FH + T * 2, 0.34, 0.04)), frameWood);
+            m.position.set(x, 0, -0.29);
+            scene.add(m);
+          });
+          [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) {
+            var blk = new THREE.Mesh(keep(ctx.roundedBox(0.44, 0.44, 0.40, 0.05)), frameWood);
+            blk.position.set(c[0] * (FW / 2 + T), c[1] * (FH / 2 + T), -0.27);
+            scene.add(blk);
+            var b = ctx.boltHead(0.055, trim);
+            b.rotation.x = -Math.PI / 2;
+            b.position.set(blk.position.x, blk.position.y, -0.06);
+            scene.add(b);
+          });
+
+          var ledge = new THREE.Mesh(keep(ctx.roundedBox(FW * 0.86, 0.13, 0.40, 0.04)), frameWood);
+          ledge.position.set(0, -FH / 2 - T - 0.12, 0.02);
+          scene.add(ledge);
+          var ledgeLip = new THREE.Mesh(keep(ctx.roundedBox(FW * 0.86, 0.12, 0.07, 0.03)), trim);
+          ledgeLip.position.set(0, -FH / 2 - T - 0.05, 0.20);
+          scene.add(ledgeLip);
+          [-1, 1].forEach(function (br) {
+            var bracket = new THREE.Mesh(keep(ctx.roundedBox(0.12, 0.36, 0.34, 0.03)), trim);
+            bracket.position.set(br * FW * 0.36, -FH / 2 - T - 0.24, -0.10);
+            scene.add(bracket);
+          });
+
+          var legMat = keep(ctx.wood("ebony", { repeat: [1, 4] }));
+          var rubber = keep(ctx.material("rubber", { color: 0x24262a }));
+          [-1, 1].forEach(function (lg) {
+            var leg = new THREE.Mesh(
+              keep(ctx.turnedCylinder(0.09, 0.13, FH + 1.9, 0.03)), legMat);
+            leg.position.set(lg * (FW / 2 - 0.35), -0.95, -0.52);
+            leg.rotation.z = -lg * 0.075;
+            scene.add(leg);
+            var pad = new THREE.Mesh(keep(ctx.turnedCylinder(0.15, 0.19, 0.11, 0.03)), rubber);
+            pad.position.set(lg * (FW / 2 - 0.02), -FH / 2 - 2.06, -0.52);
+            scene.add(pad);
+          });
+          var prop = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.08, 0.12, FH + 1.4, 0.03)), legMat);
+          prop.position.set(0, -1.1, -1.25);
+          prop.rotation.x = 0.30;
+          scene.add(prop);
+          var crossbar = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.06, 0.06, FW - 0.5, 0.02)), trim);
+          crossbar.rotation.z = Math.PI / 2;
+          crossbar.position.set(0, -FH / 2 - 1.25, -0.62);
+          scene.add(crossbar);
+        })();
         scene.add(board);
 
         var gridMat = mat({ color: A.graph.grid, roughness: 0.9 });
@@ -156,6 +221,30 @@
           mat({ color: A.marker.color, roughness: 0.25,
                 emissive: A.marker.color, emissiveIntensity: 0.6 }));
         scene.add(marker);
+        /* The equilibrium marker was a bare emissive sphere. Three gimbal rings
+           and four sight ticks make it read as an instrument tracking a point. */
+        (function () {
+          var cageMat = mat({ color: 0xffffff, roughness: 0.3, metalness: 0.4,
+                              emissive: A.marker.color, emissiveIntensity: 0.35 });
+          [[0, 0], [Math.PI / 2, 0], [0, Math.PI / 2]].forEach(function (rot) {
+            var ring = new THREE.Mesh(
+              keep(new THREE.TorusGeometry(A.marker.r * 1.55, A.marker.r * 0.10, 16, 96)),
+              cageMat);
+            ring.rotation.set(rot[0], rot[1], 0);
+            marker.add(ring);
+          });
+          for (var tk = 0; tk < 4; tk++) {
+            var tick = new THREE.Mesh(
+              keep(ctx.roundedBox(A.marker.r * 0.16, A.marker.r * 0.62,
+                                  A.marker.r * 0.16, A.marker.r * 0.05)),
+              cageMat);
+            var ta = (tk / 4) * Math.PI * 2;
+            tick.position.set(Math.cos(ta) * A.marker.r * 2.0,
+                              Math.sin(ta) * A.marker.r * 2.0, 0);
+            tick.rotation.z = ta + Math.PI / 2;
+            marker.add(tick);
+          }
+        })();
         var dropLine = new THREE.Mesh(
           keep(ctx.roundedBox(0.04, 1, 0.02)),
           mat({ color: A.marker.color, roughness: 0.6,

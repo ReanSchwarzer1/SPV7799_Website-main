@@ -96,6 +96,32 @@
           });
         })();
 
+        /* A balustrade along the back edge of the floor: turned posts, a top
+           rail and a lower rail, so the hall has a limit rather than fading out. */
+        (function () {
+          var railWood = keep(ctx.wood("teak", { repeat: [8, 1] }));
+          var railBrass = keep(ctx.material("brass"));
+          var RZ = -2.62, RY = -1.70;
+          for (var rp = -8; rp <= 8; rp++) {
+            var post = new THREE.Mesh(
+              keep(ctx.turnedCylinder(0.055, 0.085, 0.86, 0.025)), railBrass);
+            post.position.set(rp * 1.1, RY + 0.43, RZ);
+            scene.add(post);
+            var knop = new THREE.Mesh(
+              keep(new THREE.SphereGeometry(0.075, 24, 16)), railBrass);
+            knop.position.set(rp * 1.1, RY + 0.90, RZ);
+            scene.add(knop);
+          }
+          [0.86, 0.34].forEach(function (ry, ri) {
+            var bar = new THREE.Mesh(
+              keep(ctx.turnedCylinder(ri ? 0.045 : 0.065, ri ? 0.045 : 0.065, 18.4, 0.02)),
+              ri ? railBrass : railWood);
+            bar.rotation.z = Math.PI / 2;
+            bar.position.set(0, RY + ry, RZ);
+            scene.add(bar);
+          });
+        })();
+
         // ---------- pedestals ----------
         var pods = [];
         var total = A.systems.length;
@@ -106,6 +132,63 @@
             mat({ color: 0x232a36, roughness: 0.8 }));
           base.position.set(x, -1.53, 0);
           scene.add(base);
+
+          /* The pedestal was a single cylinder. It gets a stepped plinth, a
+             bead, a ring of bolts and a nameplate, and the pair of towers now
+             stands inside a measuring gantry with a graduated upright, which is
+             what the towers are actually being read against. */
+          (function () {
+            var steel = keep(ctx.material("machinedSteel", { color: 0x8d97a6 }));
+            var dark = keep(ctx.material("paintedMetal", { color: 0x232a36 }));
+
+            var plinth = new THREE.Mesh(
+              keep(ctx.turnedCylinder(1.18, 1.30, 0.14, 0.035)), dark);
+            plinth.position.set(x, -1.63, 0);
+            scene.add(plinth);
+            var bead = new THREE.Mesh(
+              keep(new THREE.TorusGeometry(1.08, 0.045, 16, 96)), steel);
+            bead.rotation.x = Math.PI / 2;
+            bead.position.set(x, -1.54, 0);
+            scene.add(bead);
+            var pbolts = ctx.boltRing(0.86, 8, 0.032, steel);
+            pbolts.position.set(x, -1.37, 0);
+            scene.add(pbolts);
+            var plate = ctx.nameplate(0.86, 0.24, steel, dark);
+            plate.rotation.x = Math.PI / 2;
+            plate.position.set(x, -1.48, 1.02);
+            scene.add(plate);
+
+            var GT = 3.86, GB = -1.70, GH = GT - GB, GZ = -1.62;
+            [-1.02, 1.02].forEach(function (ux) {
+              var post = new THREE.Mesh(
+                keep(ctx.turnedCylinder(0.042, 0.068, GH, 0.02)), dark);
+              post.position.set(x + ux, (GT + GB) / 2, GZ);
+              scene.add(post);
+              var shoe = new THREE.Mesh(
+                keep(ctx.roundedBox(0.30, 0.09, 0.30, 0.025)), steel);
+              shoe.position.set(x + ux, GB + 0.045, GZ);
+              scene.add(shoe);
+            });
+            var beam = new THREE.Mesh(
+              keep(ctx.roundedBox(2.34, 0.11, 0.13, 0.035)), dark);
+            beam.position.set(x, GT, GZ);
+            scene.add(beam);
+            [-1, 1].forEach(function (g) {
+              var gus = new THREE.Mesh(
+                keep(ctx.roundedBox(0.26, 0.26, 0.09, 0.03)), dark);
+              gus.position.set(x + g * 0.86, GT - 0.16, GZ);
+              gus.rotation.z = g * Math.PI / 4;
+              scene.add(gus);
+            });
+            /* graduations up the left upright, one per 10 per cent */
+            var tickGeo = keep(ctx.roundedBox(0.20, 0.024, 0.05, 0.008));
+            var longGeo = keep(ctx.roundedBox(0.34, 0.030, 0.05, 0.008));
+            for (var g2 = 0; g2 <= 10; g2++) {
+              var tick = new THREE.Mesh(g2 % 5 === 0 ? longGeo : tickGeo, steel);
+              tick.position.set(x - 1.02 - 0.14, -1.36 + (g2 / 10) * A.tower.maxH, GZ);
+              scene.add(tick);
+            }
+          })();
 
           function tower(offset, pct, color) {
             var h = Math.max(0.1, (pct / 100) * A.tower.maxH);

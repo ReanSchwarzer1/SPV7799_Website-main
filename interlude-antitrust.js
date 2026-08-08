@@ -111,13 +111,51 @@
             keep(new THREE.ExtrudeGeometry(shape, {
               depth: 0.86, bevelEnabled: true, bevelThickness: 0.05,
               bevelSize: 0.05, bevelSegments: 3, curveSegments: 12 })),
-            ctx.material("polishedStone", { color: 0x3c4350 }));
-          body.position.z = -0.43;
+            ctx.material("polishedStone", { color: 0x5b6270 }));
+          body.position.z = -0.94;   // sits behind the rail so the curve stands proud
           scene.add(body);
+
+          /* A flat face square to the camera catches almost no light, so the
+             mass read as a black hole under the curve. Contour bands across it
+             and buttress ribs under it give the light something to break on,
+             and turn the fill into a landform with construction rather than a
+             silhouette. The extrusion runs from z 0 to depth, so with the body
+             pushed back its front face is at -0.08; these sit just proud of it,
+             not at the body centre, or they would be buried inside. */
+          var band = ctx.material("polishedStone", { color: 0x6d7686 });
+          var ribMat = ctx.material("polishedStone", { color: 0x4a515e });
+          keep(band); keep(ribMat);
+          for (var lv = 0; lv < 6; lv++) {
+            var yy = BASE + ((lv + 1) / 7) * (A.hill.h + 1.2);
+            /* trim each contour to the width of the hill at that height */
+            var lo = null, hi = null;
+            for (var q = 0; q <= 160; q++) {
+              var nn = A.minFirms + (q / 160) * (A.maxFirms - A.minFirms);
+              if (curveY(nn) >= yy) { if (lo === null) lo = curveX(nn); hi = curveX(nn); }
+            }
+            if (lo === null || hi - lo < 0.3) continue;
+            var contour = new THREE.Mesh(
+              keep(ctx.roundedBox(hi - lo, 0.055, 0.10, 0.02)), band);
+            contour.position.set((lo + hi) / 2, yy, -0.03);
+            scene.add(contour);
+          }
+          for (var rb = 0; rb < 13; rb++) {
+            var rx = -A.hill.w / 2 + ((rb + 0.5) / 13) * A.hill.w;
+            var top = -1e9, nn2;
+            for (var q2 = 0; q2 <= 60; q2++) {
+              nn2 = A.minFirms + (q2 / 60) * (A.maxFirms - A.minFirms);
+              if (Math.abs(curveX(nn2) - rx) < A.hill.w / 26) top = Math.max(top, curveY(nn2));
+            }
+            if (top < BASE + 0.25) continue;
+            var rib = new THREE.Mesh(
+              keep(ctx.roundedBox(0.10, top - BASE - 0.10, 0.14, 0.03)), ribMat);
+            rib.position.set(rx, (BASE + top) / 2 - 0.05, -0.04);
+            scene.add(rib);
+          }
           // a plinth the landform stands on, with feet under it
           var plinth = new THREE.Mesh(
             keep(ctx.roundedBox(A.hill.w * 1.12, 0.26, 1.5, 0.05)),
-            ctx.wood("ebony", { repeat: [4, 1] }));
+            ctx.wood("oak", { repeat: [4, 1] }));
           plinth.position.set(0, BASE - 0.13, 0);
           scene.add(plinth);
           var pads = ctx.footPads(A.hill.w * 1.02, 1.3,

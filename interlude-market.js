@@ -124,6 +124,49 @@
           scene.add(crown);
           column.userData.crown = crown;
         })();
+        /* The column was a smooth tube between its flange and its crown. Rolled
+           steel comes in courses, so it gets banding rings, a welded vertical
+           seam with rivets, and a gauge strip up the front.
+
+           The column's height is the price, so it is rescaled every refresh.
+           All of this therefore lives in one group whose children are laid out
+           in a 0..maxH space measured from the base, and refresh() scales the
+           group by the same factor as the column. Anything positioned at a
+           fixed world height would float off the top of a cheap market. */
+        var columnSkin = new THREE.Group();
+        columnSkin.position.set(A.column.x, -1.7, 0);
+        scene.add(columnSkin);
+        (function () {
+          var steel = keep(ctx.material("machinedSteel", { color: 0x9aa3b0 }));
+          var R = A.column.r, MH = A.column.maxH;
+          for (var b = 1; b <= 5; b++) {
+            var band = new THREE.Mesh(
+              keep(new THREE.TorusGeometry(R + 0.035, 0.045, 14, 96)), steel);
+            band.rotation.x = Math.PI / 2;
+            band.position.y = (b / 6) * MH;
+            columnSkin.add(band);
+          }
+          var seam = new THREE.Mesh(
+            keep(ctx.roundedBox(0.10, MH * 0.94, 0.05, 0.02)), steel);
+          seam.position.set(0, MH * 0.5, R + 0.03);
+          columnSkin.add(seam);
+          var rv = ctx.rivetLine(MH * 0.88, 14, 0.024, steel);
+          rv.rotation.z = Math.PI / 2;
+          rv.position.set(0, MH * 0.5, R + 0.08);
+          columnSkin.add(rv);
+          var gauge = new THREE.Mesh(
+            keep(ctx.roundedBox(0.17, MH * 0.90, 0.04, 0.012)),
+            keep(ctx.material("paintedMetal", { color: 0x2a3140 })));
+          gauge.position.set(R * 0.86, MH * 0.5, R * 0.62);
+          columnSkin.add(gauge);
+          var gGeo = keep(ctx.roundedBox(0.11, 0.020, 0.05, 0.007));
+          for (var g = 0; g <= 12; g++) {
+            var t = new THREE.Mesh(gGeo, steel);
+            t.position.set(R * 0.86, 0.10 + (g / 12) * MH * 0.84, R * 0.62 + 0.04);
+            columnSkin.add(t);
+          }
+        })();
+
         var columnCap = new THREE.Mesh(
           keep(ctx.turnedCylinder(A.column.r + 0.09, A.column.r + 0.09, 0.12)),
           mat({ color: 0xe8ecf2, roughness: 0.4 }));
@@ -159,6 +202,80 @@
             tr.position.set(cfg.x, -1.7 + A.tank.maxH * 0.45, A.tank.d * 0.58);
             scene.add(tr);
           })();
+          /* Flat plates bolted to a translucent box still read as a box. What a
+             pressure vessel actually has is a frame: angle-iron up all four
+             corners, ribs banding it at intervals, feet under the flange, and a
+             sight glass on the front with a graduated scale beside it. The
+             sight glass carries the same level as the tank, so the gauge is
+             not decoration. */
+          var sight = null;
+          (function () {
+            var steel = keep(ctx.material("machinedSteel", { color: 0x8d97a6 }));
+            var dark = keep(ctx.material("paintedMetal", { color: 0x2a3140 }));
+            var HW = A.tank.w / 2, HD = A.tank.d / 2, H = A.tank.maxH, Y0 = -1.7;
+
+            // angle iron up each corner: two thin webs meeting at right angles
+            [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) {
+              var wa = new THREE.Mesh(keep(ctx.roundedBox(0.20, H, 0.06, 0.018)), dark);
+              wa.position.set(cfg.x + c[0] * (HW - 0.08), Y0 + H / 2, c[1] * (HD + 0.03));
+              scene.add(wa);
+              var wb = new THREE.Mesh(keep(ctx.roundedBox(0.06, H, 0.20, 0.018)), dark);
+              wb.position.set(cfg.x + c[0] * (HW + 0.03), Y0 + H / 2, c[1] * (HD - 0.08));
+              scene.add(wb);
+            });
+
+            // ribs banding the shell, with bolts at the corners of each
+            [0.20, 0.70, 0.92].forEach(function (f) {
+              var rib = new THREE.Mesh(
+                keep(ctx.roundedBox(A.tank.w * 1.07, 0.09, A.tank.d * 1.07, 0.025)), dark);
+              rib.position.set(cfg.x, Y0 + H * f, 0);
+              scene.add(rib);
+              [[-1, 1], [1, 1]].forEach(function (c) {
+                var b = ctx.boltHead(0.032, steel);
+                b.rotation.x = Math.PI / 2;
+                b.position.set(cfg.x + c[0] * (HW - 0.16), Y0 + H * f, HD + 0.09);
+                scene.add(b);
+              });
+            });
+
+            var feet = ctx.footPads(A.tank.w * 1.18, A.tank.d * 1.18,
+                                    keep(ctx.material("rubber", { color: 0x24262a })), 0.11);
+            feet.position.set(cfg.x, Y0 - 0.05, 0);
+            scene.add(feet);
+
+            // sight glass: a clear tube, its two unions, and a graduated plate
+            var tube = new THREE.Mesh(
+              keep(ctx.turnedCylinder(0.085, 0.085, H * 0.94, 0.02)),
+              keep(ctx.material("glass", { color: 0xbcd4e6, transparent: true,
+                                           opacity: 0.30, roughness: 0.06 })));
+            tube.position.set(cfg.x + HW * 0.52, Y0 + H * 0.5, HD + 0.16);
+            scene.add(tube);
+            [0.03, 0.97].forEach(function (u) {
+              var union = new THREE.Mesh(
+                keep(ctx.turnedCylinder(0.13, 0.15, 0.14, 0.03)), steel);
+              union.position.set(cfg.x + HW * 0.52, Y0 + H * u, HD + 0.16);
+              scene.add(union);
+            });
+            sight = new THREE.Mesh(
+              keep(ctx.turnedCylinder(0.062, 0.062, 1, 0.015)),
+              mat({ color: cfg.fill, roughness: 0.3,
+                    emissive: cfg.fill, emissiveIntensity: 0.45 }));
+            scene.add(sight);
+
+            var scalePlate = new THREE.Mesh(
+              keep(ctx.roundedBox(0.20, H * 0.94, 0.04, 0.012)), dark);
+            scalePlate.position.set(cfg.x + HW * 0.52 + 0.20, Y0 + H * 0.5, HD + 0.16);
+            scene.add(scalePlate);
+            var tGeo = keep(ctx.roundedBox(0.13, 0.022, 0.05, 0.008));
+            var tGeoL = keep(ctx.roundedBox(0.20, 0.030, 0.05, 0.008));
+            for (var g = 0; g <= 10; g++) {
+              var tick = new THREE.Mesh(g % 5 === 0 ? tGeoL : tGeo, steel);
+              tick.position.set(cfg.x + HW * 0.52 + 0.22, Y0 + H * 0.03 + (g / 10) * H * 0.94,
+                                HD + 0.19);
+              scene.add(tick);
+            }
+          })();
+
           var fill = new THREE.Mesh(
             keep(ctx.roundedBox(A.tank.w * 0.82, 1, A.tank.d * 0.82)),
             mat({ color: cfg.fill, roughness: 0.45,
@@ -166,7 +283,7 @@
           scene.add(fill);
           var lab = makeLabel(cfg.x, -1.7 + A.tank.maxH + 0.95, 0,
             { top: title, accent: "#" + cfg.fill.toString(16).padStart(6, "0") }, 2.15, 1.07);
-          return { fill: fill, x: cfg.x, label: lab, title: title,
+          return { fill: fill, sight: sight, x: cfg.x, label: lab, title: title,
                    color: "#" + cfg.fill.toString(16).padStart(6, "0") };
         }
         var tankProfit = makeTank(A.tank.profit, "PRIVATE PROFIT");
@@ -190,12 +307,67 @@
             scene.add(stop);
           });
         })();
+        /* The rail was a single dark bar and the lever a ball on top of it. A
+           real slide has a channel: two side rails, mounting blocks bolted down
+           at intervals, and a graduated strip so the position means something. */
+        (function () {
+          var steel = keep(ctx.material("machinedSteel", { color: 0x8d97a6 }));
+          var dark = keep(ctx.material("paintedMetal", { color: 0x232a36 }));
+          var span = railR - railL;
+          [-1, 1].forEach(function (sd) {
+            var side = new THREE.Mesh(keep(ctx.roundedBox(span, 0.16, 0.07, 0.025)), steel);
+            side.position.set(0, A.lever.y + 0.06, A.lever.z + sd * 0.145);
+            scene.add(side);
+          });
+          var web = new THREE.Mesh(keep(ctx.roundedBox(span, 0.09, 0.34, 0.025)), dark);
+          web.position.set(0, A.lever.y - 0.10, A.lever.z);
+          scene.add(web);
+          for (var mb = -4; mb <= 4; mb++) {
+            var blk = new THREE.Mesh(keep(ctx.roundedBox(0.32, 0.22, 0.42, 0.04)), dark);
+            blk.position.set(mb * (span / 9), A.lever.y - 0.20, A.lever.z);
+            scene.add(blk);
+            var bb = ctx.boltRing(0.11, 2, 0.030, steel);
+            bb.position.set(mb * (span / 9), A.lever.y - 0.09, A.lever.z);
+            scene.add(bb);
+          }
+          var strip = new THREE.Mesh(keep(ctx.roundedBox(span * 0.96, 0.16, 0.04, 0.012)), dark);
+          strip.position.set(0, A.lever.y + 0.02, A.lever.z + 0.20);
+          scene.add(strip);
+          var tGeo = keep(ctx.roundedBox(0.022, 0.11, 0.05, 0.007));
+          var tGeoL = keep(ctx.roundedBox(0.030, 0.17, 0.05, 0.007));
+          for (var g = 0; g <= 14; g++) {
+            var t = new THREE.Mesh(g % 7 === 0 ? tGeoL : tGeo, steel);
+            t.position.set(railL + (g / 14) * span, A.lever.y + 0.02, A.lever.z + 0.23);
+            scene.add(t);
+          }
+        })();
+
         var knob = new THREE.Mesh(
           keep(new THREE.SphereGeometry(A.lever.knob, 64, 40)),
           mat({ color: open ? A.lever.color : 0x5b6270, roughness: 0.35,
                 emissive: open ? A.lever.color : 0x000000, emissiveIntensity: 0.3 }));
         knob.position.set(railL, A.lever.y + 0.3, A.lever.z);
         scene.add(knob);
+        /* A sphere alone is a ball, not a handle. The stem, collar and carriage
+           are parented to the knob so the whole assembly slides as one. */
+        (function () {
+          var steel = keep(ctx.material("machinedSteel", { color: 0x8d97a6 }));
+          var stem = new THREE.Mesh(keep(ctx.turnedCylinder(0.075, 0.10, 0.42, 0.025)), steel);
+          stem.position.y = -0.26;
+          knob.add(stem);
+          var collar = new THREE.Mesh(keep(ctx.turnedCylinder(0.17, 0.17, 0.07, 0.025)), steel);
+          collar.position.y = -0.09;
+          knob.add(collar);
+          var carriage = new THREE.Mesh(keep(ctx.roundedBox(0.46, 0.14, 0.40, 0.04)), steel);
+          carriage.position.y = -0.44;
+          knob.add(carriage);
+          var cb = ctx.boltRing(0.15, 4, 0.026, steel);
+          cb.position.y = -0.37;
+          knob.add(cb);
+          var cap = new THREE.Mesh(keep(ctx.turnedCylinder(0.13, 0.16, 0.06, 0.02)), steel);
+          cap.position.y = A.lever.knob * 0.86;
+          knob.add(cap);
+        })();
         if (open) ctx.pickables.push(knob);
 
         var leverLabel = makeLabel(1.7, A.lever.y - 1.35, A.lever.z + 1.2,
@@ -204,14 +376,105 @@
           3.0, 1.5);
 
         // ---------- procurement wheel ----------
-        var wheel = new THREE.Mesh(
-          keep(ctx.turnedCylinder(A.wheel.r, A.wheel.r, 0.24)),
-          mat({ color: A.wheel.color, roughness: 0.4,
-                emissive: A.wheel.color, emissiveIntensity: 0.22 }));
+        /* This was one bare cylinder, which is why it read as a poker chip
+           rather than a control. It is now built the way a cast valve handwheel
+           actually is: a rim with an outer and inner bead, three tapered spokes
+           cast straight through the hub, a bolted hub cap, grip knobs on the
+           rim, and a shaft running back into a bracket bolted to a detent plate.
+           The bracket and plate are static; only the wheel spins. */
+        var WX = -3.4, WY = A.lever.y + 0.3, WZ = A.lever.z, WR = A.wheel.r;
+        var wheelBlue = mat({ color: A.wheel.color, roughness: 0.34, metalness: 0.42,
+                              emissive: A.wheel.color, emissiveIntensity: 0.20 });
+        var wheelDark = mat({ color: 0x2f4c70, roughness: 0.45, metalness: 0.50 });
+        var wheelSteel = mat({ color: 0x8b949f, roughness: 0.30, metalness: 0.85 });
+
+        var wheel = new THREE.Group();
         wheel.rotation.x = Math.PI / 2;
-        wheel.position.set(-3.4, A.lever.y + 0.3, A.lever.z);
+        wheel.position.set(WX, WY, WZ);
         scene.add(wheel);
-        ctx.pickables.push(wheel);
+
+        wheel.add(new THREE.Mesh(
+          keep(new THREE.TorusGeometry(WR, 0.125, 28, 128)), wheelBlue));
+        wheel.add(new THREE.Mesh(
+          keep(new THREE.TorusGeometry(WR + 0.058, 0.048, 20, 128)), wheelDark));
+        wheel.add(new THREE.Mesh(
+          keep(new THREE.TorusGeometry(WR - 0.062, 0.038, 20, 128)), wheelDark));
+
+        var spokeGeo = keep(ctx.turnedCylinder(0.048, 0.082, WR * 1.78, 0.02));
+        for (var sp = 0; sp < 3; sp++) {
+          var bar = new THREE.Mesh(spokeGeo, wheelBlue);
+          bar.rotation.z = (sp / 3) * Math.PI;
+          wheel.add(bar);
+        }
+        /* Webs in the corner where each spoke meets the hub — cast parts are
+           never a clean butt joint. */
+        for (var wb = 0; wb < 6; wb++) {
+          var web = new THREE.Mesh(keep(ctx.roundedBox(0.20, 0.075, 0.11, 0.02)), wheelBlue);
+          var wa = (wb / 6) * Math.PI * 2;
+          web.position.set(Math.cos(wa) * 0.30, Math.sin(wa) * 0.30, 0);
+          web.rotation.z = wa;
+          wheel.add(web);
+        }
+
+        var hub = new THREE.Mesh(keep(ctx.turnedCylinder(0.215, 0.275, 0.34, 0.03)), wheelBlue);
+        hub.rotation.x = Math.PI / 2; wheel.add(hub);
+        var hubCap = new THREE.Mesh(keep(ctx.turnedCylinder(0.30, 0.30, 0.07, 0.025)), wheelSteel);
+        hubCap.rotation.x = Math.PI / 2; hubCap.position.z = 0.19; wheel.add(hubCap);
+        var hubBolts = ctx.boltRing(0.205, 6, 0.036, wheelSteel);
+        hubBolts.rotation.x = -Math.PI / 2; hubBolts.position.z = 0.22; wheel.add(hubBolts);
+
+        /* Grip knobs, the part a hand would actually take hold of. */
+        var knobGeo = keep(ctx.turnedCylinder(0.075, 0.055, 0.20, 0.03));
+        for (var gk = 0; gk < 3; gk++) {
+          var grip = new THREE.Mesh(knobGeo, wheelDark);
+          var ga = (gk / 3) * Math.PI * 2 + Math.PI / 6;
+          grip.position.set(Math.cos(ga) * WR, Math.sin(ga) * WR, 0.20);
+          grip.rotation.x = Math.PI / 2;
+          wheel.add(grip);
+        }
+
+        var wheelHit = new THREE.Mesh(
+          keep(new THREE.CylinderGeometry(WR + 0.12, WR + 0.12, 0.5, 16)),
+          new THREE.MeshBasicMaterial({ visible: false }));
+        wheelHit.rotation.x = Math.PI / 2;
+        wheel.add(wheelHit);
+        ctx.pickables.push(wheelHit);
+
+        /* Static mount: shaft, detent plate with teeth, bracket and gussets. */
+        var shaft = new THREE.Mesh(keep(ctx.turnedCylinder(0.10, 0.10, 0.62, 0.02)), wheelSteel);
+        shaft.rotation.x = Math.PI / 2; shaft.position.set(WX, WY, WZ - 0.30);
+        scene.add(shaft);
+
+        var detent = new THREE.Mesh(keep(ctx.turnedCylinder(0.46, 0.50, 0.10, 0.03)), wheelDark);
+        detent.rotation.x = Math.PI / 2; detent.position.set(WX, WY, WZ - 0.44);
+        scene.add(detent);
+        var toothGeo = keep(ctx.roundedBox(0.07, 0.13, 0.10, 0.018));
+        for (var td = 0; td < 16; td++) {
+          var tooth = new THREE.Mesh(toothGeo, wheelSteel);
+          var ta = (td / 16) * Math.PI * 2;
+          tooth.position.set(WX + Math.cos(ta) * 0.50, WY + Math.sin(ta) * 0.50, WZ - 0.44);
+          tooth.rotation.z = ta;
+          scene.add(tooth);
+        }
+
+        var bracket = new THREE.Mesh(keep(ctx.roundedBox(0.90, 0.90, 0.14, 0.05)), wheelDark);
+        bracket.position.set(WX, WY, WZ - 0.58);
+        scene.add(bracket);
+        var bracketBolts = ctx.boltRing(0.34, 4, 0.042, wheelSteel);
+        bracketBolts.rotation.x = -Math.PI / 2;
+        bracketBolts.position.set(WX, WY, WZ - 0.50);
+        scene.add(bracketBolts);
+        for (var gu = -1; gu <= 1; gu += 2) {
+          var gusset = new THREE.Mesh(keep(ctx.roundedBox(0.11, 0.62, 0.42, 0.03)), wheelDark);
+          gusset.position.set(WX + gu * 0.34, WY - 0.30, WZ - 0.78);
+          scene.add(gusset);
+        }
+        var post = new THREE.Mesh(keep(ctx.turnedCylinder(0.13, 0.19, 1.5, 0.04)), wheelDark);
+        post.position.set(WX, WY - 1.05, WZ - 0.72);
+        scene.add(post);
+        var postBase = new THREE.Mesh(keep(ctx.turnedCylinder(0.34, 0.44, 0.16, 0.04)), wheelSteel);
+        postBase.position.set(WX, WY - 1.78, WZ - 0.72);
+        scene.add(postBase);
         var wheelLabel = makeLabel(-3.4, A.lever.y - 1.35, A.lever.z + 1.2,
           { top: "PROCUREMENT", sub: "LOW · click to raise", accent: "#4f86c6" }, 2.41, 1.20);
 
@@ -281,6 +544,7 @@
               column.userData.crown.position.set(A.column.x, column.position.y + column.scale.y / 2 + 0.06, 0);
             }
           column.position.set(A.column.x, -1.7 + h / 2, 0);
+          columnSkin.scale.y = h / A.column.maxH;
           columnCap.position.set(A.column.x, -1.7 + h + 0.06, 0);
           priceLabel.material.map = labelTex(
             { top: "PRICE INDEX", big: String(Math.round(m.price)), accent: "#d4573f" });
@@ -290,6 +554,12 @@
             var hh = Math.max(0.08, Math.min(1, v / MAXV) * A.tank.maxH);
             t.fill.scale.y = hh;
             t.fill.position.set(t.x, -1.7 + hh / 2, 0);
+            // the sight glass reads the same level as the tank it is bolted to
+            if (t.sight) {
+              t.sight.scale.y = hh * 0.94;
+              t.sight.position.set(t.x + A.tank.w * 0.26, -1.7 + 0.16 + hh * 0.47,
+                                   A.tank.d * 0.5 + 0.16);
+            }
             t.label.material.map = labelTex(
               { top: t.title, big: String(Math.round(v)), accent: t.color });
             t.label.material.needsUpdate = true;
@@ -390,7 +660,7 @@
           onPointerDown: function (hitObj) {
             if (!hitObj) return;
             if (hitObj.object === knob && open) { dragging = true; return; }
-            if (hitObj.object === wheel) {
+            if (hitObj.object === wheelHit) {
               procurement = procurement >= 3 ? 1 : procurement + 1;
               pushToPage();
               refresh();
