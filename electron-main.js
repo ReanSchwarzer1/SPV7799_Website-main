@@ -25,6 +25,19 @@ const { pathToFileURL } = require("node:url");
 app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 
+/* Chromium opens its HTTP and GPU shader disk caches very early in startup,
+   before our single instance check can quit a duplicate launch. A duplicate
+   therefore prints "Unable to move the cache" and "Gpu Cache Creation failed"
+   on its way out, which looks alarming and is not.
+
+   Neither cache earns its keep here. The app makes no network requests at all
+   (everything is served locally over game://), and the shader set is small
+   enough that recompiling it per launch costs far less than the confusion of
+   red errors in a tester's console. Turning both off removes the noise and
+   makes startup deterministic. */
+app.commandLine.appendSwitch("disable-http-cache");
+app.commandLine.appendSwitch("disable-gpu-shader-disk-cache");
+
 const ROOT = __dirname;
 const START_PAGE = "index-gamified.html";
 
@@ -40,7 +53,29 @@ protocol.registerSchemesAsPrivileged([
   }
 ]);
 
+/* Single instance.
+
+   Two copies of the game must never run at once. Chromium keeps one GPU and
+   disk cache per user data directory, so a second instance cannot take it and
+   logs "Unable to move the cache / Gpu Cache Creation failed" before falling
+   back to no caching. That is only the visible symptom.
+
+   The real problem is the study: two windows would be two independent game
+   states, and a participant who double-clicks the icon would be running two
+   terms at once. A second launch now just focuses the window that already
+   exists. */
 let win = null;
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", function () {
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  });
+}
 
 function createWindow() {
   win = new BrowserWindow({

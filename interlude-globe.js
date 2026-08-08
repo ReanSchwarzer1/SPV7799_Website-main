@@ -76,7 +76,7 @@
           mat({ color: A.globe.color, roughness: 0.95, metalness: 0.05 }));
         globe.add(ball);
         var halo = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.globe.r * 1.035, 32, 24)),
+          keep(new THREE.SphereGeometry(A.globe.r * 1.035, 48, 32)),
           mat({ color: A.globe.glow, roughness: 1, transparent: true, opacity: 0.18,
                 side: THREE.BackSide }));
         globe.add(halo);
@@ -85,13 +85,13 @@
         var wireMat = keep(new THREE.MeshBasicMaterial({ color: A.globe.grid, transparent: true, opacity: 0.5 }));
         for (var la = -60; la <= 60; la += 30) {
           var rr = A.globe.r * Math.cos(la * Math.PI / 180);
-          var ring = new THREE.Mesh(keep(new THREE.TorusGeometry(rr, 0.012, 6, 72)), wireMat);
+          var ring = new THREE.Mesh(keep(new THREE.TorusGeometry(rr, 0.012, 24, 96)), wireMat);
           ring.rotation.x = Math.PI / 2;
           ring.position.y = A.globe.r * Math.sin(la * Math.PI / 180);
           globe.add(ring);
         }
         for (var lo = 0; lo < 180; lo += 30) {
-          var mer = new THREE.Mesh(keep(new THREE.TorusGeometry(A.globe.r, 0.012, 6, 72)), wireMat);
+          var mer = new THREE.Mesh(keep(new THREE.TorusGeometry(A.globe.r, 0.012, 24, 96)), wireMat);
           mer.rotation.y = lo * Math.PI / 180;
           globe.add(mer);
         }
@@ -99,19 +99,19 @@
         // ---------- markers ----------
         function makeMarker(lat, lng, color, big) {
           var m = new THREE.Mesh(
-            keep(new THREE.SphereGeometry(big ? 0.2 : 0.16, 16, 12)),
+            keep(new THREE.SphereGeometry(big ? 0.2 : 0.16, 48, 32)),
             mat({ color: color, roughness: 0.3, emissive: color, emissiveIntensity: 0.8 }));
           m.position.copy(toVec(lat, lng, A.globe.r * 1.01));
           globe.add(m);
           var halo2 = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(big ? 0.34 : 0.28, 0.028, 8, 26)),
+            keep(new THREE.TorusGeometry(big ? 0.34 : 0.28, 0.028, 24, 96)),
             mat({ color: color, roughness: 0.4, emissive: color, emissiveIntensity: 0.6 }));
           halo2.position.copy(m.position);
           halo2.lookAt(0, 0, 0);
           globe.add(halo2);
           // generous invisible hit target
           var hit = new THREE.Mesh(
-            keep(new THREE.SphereGeometry(0.52, 10, 8)),
+            keep(new THREE.SphereGeometry(0.52, 48, 32)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.copy(m.position);
           globe.add(hit);
@@ -131,7 +131,7 @@
                         .normalize().multiplyScalar(A.globe.r * (1.28 + from.distanceTo(to) * 0.035));
           var curve = new THREE.QuadraticBezierCurve3(from, mid, to);
           var tube = new THREE.Mesh(
-            keep(new THREE.TubeGeometry(curve, 44, 0.05, 8, false)),
+            keep(new THREE.TubeGeometry(curve, 96, 0.05, 16, false)),
             mat({ color: d.color, roughness: 0.4, emissive: d.color, emissiveIntensity: 0.55,
                   transparent: true, opacity: 0.9 }));
           tube.visible = false;
@@ -139,7 +139,7 @@
 
           // a consignment that runs the route
           var ship = new THREE.Mesh(
-            keep(new THREE.SphereGeometry(0.11, 12, 10)),
+            keep(new THREE.SphereGeometry(0.11, 48, 32)),
             mat({ color: 0xffffff, roughness: 0.2,
                   emissive: 0xffffff, emissiveIntensity: 0.9 }));
           ship.visible = false;
@@ -155,7 +155,7 @@
         var cMid = cFrom.clone().add(cTo).multiplyScalar(0.5).normalize()
                         .multiplyScalar(A.globe.r * 1.2);
         var apiTube = new THREE.Mesh(
-          keep(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(cFrom, cMid, cTo), 32, 0.035, 6, false)),
+          keep(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(cFrom, cMid, cTo), 96, 0.035, 16, false)),
           mat({ color: A.china.color, roughness: 0.5, emissive: A.china.color,
                 emissiveIntensity: 0.5, transparent: true, opacity: 0.85 }));
         globe.add(apiTube);
@@ -164,12 +164,12 @@
         // ---------- timeline ----------
         var railL = A.rail.x[0], railR = A.rail.x[1];
         var rail = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(railR - railL, 0.1, 0.24)),
+          keep(ctx.roundedBox(railR - railL, 0.1, 0.24)),
           mat({ color: 0x2a3140, roughness: 0.75 }));
         rail.position.set(0, A.rail.y, A.rail.z);
         scene.add(rail);
         var knob = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.rail.knob, 18, 12)),
+          keep(new THREE.SphereGeometry(A.rail.knob, 48, 32)),
           mat({ color: A.rail.color, roughness: 0.3,
                 emissive: A.rail.color, emissiveIntensity: 0.45 }));
         knob.position.set(railL, A.rail.y + 0.28, A.rail.z);
@@ -191,7 +191,7 @@
 
         // ---------- API switch ----------
         var apiSwitch = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(1.5, 0.42, 0.42)),
+          keep(ctx.roundedBox(1.5, 0.42, 0.42)),
           mat({ color: 0x39404e, roughness: 0.6 }));
         apiSwitch.position.set(-6.0, -0.4, 0);
         scene.add(apiSwitch);

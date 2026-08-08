@@ -95,7 +95,7 @@
           clearcoat: 0.4, clearcoatRoughness: 0.22 }));
         var peakMat = mat({ color: A.hill.peak, roughness: 0.5,
                             emissive: A.hill.peak, emissiveIntensity: 0.3 });
-        var segGeo = keep(new THREE.BoxGeometry(1, A.hill.thickness, 0.5));
+        var segGeo = keep(ctx.roundedBox(1, A.hill.thickness, 0.5));
         for (var s = 0; s < A.hill.samples; s++) {
           var n0 = A.minFirms + (s / A.hill.samples) * (A.maxFirms - A.minFirms);
           var n1 = A.minFirms + ((s + 1) / A.hill.samples) * (A.maxFirms - A.minFirms);
@@ -112,7 +112,7 @@
         }
         // summit flag over the sweet spot
         var flagPole = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.035, 0.035, 1.1, 8)),
+          keep(new THREE.CylinderGeometry(0.035, 0.035, 1.1, 48)),
           mat({ color: 0xe8ecf2, roughness: 0.5 }));
         flagPole.position.set(curveX(5), curveY(5) + 0.62, 0);
         scene.add(flagPole);
@@ -121,7 +121,7 @@
 
         // ---------- the ball ----------
         var ball = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.ball.r, 22, 16)),
+          keep(new THREE.SphereGeometry(A.ball.r, 48, 32)),
           keep(new THREE.MeshStandardMaterial({
             color: A.ball.color, roughness: 0.16, metalness: 0.85,
             // kept emissive so it still reads against the dark hall, but far
@@ -131,8 +131,8 @@
 
         // ---------- firms on the floor ----------
         var firmMeshes = [];
-        var fBody = keep(new THREE.BoxGeometry(A.firm.w, A.firm.h, A.firm.d));
-        var fRoof = keep(new THREE.BoxGeometry(A.firm.w * 1.16, 0.1, A.firm.d * 1.16));
+        var fBody = keep(ctx.roundedBox(A.firm.w, A.firm.h, A.firm.d));
+        var fRoof = keep(ctx.roundedBox(A.firm.w * 1.16, 0.1, A.firm.d * 1.16));
         var fMat = mat({ color: A.firm.color, roughness: 0.7 });
         var rMat = mat({ color: A.firm.roof, roughness: 0.5 });
         for (var i = 0; i < A.maxFirms; i++) {
@@ -151,11 +151,11 @@
         // ---------- HHI bar ----------
         var hhiSegs = [];
         var hhiBack = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.hhi.w, A.hhi.h, 0.1)),
+          keep(ctx.roundedBox(A.hhi.w, A.hhi.h, 0.1)),
           mat({ color: 0x232a36, roughness: 0.85 }));
         hhiBack.position.set(0, A.hhi.y, 0);
         scene.add(hhiBack);
-        var segGeo2 = keep(new THREE.BoxGeometry(1, A.hhi.h * 0.82, 0.16));
+        var segGeo2 = keep(ctx.roundedBox(1, A.hhi.h * 0.82, 0.16));
         var origMat = mat({ color: 0x1a1a1a, roughness: 0.6 });
         var genMat = mat({ color: 0xc9ced6, roughness: 0.6 });
         for (var k = 0; k < A.maxFirms; k++) {
@@ -171,13 +171,13 @@
         // ---------- add / remove buttons ----------
         function makeButton(x, sign, title, color) {
           var b = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.button.w, A.button.h, A.button.d)),
+            keep(ctx.roundedBox(A.button.w, A.button.h, A.button.d)),
             mat({ color: color, roughness: 0.4, metalness: 0.15,
                   emissive: color, emissiveIntensity: 0.32 }));
           b.position.set(x, -2.55, 3.4);
           scene.add(b);
           var hit = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.button.w * 1.3, A.button.h * 1.6, A.button.d * 2)),
+            keep(ctx.roundedBox(A.button.w * 1.3, A.button.h * 1.6, A.button.d * 2)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.copy(b.position);
           scene.add(hit);

@@ -244,10 +244,10 @@ What each scene needs, beyond the global lighting and material work.
 
 Sub-phases, each independently verifiable.
 
-- **2a — Lighting correction.** Tone mapping, exposure, environment split into reflection
+- **2a — Lighting correction. [DONE — devlog 15]** Tone mapping, exposure, environment split into reflection
   versus fill, per-scene overrides, contrast restored. Nothing else changes. Review all 15
   scenes against the pre-environment screenshots and confirm the low-key look is back.
-- **2b — Edges and tessellation.** `RoundedBoxGeometry` across the box population, segment
+- **2b — Edges and tessellation. [DONE — devlog 16]** `RoundedBoxGeometry` across the box population, segment
   counts raised, `mergeVertices` for smooth shading. No material change. This is the
   single largest visual return in the whole document.
 - **2c — Material library.** The families from section 4 defined centrally and adopted
@@ -288,10 +288,10 @@ this checklist per scene:
 
 ## 11. Decisions needed
 
-1. **Real models or not.** If yes, who sources or authors them, and under what licence?
+1. ~~Real models or not.~~ **DECIDED: hero glTF models for the objects the player sees most — the gavel and the bench. Procedural for everything else.**
    Route B starts immediately either way, so this is not blocking, but it has a long lead
    time if the answer is yes.
-2. **What the gavel strikes** — the sound block or the ruling paper. See section 6.
-3. **How dark is too dark.** Section 2 pushes contrast back up and the shadow side down.
+2. ~~What the gavel strikes.~~ **DECIDED: the ruling paper.**
+3. ~~How dark is too dark.~~ **DECIDED:  courtroom is the reference. Applied in 2a.** Section 2 pushes contrast back up and the shadow side down.
    Worth agreeing a reference: the pre-environment courtroom screenshot in
    `tools/verify-out-p1/` is a reasonable starting point for the mood.

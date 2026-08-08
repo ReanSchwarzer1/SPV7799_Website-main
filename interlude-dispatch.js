@@ -180,13 +180,13 @@
         // ---------- gauges ----------
         function makeGauge(x, label, value, color) {
           var back = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w, A.gauge.h, 0.12)),
+            keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
           back.position.set(x, 0.3, 0);
           scene.add(back);
           var h = Math.max(0.06, A.gauge.h * (Math.max(0, Math.min(100, value)) / 100));
           var fill = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w * 0.72, h, 0.16)),
+            keep(ctx.roundedBox(A.gauge.w * 0.72, h, 0.16)),
             keep(new THREE.MeshStandardMaterial(
               { color: color, roughness: 0.4, emissive: color, emissiveIntensity: 0.35 })));
           fill.position.set(x, 0.3 - A.gauge.h / 2 + h / 2, 0.03);
@@ -482,12 +482,12 @@
 
         function makeGauge(x, label, value, color) {
           var back = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w, A.gauge.h, 0.12)),
+            keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
           back.position.set(x, 0.1, 0); scene.add(back);
           var h = Math.max(0.06, A.gauge.h * (Math.max(0, Math.min(100, value)) / 100));
           var fill = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w * 0.72, h, 0.16)),
+            keep(ctx.roundedBox(A.gauge.w * 0.72, h, 0.16)),
             keep(new THREE.MeshStandardMaterial({ color: color, roughness: 0.4,
                   emissive: color, emissiveIntensity: 0.35 })));
           fill.position.set(x, 0.1 - A.gauge.h / 2 + h / 2, 0.03); scene.add(fill);
@@ -747,12 +747,12 @@
 
         function makeGauge(x, label, value, color) {
           var back = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w, A.gauge.h, 0.12)),
+            keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
           back.position.set(x, 0.1, 0); scene.add(back);
           var h = Math.max(0.06, A.gauge.h * (Math.max(0, Math.min(100, value)) / 100));
           var fill = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w * 0.72, h, 0.16)),
+            keep(ctx.roundedBox(A.gauge.w * 0.72, h, 0.16)),
             keep(new THREE.MeshStandardMaterial({ color: color, roughness: 0.4,
                   emissive: color, emissiveIntensity: 0.35 })));
           fill.position.set(x, 0.1 - A.gauge.h / 2 + h / 2, 0.03); scene.add(fill);
@@ -1020,12 +1020,12 @@
 
         function makeGauge(x, label, value, color) {
           var back = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w, A.gauge.h, 0.12)),
+            keep(ctx.roundedBox(A.gauge.w, A.gauge.h, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
           back.position.set(x, 0.1, 0); scene.add(back);
           var h = Math.max(0.06, A.gauge.h * (Math.max(0, Math.min(100, value)) / 100));
           var fill = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.gauge.w * 0.72, h, 0.16)),
+            keep(ctx.roundedBox(A.gauge.w * 0.72, h, 0.16)),
             keep(new THREE.MeshStandardMaterial({ color: color, roughness: 0.4,
                   emissive: color, emissiveIntensity: 0.35 })));
           fill.position.set(x, 0.1 - A.gauge.h / 2 + h / 2, 0.03); scene.add(fill);

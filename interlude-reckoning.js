@@ -99,7 +99,7 @@
         scene.add(ground);
         for (var r2 = 0; r2 < 3; r2++) {
           var halo = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(4.6 + r2 * 2.5, 0.02, 6, 90)),
+            keep(new THREE.TorusGeometry(4.6 + r2 * 2.5, 0.02, 24, 96)),
             mat({ color: 0x2f4358, roughness: 1,
                   emissive: 0x2f4358, emissiveIntensity: 0.3 }));
           halo.rotation.x = Math.PI / 2;
@@ -113,8 +113,7 @@
         for (var i = 0; i < mods.length; i++) {
           var m = mods[i];
           var seg = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.column.r - i * 0.03, A.column.r - i * 0.03 + 0.02,
-                                            A.column.strata, 8)),
+            keep(new THREE.CylinderGeometry(A.column.r - i * 0.03, A.column.r - i * 0.03 + 0.02, A.column.strata, 48)),
             mat({ color: m.ok ? 0x2f5f45 : 0x2a2f3a, roughness: 0.7,
                   emissive: m.ok ? 0x3fae6b : 0x000000,
                   emissiveIntensity: m.ok ? 0.22 : 0 }));

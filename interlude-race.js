@@ -60,14 +60,14 @@
 
         // ---------- table ----------
         var table = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.table.w, 0.3, A.table.d)),
+          keep(ctx.roundedBox(A.table.w, 0.3, A.table.d)),
           mat({ color: A.table.color, roughness: 0.92 }));
         table.position.set(0, -0.15, 0);
         scene.add(table);
 
         // ---------- the prize ----------
         var prize = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.75, 0.75, 0.3, 28)),
+          keep(new THREE.CylinderGeometry(0.75, 0.75, 0.3, 48)),
           mat({ color: 0xd9a441, roughness: 0.25, metalness: 0.4,
                 emissive: 0xd9a441, emissiveIntensity: 0.4 }));
         prize.position.set(0, 0.16, -2.9);
@@ -79,7 +79,7 @@
         // ---------- chip stacks ----------
         function makeStack(x, count, color, label, cost) {
           var grp = new THREE.Group();
-          var geo = keep(new THREE.CylinderGeometry(A.chip.r, A.chip.r, A.chip.h, 22));
+          var geo = keep(new THREE.CylinderGeometry(A.chip.r, A.chip.r, A.chip.h, 48));
           var m = mat({ color: color, roughness: 0.4, metalness: 0.15,
                         emissive: color, emissiveIntensity: 0.22 });
           for (var i = 0; i < count; i++) {
@@ -91,8 +91,7 @@
           grp.position.set(x, 0, 2.3);
           scene.add(grp);
           var hit = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.chip.r + 0.5, A.chip.r + 0.5,
-                                            count * (A.chip.h + 0.008) + 0.7, 16)),
+            keep(new THREE.CylinderGeometry(A.chip.r + 0.5, A.chip.r + 0.5, count * (A.chip.h + 0.008) + 0.7, 48)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.set(x, count * (A.chip.h + 0.008) / 2 + 0.2, 2.3);
           scene.add(hit);
@@ -108,7 +107,7 @@
 
         // ---------- commit slot ----------
         var slot = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.slot.w, A.slot.h, A.slot.d)),
+          keep(ctx.roundedBox(A.slot.w, A.slot.h, A.slot.d)),
           mat({ color: A.slot.color, roughness: 0.7,
                 emissive: 0xfffb00, emissiveIntensity: 0.16 }));
         slot.position.set(0, 0.11, 0.9);
@@ -118,7 +117,7 @@
 
         // ---------- rival envelope ----------
         var envelope = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(2.0, 0.08, 1.3)),
+          keep(ctx.roundedBox(2.0, 0.08, 1.3)),
           mat({ color: 0xe8e2cf, roughness: 0.85 }));
         envelope.position.set(0, 0.2, -1.15);
         scene.add(envelope);

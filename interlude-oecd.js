@@ -69,7 +69,7 @@
         });
 
         var floor = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(19, 0.3, 6)),
+          keep(ctx.roundedBox(19, 0.3, 6)),
           mat({ color: 0x141821, roughness: 0.93 }));
         floor.position.set(0, -1.85, 0);
         scene.add(floor);
@@ -80,7 +80,7 @@
         A.systems.forEach(function (s, i) {
           var x = -((total - 1) * A.gap) / 2 + i * A.gap;
           var base = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(0.95, 1.05, 0.34, 22)),
+            keep(new THREE.CylinderGeometry(0.95, 1.05, 0.34, 48)),
             mat({ color: 0x232a36, roughness: 0.8 }));
           base.position.set(x, -1.53, 0);
           scene.add(base);
@@ -88,7 +88,7 @@
           function tower(offset, pct, color) {
             var h = Math.max(0.1, (pct / 100) * A.tower.maxH);
             var m = new THREE.Mesh(
-              keep(new THREE.BoxGeometry(A.tower.w, h, A.tower.d)),
+              keep(ctx.roundedBox(A.tower.w, h, A.tower.d)),
               mat({ color: color, roughness: 0.45,
                     emissive: color, emissiveIntensity: 0.22 }));
             m.position.set(x + offset, -1.36 + h / 2, 0);
@@ -99,7 +99,7 @@
           var tm = tower(0.38, s.value, A.tower.value);
 
           var hit = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(2.1, 6.2, 2.0)),
+            keep(ctx.roundedBox(2.1, 6.2, 2.0)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.set(x, 1.2, 0);
           scene.add(hit);

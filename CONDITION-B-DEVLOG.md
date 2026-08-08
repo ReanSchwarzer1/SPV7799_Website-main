@@ -775,3 +775,171 @@ quality gap between those two scenes and the rest. That sweep is still outstandi
 Hybrid, confirmed: procedural synthesis for impacts, meters and chimes; sourced CC0
 recordings only for the market floor and reckoning ambiences, whose licences must be
 documented for a published artifact.
+
+---
+
+## 15. Phase 2a — lighting correction
+
+The first Phase 2 pass over-lit the game. The environment map was a correct fix for
+"clearcoat has nothing to reflect", but applying it as a global `scene.environment` at
+0.38 on top of hemi 0.72, key 1.0 and rim 0.34 flooded scenes that were art-directed
+low-key into an even overcast. Reference mood for this correction: the pre-environment
+courtroom shot in `tools/verify-out-p1/`.
+
+**Tone mapping.** The renderer was on `NoToneMapping`, so anything above 1.0 clipped flat
+to white. That is the root cause of the case file burning out. Now
+`ACESFilmicToneMapping` with exposure 0.82, overridable per scene via `def.exposure`.
+
+**Environment split from fill.** `scene.environment` feeds both diffuse irradiance and
+specular reflection, and the diffuse half is what flattens everything. Global intensity
+dropped from 0.38 to **0.06** — barely lifting the ambient — with reflection restored per
+material through `envMapIntensity` on the surfaces that should actually reflect. The
+bench sets 0.5.
+
+**Contrast restored.** hemi 0.72 → **0.28**, key 1.0 → **1.35**, rim 0.34 → **0.26**. One
+clearly dominant key, fill well below it, shadow side allowed to go dark. Drama comes
+from range, not brightness.
+
+**Bench sheen.** Clearcoat 0.55 → 0.3 with roughness 0.28 → 0.45. A broad gloss across
+the whole bench top read as wet plastic; satin reads as varnish.
+
+**Text is exempt from tone mapping**, as it already was from fog. Labels, record cards
+and the case file pages set `toneMapped: false` so they render exactly as drawn whatever
+the scene exposure is. Applied both at the point labels are created and in the post-build
+traversal.
+
+---
+
+## 16. Phase 2b — edges and tessellation
+
+The largest single visual return in the art direction document, and it cost nothing in
+frame time.
+
+### Why edges mattered most
+
+A perfectly sharp 90 degree edge is the strongest "computer graphics" tell there is. No
+manufactured object has one: every real edge carries a small chamfer that catches a
+bright specular line, and it is that line the eye reads as solidity. The build had
+**~132 raw primitives and zero chamfered edges**.
+
+### Boxes
+
+`RoundedBoxGeometry` and `BufferGeometryUtils` vendored, bringing the addon set to 17
+modules and 108 KB. Still the only bare specifier anywhere in it is `three`.
+
+A harness helper `ctx.roundedBox(w, h, d, radius, segments)` computes a proportional
+radius (`smallest * 0.09`), clamped so a thin panel cannot round itself away, at 3
+segments.
+
+**One constraint drove the whole approach.** `RoundedBoxGeometry` has a single material
+group, not six, so any box relying on per-face materials cannot use it. Rather than
+guess, every `BoxGeometry` call site was parsed and matched to its enclosing
+`new THREE.Mesh(...)` to see whether the material argument was an array:
+
+```
+53 BoxGeometry total | 2 array-material | 51 roundable
+```
+
+The two that stay sharp are both in the courtroom: the ruling papers
+(`[side, side, top, side, side, side]`) and the case file pages
+(`[edge, edge, edge, edge, front, back]`). Both genuinely need per-face materials, and
+both are thin enough that the sharp edge does not read.
+
+**51 boxes rounded** across eleven scene files.
+
+### Curves
+
+Radial and ring segment counts were raised wherever they fell below a sensible floor:
+cylinders and cones to 48, spheres to 48 x 32, torus to 24 x 96, capsules to 12 x 32,
+tubes to 96 x 16. **72 counts raised.** The worst offender was a 8-sided cylinder in the
+molecule scene; the gavel handle and head were 20 and 24 and are now 48.
+
+Faceting was visible on silhouettes and, worse, broke specular highlights into bands.
+
+### What this bought
+
+- **Courtroom:** a highlight now runs along the bench's top front edge and the corners
+  are softened. The gavel and sound block are smooth rather than faceted.
+- **Wage floor:** the tower of working days reads as a stack of individual bricks, each
+  catching light on its edges, instead of a solid orange mass.
+
+### Not needed after all
+
+The plan listed `BufferGeometryUtils.mergeVertices` for smooth shading. Three's built-in
+primitives already carry correct normals, so there was nothing to weld. The helper is
+exposed as `ctx.smoothGeometry()` for the custom geometry that sub-phase 2d will bring,
+but it was not applied here and pretending otherwise would be false.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| All 15 scenes build | yes, 0 console errors |
+| Frame budget | 120 fps, median 8.3 ms, p95 8.4 ms — unchanged since Phase 0 |
+| Boxes rounded | 51 of 53; the 2 exceptions are deliberate and documented |
+| Segment counts raised | 72 |
+| Legibility | unaffected; text surfaces are unlit and tone-map exempt |
+| Condition A untouched | yes |
+
+Screenshots: `tools/verify-out-2a/` and `tools/verify-out-2b/`.
+
+### Still open in Phase 2
+
+- **2c** material library: named families (varnished hardwood, raw timber, paper, polished
+  stone, machined steel, brass, painted metal, glass, rubber) defined centrally with
+  per-family `envMapIntensity`.
+- **2d** hero objects: the gavel rebuilt as a pivot with a real strike animation
+  (decided: it strikes the **ruling paper**), glass domes and tubes, and glTF for the
+  gavel and bench, which are the two objects the player looks at most.
+- **2e** wear and dirt.
+
+---
+
+## 17. Launching twice: cache errors, and the real problem behind them
+
+Reported from `run-game.cmd`:
+
+```
+ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: Access is denied. (0x5)
+ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+```
+
+**Cause.** Four `electron.exe` processes were still running from the verification sweeps.
+Chromium keeps one HTTP cache and one GPU shader cache per user data directory, and a
+second instance cannot take them, so it logs this and falls back to no caching. The
+errors are not fatal and the app runs.
+
+**The errors were the symptom, not the problem.** Two copies of this game must never run
+at once: they would be two independent game states, and a participant who double-clicks
+the icon would be running two terms in parallel. In a study session that invalidates the
+run.
+
+**Fixed with a single instance lock.** A duplicate launch now quits immediately and
+focuses the window that already exists.
+
+```js
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) app.quit();
+else app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+```
+
+**A second, cosmetic fix.** Chromium opens those caches very early in startup, before the
+lock check can quit a duplicate, so a second launch still printed the errors on its way
+out. Neither cache earns its keep here: the app makes no network requests at all
+(everything is served locally over `game://`) and the shader set is small. Both are now
+disabled:
+
+```js
+app.commandLine.appendSwitch("disable-http-cache");
+app.commandLine.appendSwitch("disable-gpu-shader-disk-cache");
+```
+
+Trade-off: shaders recompile on every launch rather than being cached. For this app that
+costs far less than red errors in a tester's console, and it makes startup deterministic.
+
+**Verified.** First launch and second launch both produce completely silent output, only
+one app instance remains, and all 15 scenes still build at 120 fps with zero errors.
+`READ ME FIRST.txt` now tells testers that a second double-click is expected to do
+nothing.
+

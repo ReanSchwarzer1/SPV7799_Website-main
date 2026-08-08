@@ -147,17 +147,18 @@
         var woodRough   = ctx.grayTexture("woodR", 512, 512, woodHeight, 2, 1);
 
         var table = new THREE.Mesh(
-          geo(new THREE.BoxGeometry(A.table.w, A.table.h, A.table.d)),
+          geo(ctx.roundedBox(A.table.w, A.table.h, A.table.d)),
           keep(new THREE.MeshPhysicalMaterial({
             color: A.table.color, roughness: 0.52, metalness: 0.04,
             normalMap: woodNormal,
             normalScale: new THREE.Vector2(0.5, 0.5),
             roughnessMap: woodRough,
-            clearcoat: 0.55, clearcoatRoughness: 0.28 })));
+            clearcoat: 0.3, clearcoatRoughness: 0.45,
+            envMapIntensity: 0.5 })));
         scene.add(table);
 
         var block = new THREE.Mesh(
-          geo(new THREE.CylinderGeometry(A.block.r, A.block.r, A.block.h, 32)),
+          geo(new THREE.CylinderGeometry(A.block.r, A.block.r, A.block.h, 48)),
           mat({ color: A.block.color, roughness: 0.5 }));
         block.position.set(0, A.table.h / 2 + A.block.h / 2, -1.1);
         scene.add(block);
@@ -216,12 +217,12 @@
         // ---- gavel ----
         var gavel = new THREE.Group();
         var handle = new THREE.Mesh(
-          geo(new THREE.CylinderGeometry(A.gavel.handleR, A.gavel.handleR, A.gavel.handleL, 20)),
+          geo(new THREE.CylinderGeometry(A.gavel.handleR, A.gavel.handleR, A.gavel.handleL, 48)),
           mat({ color: A.gavel.color, roughness: 0.55 }));
         handle.rotation.z = Math.PI / 2;
         handle.position.x = A.gavel.handleL / 2 - 0.1;
         var head = new THREE.Mesh(
-          geo(new THREE.CylinderGeometry(A.gavel.headR, A.gavel.headR, A.gavel.headL, 24)),
+          geo(new THREE.CylinderGeometry(A.gavel.headR, A.gavel.headR, A.gavel.headL, 48)),
           mat({ color: A.gavel.color, roughness: 0.4, metalness: 0.1 }));
         head.rotation.x = Math.PI / 2;
         gavel.add(handle); gavel.add(head);
@@ -370,7 +371,7 @@
            and they are the most legible surfaces in the game. The pages still
            cast a shadow, because shadow casting reads depth, not shading. */
         function faceMat(tex) {
-          return keep(new THREE.MeshBasicMaterial({ map: tex, fog: false }));
+          return keep(new THREE.MeshBasicMaterial({ map: tex, fog: false, toneMapped: false }));
         }
         function setFace(mat, tex) {
           mat.map = tex; mat.needsUpdate = true;

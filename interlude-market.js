@@ -67,7 +67,7 @@
 
         // ---------- floor ----------
         var floor = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.floor.w, 0.3, A.floor.d)),
+          keep(ctx.roundedBox(A.floor.w, 0.3, A.floor.d)),
           mat({ color: A.floor.color, roughness: 0.9 }));
         floor.position.set(0, -1.85, 0);
         scene.add(floor);
@@ -78,12 +78,12 @@
 
         // ---------- price column ----------
         var column = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.column.r, A.column.r, 1, 24)),
+          keep(new THREE.CylinderGeometry(A.column.r, A.column.r, 1, 48)),
           mat({ color: A.column.color, roughness: 0.4,
                 emissive: A.column.color, emissiveIntensity: 0.25 }));
         scene.add(column);
         var columnCap = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.column.r + 0.09, A.column.r + 0.09, 0.12, 24)),
+          keep(new THREE.CylinderGeometry(A.column.r + 0.09, A.column.r + 0.09, 0.12, 48)),
           mat({ color: 0xe8ecf2, roughness: 0.4 }));
         scene.add(columnCap);
         var priceLabel = makeLabel(A.column.x, 5.6, 0,
@@ -92,12 +92,12 @@
         // ---------- surplus tanks ----------
         function makeTank(cfg, title) {
           var shell = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.tank.w, A.tank.maxH, A.tank.d)),
+            keep(ctx.roundedBox(A.tank.w, A.tank.maxH, A.tank.d)),
             mat({ color: cfg.color, roughness: 0.85, transparent: true, opacity: 0.32 }));
           shell.position.set(cfg.x, -1.7 + A.tank.maxH / 2, 0);
           scene.add(shell);
           var fill = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.tank.w * 0.82, 1, A.tank.d * 0.82)),
+            keep(ctx.roundedBox(A.tank.w * 0.82, 1, A.tank.d * 0.82)),
             mat({ color: cfg.fill, roughness: 0.45,
                   emissive: cfg.fill, emissiveIntensity: 0.22 }));
           scene.add(fill);
@@ -112,13 +112,13 @@
         // ---------- gate + lever ----------
         var railL = A.lever.railX[0], railR = A.lever.railX[1];
         var rail = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(railR - railL, 0.12, 0.28)),
+          keep(ctx.roundedBox(railR - railL, 0.12, 0.28)),
           mat({ color: 0x2a3140, roughness: 0.7 }));
         rail.position.set(0, A.lever.y, A.lever.z);
         scene.add(rail);
 
         var knob = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.lever.knob, 18, 12)),
+          keep(new THREE.SphereGeometry(A.lever.knob, 48, 32)),
           mat({ color: open ? A.lever.color : 0x5b6270, roughness: 0.35,
                 emissive: open ? A.lever.color : 0x000000, emissiveIntensity: 0.3 }));
         knob.position.set(railL, A.lever.y + 0.3, A.lever.z);
@@ -132,7 +132,7 @@
 
         // ---------- procurement wheel ----------
         var wheel = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.wheel.r, A.wheel.r, 0.24, 28)),
+          keep(new THREE.CylinderGeometry(A.wheel.r, A.wheel.r, 0.24, 48)),
           mat({ color: A.wheel.color, roughness: 0.4,
                 emissive: A.wheel.color, emissiveIntensity: 0.22 }));
         wheel.rotation.x = Math.PI / 2;
@@ -146,8 +146,8 @@
         var firmGroup = new THREE.Group();
         scene.add(firmGroup);
         var firmMeshes = [];
-        var firmBody = keep(new THREE.BoxGeometry(A.firm.w, A.firm.h, A.firm.d));
-        var firmRoof = keep(new THREE.BoxGeometry(A.firm.w * 1.15, 0.12, A.firm.d * 1.15));
+        var firmBody = keep(ctx.roundedBox(A.firm.w, A.firm.h, A.firm.d));
+        var firmRoof = keep(ctx.roundedBox(A.firm.w * 1.15, 0.12, A.firm.d * 1.15));
         var firmMat = mat({ color: A.firm.color, roughness: 0.7 });
         var roofMat = mat({ color: A.firm.roof, roughness: 0.5 });
         for (var i = 0; i < A.firm.maxShown; i++) {

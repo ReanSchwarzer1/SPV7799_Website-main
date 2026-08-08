@@ -62,14 +62,14 @@
 
         // ---------- graph board ----------
         var board = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(GW + 1.3, GH + 1.3, 0.2)),
+          keep(ctx.roundedBox(GW + 1.3, GH + 1.3, 0.2)),
           mat({ color: A.graph.color, roughness: 0.9 }));
         board.position.z = -0.35;
         scene.add(board);
 
         var gridMat = mat({ color: A.graph.grid, roughness: 0.9 });
-        var gridGeoV = keep(new THREE.BoxGeometry(0.025, GH, 0.02));
-        var gridGeoH = keep(new THREE.BoxGeometry(GW, 0.025, 0.02));
+        var gridGeoV = keep(ctx.roundedBox(0.025, GH, 0.02));
+        var gridGeoH = keep(ctx.roundedBox(GW, 0.025, 0.02));
         for (var q = 0; q <= A.graph.qMax; q += 50) {
           var gv = new THREE.Mesh(gridGeoV, gridMat);
           gv.position.set(X(q), 0, -0.22); scene.add(gv);
@@ -88,12 +88,12 @@
         // cannot tell what is draggable, which was the whole confusion here.
         function makeBeam(color, title, note) {
           var m = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(1, A.supply.thickness, A.supply.thickness)),
+            keep(ctx.roundedBox(1, A.supply.thickness, A.supply.thickness)),
             mat({ color: color, roughness: 0.35, emissive: color, emissiveIntensity: 0.3 }));
           scene.add(m);
           // fat invisible grab volume so the whole beam is easy to catch
           var grab = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(1, 0.95, 0.6)),
+            keep(ctx.roundedBox(1, 0.95, 0.6)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           scene.add(grab);
           ctx.pickables.push(grab);
@@ -101,20 +101,20 @@
           // the grip: a chunky knurled handle sitting on the beam
           var handle = new THREE.Group();
           var barrel = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(0.34, 0.34, 0.62, 20)),
+            keep(new THREE.CylinderGeometry(0.34, 0.34, 0.62, 48)),
             mat({ color: color, roughness: 0.25, metalness: 0.25,
                   emissive: color, emissiveIntensity: 0.55 }));
           barrel.rotation.x = Math.PI / 2;
           handle.add(barrel);
           var collar = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(0.42, 0.05, 8, 26)),
+            keep(new THREE.TorusGeometry(0.42, 0.05, 24, 96)),
             mat({ color: 0xffffff, roughness: 0.3,
                   emissive: 0xffffff, emissiveIntensity: 0.3 }));
           handle.add(collar);
           // arrows showing which way it slides
           [-1, 1].forEach(function (s) {
             var a = new THREE.Mesh(
-              keep(new THREE.ConeGeometry(0.15, 0.34, 14)),
+              keep(new THREE.ConeGeometry(0.15, 0.34, 48)),
               mat({ color: 0xffffff, roughness: 0.4,
                     emissive: 0xffffff, emissiveIntensity: 0.45 }));
             a.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
@@ -152,12 +152,12 @@
 
         // ---------- equilibrium marker ----------
         var marker = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.marker.r, 20, 14)),
+          keep(new THREE.SphereGeometry(A.marker.r, 48, 32)),
           mat({ color: A.marker.color, roughness: 0.25,
                 emissive: A.marker.color, emissiveIntensity: 0.6 }));
         scene.add(marker);
         var dropLine = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(0.04, 1, 0.02)),
+          keep(ctx.roundedBox(0.04, 1, 0.02)),
           mat({ color: A.marker.color, roughness: 0.6,
                 emissive: A.marker.color, emissiveIntensity: 0.25, transparent: true, opacity: 0.5 }));
         scene.add(dropLine);
@@ -172,7 +172,7 @@
 
         // ---------- patients ----------
         var patients = [];
-        var pg = keep(new THREE.CapsuleGeometry(A.patient.r, A.patient.len, 4, 8));
+        var pg = keep(new THREE.CapsuleGeometry(A.patient.r, A.patient.len, 12, 32));
         var pOn = mat({ color: A.patient.on, roughness: 0.4,
                         emissive: A.patient.on, emissiveIntensity: 0.45 });
         var pOff = mat({ color: A.patient.off, roughness: 0.8 });

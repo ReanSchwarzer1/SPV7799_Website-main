@@ -135,7 +135,7 @@
             mats[el] = keep(new THREE.MeshStandardMaterial(
               { color: col, roughness: 0.35, metalness: 0.15 }));
           });
-          var sph = keep(new THREE.SphereGeometry(1, 18, 12));
+          var sph = keep(new THREE.SphereGeometry(1, 48, 32));
           atoms.forEach(function (a) {
             var m = new THREE.Mesh(sph, mats[a.el] || mats.C);
             m.position.set(a.x * s, a.y * s, a.z * s);
@@ -144,7 +144,7 @@
           });
           var bm = keep(new THREE.MeshStandardMaterial(
             { color: A.bond.color, roughness: 0.5, metalness: 0.2 }));
-          var cyl = keep(new THREE.CylinderGeometry(A.bond.radius, A.bond.radius, 1, 8));
+          var cyl = keep(new THREE.CylinderGeometry(A.bond.radius, A.bond.radius, 1, 48));
           var up = new THREE.Vector3(0, 1, 0);
           bonds.forEach(function (b) {
             var pa = atoms[b.a], pb = atoms[b.b];
@@ -163,12 +163,12 @@
 
         function makePlinth(x, tint) {
           var p = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.plinth.r, A.plinth.r, A.plinth.h, 36)),
+            keep(new THREE.CylinderGeometry(A.plinth.r, A.plinth.r, A.plinth.h, 48)),
             keep(new THREE.MeshStandardMaterial({ color: A.plinth.color, roughness: 0.65 })));
           p.position.set(x, -1.75, 0);
           scene.add(p);
           var ring = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(A.plinth.r, 0.025, 8, 44)),
+            keep(new THREE.TorusGeometry(A.plinth.r, 0.025, 24, 96)),
             keep(new THREE.MeshStandardMaterial(
               { color: tint, roughness: 0.4, emissive: tint, emissiveIntensity: 0.4 })));
           ring.rotation.x = Math.PI / 2;
@@ -192,7 +192,7 @@
 
         // grab handle for the draggable sample
         var grab = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(1.55, 14, 10)),
+          keep(new THREE.SphereGeometry(1.55, 48, 32)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         grab.position.copy(subject.position);
         scene.add(grab);
@@ -205,14 +205,14 @@
 
         function makeTube(x, tint) {
           var t = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.tube.r, A.tube.r, A.tube.h, 24, 1, true)),
+            keep(new THREE.CylinderGeometry(A.tube.r, A.tube.r, A.tube.h, 48, 1, true)),
             keep(new THREE.MeshStandardMaterial({
               color: A.tube.color, transparent: true, opacity: 0.18,
               roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide })));
           t.position.set(x, 0.05, 0);
           act2.add(t);
           var base = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.tube.r + 0.08, A.tube.r + 0.08, 0.12, 24)),
+            keep(new THREE.CylinderGeometry(A.tube.r + 0.08, A.tube.r + 0.08, 0.12, 48)),
             keep(new THREE.MeshStandardMaterial({ color: tint, roughness: 0.5 })));
           base.position.set(x, 0.05 - A.tube.h / 2, 0);
           act2.add(base);
@@ -221,7 +221,7 @@
         var tubeL = makeTube(LX, A.us.tint);
         var tubeR = makeTube(RX, A.india.tint);
 
-        var pillGeo = keep(new THREE.CapsuleGeometry(A.pill.r, A.pill.len, 4, 8));
+        var pillGeo = keep(new THREE.CapsuleGeometry(A.pill.r, A.pill.len, 12, 32));
         var pillMatL = keep(new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.5 }));
         var pillMatR = keep(new THREE.MeshStandardMaterial({ color: 0xd7f0e0, roughness: 0.5 }));
         var pills = [];   // {mesh, targetY, vy}
@@ -262,7 +262,7 @@
         act2.add(note);
 
         var slot = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(1.75, 0.16, 0.5)),
+          keep(ctx.roundedBox(1.75, 0.16, 0.5)),
           keep(new THREE.MeshStandardMaterial({ color: 0x2b3240, roughness: 0.6,
                                                 emissive: 0xfffb00, emissiveIntensity: 0.18 })));
         slot.position.set(0, 0.55, 0);

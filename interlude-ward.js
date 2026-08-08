@@ -67,20 +67,20 @@
 
         // ---------- floor ----------
         var floor = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(17, 0.3, 9)),
+          keep(ctx.roundedBox(17, 0.3, 9)),
           mat({ color: 0x141821, roughness: 0.92 }));
         floor.position.set(0, -2.5, 0.6);
         scene.add(floor);
 
         // ---------- the budget, as a block that never changes ----------
         var vault = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.vault.w, A.vault.h, A.vault.d)),
+          keep(ctx.roundedBox(A.vault.w, A.vault.h, A.vault.d)),
           mat({ color: A.vault.color, roughness: 0.6, metalness: 0.15 }));
         vault.position.set(A.vault.x, -0.75, 0);
         scene.add(vault);
         for (var b = 0; b < 4; b++) {
           var band = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.vault.w * 1.03, 0.1, A.vault.d * 1.03)),
+            keep(ctx.roundedBox(A.vault.w * 1.03, 0.1, A.vault.d * 1.03)),
             mat({ color: 0x9ad3ac, roughness: 0.5 }));
           band.position.set(A.vault.x, -2.05 + b * 0.82, 0);
           scene.add(band);
@@ -92,19 +92,19 @@
         // ---------- the price wheel ----------
         var wheel = new THREE.Group();
         var rim = new THREE.Mesh(
-          keep(new THREE.TorusGeometry(A.wheel.r, A.wheel.tube, 14, 40)),
+          keep(new THREE.TorusGeometry(A.wheel.r, A.wheel.tube, 24, 96)),
           mat({ color: A.wheel.color, roughness: 0.3, metalness: 0.25,
                 emissive: A.wheel.color, emissiveIntensity: 0.35 }));
         wheel.add(rim);
         for (var s = 0; s < 6; s++) {
           var spoke = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.wheel.r * 2 - 0.1, 0.13, 0.13)),
+            keep(ctx.roundedBox(A.wheel.r * 2 - 0.1, 0.13, 0.13)),
             mat({ color: 0xb98c30, roughness: 0.45 }));
           spoke.rotation.z = (s / 6) * Math.PI;
           wheel.add(spoke);
         }
         var pointerKnob = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(0.26, 16, 12)),
+          keep(new THREE.SphereGeometry(0.26, 48, 32)),
           mat({ color: 0xffffff, roughness: 0.25,
                 emissive: 0xffffff, emissiveIntensity: 0.5 }));
         pointerKnob.position.set(A.wheel.r, 0, 0.22);
@@ -116,7 +116,7 @@
         var dirArrows = new THREE.Group();
         [0.55, 1.0, 1.45].forEach(function (a) {
           var cone = new THREE.Mesh(
-            keep(new THREE.ConeGeometry(0.16, 0.42, 14)),
+            keep(new THREE.ConeGeometry(0.16, 0.42, 48)),
             mat({ color: 0xffffff, roughness: 0.4,
                   emissive: 0xffffff, emissiveIntensity: 0.55 }));
           var rr = A.wheel.r + 0.62;
@@ -130,7 +130,7 @@
         scene.add(wheel);
 
         var wheelGrab = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.wheel.r + 0.45, A.wheel.r + 0.45, 0.7, 20)),
+          keep(new THREE.CylinderGeometry(A.wheel.r + 0.45, A.wheel.r + 0.45, 0.7, 48)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         wheelGrab.rotation.x = Math.PI / 2;
         wheelGrab.position.copy(wheel.position);
@@ -143,7 +143,7 @@
 
         // ---------- the ward ----------
         var beds = [];
-        var bedGeo = keep(new THREE.CapsuleGeometry(A.bed.r, A.bed.len, 4, 8));
+        var bedGeo = keep(new THREE.CapsuleGeometry(A.bed.r, A.bed.len, 12, 32));
         var bedOn = mat({ color: A.bed.on, roughness: 0.4,
                           emissive: A.bed.on, emissiveIntensity: 0.5 });
         var bedOff = mat({ color: A.bed.off, roughness: 0.85 });
@@ -164,12 +164,12 @@
 
         // ---------- the life-years tower ----------
         var towerShell = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.tower.w, A.tower.maxH, A.tower.w)),
+          keep(ctx.roundedBox(A.tower.w, A.tower.maxH, A.tower.w)),
           mat({ color: 0x1d2a22, roughness: 0.9, transparent: true, opacity: 0.3 }));
         towerShell.position.set(A.tower.x, -2.35 + A.tower.maxH / 2, 0);
         scene.add(towerShell);
         var tower = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(A.tower.w * 0.8, 1, A.tower.w * 0.8)),
+          keep(ctx.roundedBox(A.tower.w * 0.8, 1, A.tower.w * 0.8)),
           mat({ color: A.tower.color, roughness: 0.4,
                 emissive: A.tower.color, emissiveIntensity: 0.3 }));
         scene.add(tower);

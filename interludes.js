@@ -32,6 +32,8 @@
    ============================================================ */
 
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
 const registry = new Map();
 let active = null; // current running session
@@ -189,6 +191,13 @@ function play(id, params) {
   // again during a session, only chosen per tier when the session starts
   renderer.shadowMap.enabled = Quality.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  /* Without tone mapping anything above 1.0 clips flat to white, which is why
+     the case file burned out the moment an environment was added. ACES rolls
+     the highlight off instead, so a bright surface still reads as a material.
+     Exposure is per scene because the bench and the monument ring should not
+     have to share one setting. */
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = def.exposure != null ? def.exposure : 0.82;
   stage.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -204,9 +213,13 @@ function play(id, params) {
      close to the old two light setup so existing scenes do not shift in
      brightness; the difference is direction and the shadowing key. */
   const L = Object.assign({
-    hemi: 0.72,                       // soft ambient fill
-    key: 1.0,                         // the shadow caster
-    rim: 0.34,                        // cool separation from behind
+    /* These scenes are art directed low key: dark ground, one dominant key,
+       deep falloff. Drama comes from range, not from brightness. The fill is
+       deliberately well below the key so the shadow side is allowed to go
+       dark. */
+    hemi: 0.28,                       // soft ambient fill, kept low on purpose
+    key: 1.35,                        // the shadow caster, clearly dominant
+    rim: 0.26,                        // cool separation from behind
     // a high key keeps shadows short. Long raking shadows look dramatic but
     // they fall across the printed labels the player has to read.
     keyDir: [3.2, 11.5, 5.2],
@@ -257,8 +270,12 @@ function play(id, params) {
     const room = new RoomEnvironment();
     envRT = pmrem.fromScene(room, 0.04);
     scene.environment = envRT.texture;
-    // modest: these scenes are lit for reading, not for showroom reflections
-    scene.environmentIntensity = def.envIntensity != null ? def.envIntensity : 0.38;
+    /* Low. scene.environment feeds both diffuse irradiance and specular
+       reflection, and it is the diffuse half that flattened every scene into an
+       even overcast. Kept near the floor here so it barely lifts the ambient,
+       then raised per material through envMapIntensity on the surfaces that
+       should actually reflect: metal, glass, polished stone, varnish. */
+    scene.environmentIntensity = def.envIntensity != null ? def.envIntensity : 0.06;
     room.dispose && room.dispose();
     pmrem.dispose();
   }).catch((e) => {
@@ -281,6 +298,32 @@ function play(id, params) {
      lighting, and letting them cast would drop hard rectangles across the
      scene. Large flat geometry receives but does not cast, so floors and
      table tops do not waste shadow map area on themselves. */
+  /* ---- edges ---------------------------------------------------------
+     A perfectly sharp 90 degree edge is the strongest "computer graphics"
+     tell there is. No manufactured object has one: every real edge carries a
+     small chamfer that catches a bright specular line, and it is that line
+     the eye reads as solidity. This replaces the raw boxes.
+
+     RoundedBoxGeometry has a single material group, so anything relying on
+     per-face materials keeps its BoxGeometry and stays sharp. */
+  function roundedBox(w, h, d, radius, segments) {
+    const smallest = Math.min(Math.abs(w), Math.abs(h), Math.abs(d));
+    // proportional by default, clamped so a thin panel cannot round itself away
+    let r = radius != null ? radius : smallest * 0.09;
+    r = Math.max(0.002, Math.min(r, smallest * 0.48));
+    return new RoundedBoxGeometry(w, h, d, segments || 3, r);
+  }
+
+  /* Weld duplicated vertices so smooth shading works across a surface rather
+     than stopping at every triangle seam. */
+  function smoothGeometry(geo, angleDeg) {
+    try {
+      const merged = BufferGeometryUtils.mergeVertices(geo);
+      merged.computeVertexNormals();
+      return merged;
+    } catch (e) { return geo; }
+  }
+
   const _bbSize = new THREE.Vector3();
   function applyShadowFlags(root) {
     root.traverse(function (o) {
@@ -292,7 +335,13 @@ function play(id, params) {
            cards and plaques are unlit billboards carrying text the player has
            to read; letting atmosphere wash them out trades comprehension for
            mood, and this is a study instrument first. */
-        mats.forEach(function (m) { if (m && m.fog) { m.fog = false; m.needsUpdate = true; } });
+        mats.forEach(function (m) {
+          if (!m) return;
+          // exempt from fog and from tone mapping: these carry text and must
+          // render exactly as they were drawn, whatever the scene exposure is
+          if (m.fog) { m.fog = false; m.needsUpdate = true; }
+          if (m.toneMapped !== false) { m.toneMapped = false; m.needsUpdate = true; }
+        });
         // an unlit mesh can still be a solid object worth grounding: shadow
         // casting reads depth, not shading, so a scene may opt back in
         o.castShadow = o.userData.forceCast === true;
@@ -551,8 +600,10 @@ function play(id, params) {
     const tex = labelTexture(l);
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(w || 2.7, h || 1.35),
-      // fog:false so a readout never fades into the atmosphere, whenever it is made
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
+      // fog and tone mapping off so a readout never fades into the atmosphere
+      // and never shifts with scene exposure, whenever it happens to be made
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false,
+                                    fog: false, toneMapped: false }));
     mesh.position.set(x, y, z);
     mesh.renderOrder = o.renderOrder != null ? o.renderOrder : 5;
     scene.add(mesh);
@@ -646,6 +697,7 @@ function play(id, params) {
     canvasTexture, labelTexture, makeLabel, tune, texScale,
     // procedural surface maps: ctx.surfaces.wood(), then grayTexture/normalTexture
     surfaces, grayTexture, normalTexture,
+    roundedBox, smoothGeometry,
     pointer, raycaster, keys,
     quality: Quality,
     // scenes that add geometry after build call this so the new objects both

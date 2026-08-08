@@ -68,7 +68,7 @@
 
         // ---------- floor ----------
         var floor = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(18, 0.3, 8)),
+          keep(ctx.roundedBox(18, 0.3, 8)),
           mat({ color: 0x141821, roughness: 0.93 }));
         floor.position.set(0, -0.15, 0);
         scene.add(floor);
@@ -76,11 +76,11 @@
         // ---------- the worker ----------
         var worker = new THREE.Group();
         var body = new THREE.Mesh(
-          keep(new THREE.CapsuleGeometry(0.28, 0.75, 6, 12)),
+          keep(new THREE.CapsuleGeometry(0.28, 0.75, 12, 32)),
           mat({ color: 0x9aa6b4, roughness: 0.7 }));
         body.position.y = 0.72;
         var head = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(0.24, 18, 14)),
+          keep(new THREE.SphereGeometry(0.24, 48, 32)),
           mat({ color: 0xb8c2cf, roughness: 0.6 }));
         head.position.y = 1.42;
         worker.add(body); worker.add(head);
@@ -92,13 +92,13 @@
 
         // ---------- one month of medicine ----------
         var bottle = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.42, 0.42, 1.0, 24)),
+          keep(new THREE.CylinderGeometry(0.42, 0.42, 1.0, 48)),
           mat({ color: 0xd4573f, roughness: 0.35,
                 emissive: 0xd4573f, emissiveIntensity: 0.25 }));
         bottle.position.set(6.4, 0.5, 0);
         scene.add(bottle);
         var cap = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.46, 0.46, 0.2, 24)),
+          keep(new THREE.CylinderGeometry(0.46, 0.46, 0.2, 48)),
           mat({ color: 0xe8ecf2, roughness: 0.4 }));
         cap.position.set(6.4, 1.08, 0);
         scene.add(cap);
@@ -108,7 +108,7 @@
 
         // ---------- the tower of working days ----------
         var blocks = [];
-        var blockGeo = keep(new THREE.BoxGeometry(A.block.w, A.block.h, A.block.d));
+        var blockGeo = keep(ctx.roundedBox(A.block.w, A.block.h, A.block.d));
         var blockHot = mat({ color: A.block.color, roughness: 0.55,
                              emissive: A.block.color, emissiveIntensity: 0.18 });
         var blockOk = mat({ color: A.block.ok, roughness: 0.55,
@@ -128,7 +128,7 @@
 
         // WHO affordability line: one day's wage
         var whoLine = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(7.4, 0.045, 0.05)),
+          keep(ctx.roundedBox(7.4, 0.045, 0.05)),
           mat({ color: 0xfffb00, roughness: 0.5,
                 emissive: 0xfffb00, emissiveIntensity: 0.6 }));
         whoLine.position.set(0, 0.12 + (A.block.h + 0.035), 0.32);
@@ -139,18 +139,18 @@
         // ---------- the two switches ----------
         function makeSwitch(x, title) {
           var base = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(1.5, 0.28, 0.8)),
+            keep(ctx.roundedBox(1.5, 0.28, 0.8)),
             mat({ color: 0x2a3140, roughness: 0.75 }));
           base.position.set(x, 0.14, 2.9);
           scene.add(base);
           var lever = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(A.switchGeom.w, A.switchGeom.h, A.switchGeom.d)),
+            keep(ctx.roundedBox(A.switchGeom.w, A.switchGeom.h, A.switchGeom.d)),
             mat({ color: 0xd9a441, roughness: 0.35, metalness: 0.2,
                   emissive: 0xd9a441, emissiveIntensity: 0.3 }));
           lever.position.set(x, 0.62, 2.9);
           scene.add(lever);
           var hit = new THREE.Mesh(
-            keep(new THREE.BoxGeometry(1.7, 1.6, 1.2)),
+            keep(ctx.roundedBox(1.7, 1.6, 1.2)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.set(x, 0.6, 2.9);
           scene.add(hit);
@@ -164,12 +164,12 @@
 
         // ---------- Lerner gauge ----------
         var lernerBack = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(3.4, 0.34, 0.12)),
+          keep(ctx.roundedBox(3.4, 0.34, 0.12)),
           mat({ color: 0x232a36, roughness: 0.8 }));
         lernerBack.position.set(0, -0.75, 2.9);
         scene.add(lernerBack);
         var lernerFill = new THREE.Mesh(
-          keep(new THREE.BoxGeometry(1, 0.22, 0.16)),
+          keep(ctx.roundedBox(1, 0.22, 0.16)),
           mat({ color: 0xd4573f, roughness: 0.4,
                 emissive: 0xd4573f, emissiveIntensity: 0.35 }));
         scene.add(lernerFill);
