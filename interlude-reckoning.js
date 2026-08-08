@@ -63,7 +63,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var rec = (typeof window.GameFullRecord === "function")
                     ? window.GameFullRecord()
@@ -93,13 +93,13 @@
 
         // ---------- ground and sky ----------
         var ground = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(13, 13, 0.4, 56)),
+          keep(ctx.turnedCylinder(13, 13, 0.4)),
           mat({ color: 0x10141c, roughness: 0.95 }));
         ground.position.y = -2.4;
         scene.add(ground);
         for (var r2 = 0; r2 < 3; r2++) {
           var halo = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(4.6 + r2 * 2.5, 0.02, 24, 96)),
+            keep(new THREE.TorusGeometry(4.6 + r2 * 2.5, 0.02, 32, 128)),
             mat({ color: 0x2f4358, roughness: 1,
                   emissive: 0x2f4358, emissiveIntensity: 0.3 }));
           halo.rotation.x = Math.PI / 2;
@@ -113,7 +113,7 @@
         for (var i = 0; i < mods.length; i++) {
           var m = mods[i];
           var seg = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.column.r - i * 0.03, A.column.r - i * 0.03 + 0.02, A.column.strata, 48)),
+            keep(ctx.turnedCylinder(A.column.r - i * 0.03, A.column.r - i * 0.03 + 0.02, A.column.strata)),
             mat({ color: m.ok ? 0x2f5f45 : 0x2a2f3a, roughness: 0.7,
                   emissive: m.ok ? 0x3fae6b : 0x000000,
                   emissiveIntensity: m.ok ? 0.22 : 0 }));

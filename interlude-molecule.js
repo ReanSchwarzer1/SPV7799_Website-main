@@ -69,9 +69,16 @@
 
       assets: {
         scale: 0.16,
-        atomRadius: { C: 0.30, N: 0.32, O: 0.32 },
+        // ball and stick, not space filling. At van der Waals radius the
+        // spheres merge and the bonds vanish inside them, which is why the
+        // molecule read as a blob rather than a structure.
+        // A carbon-carbon bond is about 1.4 angstrom, which at scale 0.16 is
+        // roughly 0.22 world units. An atom radius anywhere near that swallows
+        // the bond whole, which is why the structure kept reading as a heap of
+        // spheres. A quarter of the bond length is what makes it skeletal.
+        atomRadius: { C: 0.062, N: 0.072, O: 0.072 },
         elementColor: { C: 0xc9ced6, N: 0x5b7fd4, O: 0xd4573f },
-        bond:   { radius: 0.085, color: 0x9aa3af },
+        bond:   { radius: 0.030, color: 0xb6bec9 },
         us:      { tint: 0xd4573f, name: "UNITED STATES", price: 179.93, pills: 1 },
         india:   { tint: 0x3fae6b, name: "INDIA", price: 1.50, pills: 120 },
         plinth: { r: 1.5, h: 0.18, color: 0x171b23 },
@@ -135,7 +142,7 @@
             mats[el] = keep(new THREE.MeshStandardMaterial(
               { color: col, roughness: 0.35, metalness: 0.15 }));
           });
-          var sph = keep(new THREE.SphereGeometry(1, 48, 32));
+          var sph = keep(new THREE.SphereGeometry(1, 64, 40));
           atoms.forEach(function (a) {
             var m = new THREE.Mesh(sph, mats[a.el] || mats.C);
             m.position.set(a.x * s, a.y * s, a.z * s);
@@ -144,7 +151,7 @@
           });
           var bm = keep(new THREE.MeshStandardMaterial(
             { color: A.bond.color, roughness: 0.5, metalness: 0.2 }));
-          var cyl = keep(new THREE.CylinderGeometry(A.bond.radius, A.bond.radius, 1, 48));
+          var cyl = keep(ctx.turnedCylinder(A.bond.radius, A.bond.radius, 1));
           var up = new THREE.Vector3(0, 1, 0);
           bonds.forEach(function (b) {
             var pa = atoms[b.a], pb = atoms[b.b];
@@ -163,12 +170,12 @@
 
         function makePlinth(x, tint) {
           var p = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.plinth.r, A.plinth.r, A.plinth.h, 48)),
+            keep(ctx.turnedCylinder(A.plinth.r, A.plinth.r, A.plinth.h)),
             keep(new THREE.MeshStandardMaterial({ color: A.plinth.color, roughness: 0.65 })));
           p.position.set(x, -1.75, 0);
           scene.add(p);
           var ring = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(A.plinth.r, 0.025, 24, 96)),
+            keep(new THREE.TorusGeometry(A.plinth.r, 0.025, 32, 128)),
             keep(new THREE.MeshStandardMaterial(
               { color: tint, roughness: 0.4, emissive: tint, emissiveIntensity: 0.4 })));
           ring.rotation.x = Math.PI / 2;
@@ -192,7 +199,7 @@
 
         // grab handle for the draggable sample
         var grab = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(1.55, 48, 32)),
+          keep(new THREE.SphereGeometry(1.55, 64, 40)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         grab.position.copy(subject.position);
         scene.add(grab);
@@ -205,14 +212,14 @@
 
         function makeTube(x, tint) {
           var t = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.tube.r, A.tube.r, A.tube.h, 48, 1, true)),
-            keep(new THREE.MeshStandardMaterial({
-              color: A.tube.color, transparent: true, opacity: 0.18,
-              roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide })));
+            keep(ctx.turnedCylinder(A.tube.r, A.tube.r, A.tube.h)),
+            keep(ctx.material("glass", {
+              color: A.tube.color, thickness: 0.9, roughness: 0.06,
+              transmission: 0.94, ior: 1.48, opacity: 1 })));
           t.position.set(x, 0.05, 0);
           act2.add(t);
           var base = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.tube.r + 0.08, A.tube.r + 0.08, 0.12, 48)),
+            keep(ctx.turnedCylinder(A.tube.r + 0.08, A.tube.r + 0.08, 0.12)),
             keep(new THREE.MeshStandardMaterial({ color: tint, roughness: 0.5 })));
           base.position.set(x, 0.05 - A.tube.h / 2, 0);
           act2.add(base);
@@ -221,7 +228,12 @@
         var tubeL = makeTube(LX, A.us.tint);
         var tubeR = makeTube(RX, A.india.tint);
 
-        var pillGeo = keep(new THREE.CapsuleGeometry(A.pill.r, A.pill.len, 12, 32));
+        var pillGeo = keep(new THREE.CapsuleGeometry(A.pill.r, A.pill.len, 24, 64));
+        // the join line round the middle of a two-part capsule, now that the
+        // tubes are real glass and the pills are actually visible through them
+        var pillSeamGeo = keep(ctx.turnedCylinder(A.pill.r * 1.035, A.pill.r * 1.035,
+                                                  A.pill.len * 0.16, A.pill.r * 0.14));
+        var pillSeamMat = keep(ctx.tunedStandard({ color: 0xdfe4ea, roughness: 0.42 }));
         var pillMatL = keep(new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.5 }));
         var pillMatR = keep(new THREE.MeshStandardMaterial({ color: 0xd7f0e0, roughness: 0.5 }));
         var pills = [];   // {mesh, targetY, vy}
@@ -229,6 +241,8 @@
         function dropPills(x, count, mat) {
           for (var i = 0; i < count; i++) {
             var m = new THREE.Mesh(pillGeo, mat);
+            var seam = new THREE.Mesh(pillSeamGeo, pillSeamMat);
+            m.add(seam);
             var a = Math.random() * Math.PI * 2, rr = Math.random() * (A.tube.r - 0.18);
             m.position.set(x + Math.cos(a) * rr, 2.6 + i * 0.16, Math.sin(a) * rr);
             m.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
@@ -254,12 +268,22 @@
           g.fillText("the price of ONE pill in the US", _W / 2, 186);
           return keep(ctx.tune(new THREE.CanvasTexture(c)));
         }
+        /* A banknote is paper, not a decal: give it thickness and a rounded
+           edge so it catches the key light, and a raised border frame. */
         var note = new THREE.Mesh(
-          keep(new THREE.PlaneGeometry(A.note.w, A.note.h)),
+          keep(ctx.roundedBox(A.note.w, A.note.h, 0.012, 0.005)),
           keep(new THREE.MeshBasicMaterial({ map: noteTexture(), transparent: true,
-                                             side: THREE.DoubleSide })));
+                                             side: THREE.DoubleSide, toneMapped: false })));
         note.position.set(0, -1.15, 1.2);
         act2.add(note);
+        (function () {
+          var frameMat = ctx.material("paper", { color: 0xbfae6a });
+          keep(frameMat);
+          var frame = new THREE.Mesh(
+            keep(ctx.roundedBox(A.note.w * 1.045, A.note.h * 1.09, 0.008, 0.004)), frameMat);
+          frame.position.set(0, -1.15, 1.194);
+          act2.add(frame);
+        })();
 
         var slot = new THREE.Mesh(
           keep(ctx.roundedBox(1.75, 0.16, 0.5)),

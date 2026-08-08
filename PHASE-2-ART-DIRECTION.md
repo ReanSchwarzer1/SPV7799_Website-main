@@ -250,11 +250,11 @@ Sub-phases, each independently verifiable.
 - **2b — Edges and tessellation. [DONE — devlog 16]** `RoundedBoxGeometry` across the box population, segment
   counts raised, `mergeVertices` for smooth shading. No material change. This is the
   single largest visual return in the whole document.
-- **2c — Material library.** The families from section 4 defined centrally and adopted
+- **2c — Material library. [DONE — devlog 18]** The families from section 4 defined centrally and adopted
   scene by scene, with per-family environment intensity.
-- **2d — Hero objects.** The gavel rebuilt and animated; the sample domes and tubes in
+- **2d — Hero objects. [gavel DONE — devlog 19; glass and hill still open]** The gavel rebuilt and animated; the sample domes and tubes in
   glass; the wage tower; the patent race chips. Optionally glTF here if models exist.
-- **2e — Wear and dirt.** Edge wear, grime in crevices, colour drift. Small, and the thing
+- **2e — Wear and dirt. [DONE]** Edge wear, grime in crevices, colour drift. Small, and the thing
   that takes it from clean to real.
 
 ---

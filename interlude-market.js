@@ -61,16 +61,38 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var open = marketIsOpen();
 
         // ---------- floor ----------
         var floor = new THREE.Mesh(
           keep(ctx.roundedBox(A.floor.w, 0.3, A.floor.d)),
-          mat({ color: A.floor.color, roughness: 0.9 }));
+          ctx.wood("oak", { repeat: [5, 2] }));
         floor.position.set(0, -1.85, 0);
         scene.add(floor);
+
+        /* Substructure. A base with a moulded lip and an apron under it reads
+           as a built surface rather than a floating slab, and every one of
+           those edges is chamfered so it carries its own highlight. */
+        (function () {
+          var subMat = ctx.wood("walnut", { repeat: [3, 1] }); keep(subMat);
+          var W = A.floor.w, H = 0.3, DD = A.floor.d;
+          var lip = new THREE.Mesh(ctx.roundedBox(W + H * 0.5, H * 0.42, H * 0.7, H * 0.14), subMat);
+          lip.position.set(floor.position.x, floor.position.y + H * 0.30, floor.position.z + DD / 2 + H * 0.12);
+          scene.add(lip);
+          var apron = new THREE.Mesh(ctx.roundedBox(W * 0.95, H * 0.9, DD * 0.92, H * 0.12), subMat);
+          apron.position.set(floor.position.x, floor.position.y - H * 0.85, floor.position.z);
+          scene.add(apron);
+          var legGeo = ctx.roundedBox(H * 0.9, H * 3.2, H * 0.9, H * 0.12);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var leg = new THREE.Mesh(legGeo, subMat);
+            leg.position.set(floor.position.x + c[0] * (W / 2 - H * 1.1),
+                             floor.position.y - H * 2.3,
+                             floor.position.z + c[1] * (DD / 2 - H * 1.1));
+            scene.add(leg);
+          });
+        })();
 
         // ---------- canvas label helper ----------
         var labelTex = ctx.labelTexture;
@@ -78,12 +100,28 @@
 
         // ---------- price column ----------
         var column = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.column.r, A.column.r, 1, 48)),
+          keep(ctx.turnedCylinder(A.column.r, A.column.r, 1)),
           mat({ color: A.column.color, roughness: 0.4,
                 emissive: A.column.color, emissiveIntensity: 0.25 }));
         scene.add(column);
+
+        /* The column is the reading of the whole scene, so it gets the
+           treatment a real gauge would have: a turned flange bolted to the
+           floor and a machined crown on top. */
+        (function () {
+          var steel = ctx.material("machinedSteel", { color: 0x9aa3b0 }); keep(steel);
+          var flange = new THREE.Mesh(
+            keep(ctx.turnedCylinder(A.column.r * 1.55, A.column.r * 1.75, 0.16)), steel);
+          flange.position.set(A.column.x, -1.72, 0);
+          scene.add(flange);
+          var crown = new THREE.Mesh(
+            keep(ctx.turnedCylinder(A.column.r * 1.12, A.column.r * 1.24, 0.12)), steel);
+          crown.name = "columnCrown";
+          scene.add(crown);
+          column.userData.crown = crown;
+        })();
         var columnCap = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.column.r + 0.09, A.column.r + 0.09, 0.12, 48)),
+          keep(ctx.turnedCylinder(A.column.r + 0.09, A.column.r + 0.09, 0.12)),
           mat({ color: 0xe8ecf2, roughness: 0.4 }));
         scene.add(columnCap);
         var priceLabel = makeLabel(A.column.x, 5.6, 0,
@@ -96,6 +134,23 @@
             mat({ color: cfg.color, roughness: 0.85, transparent: true, opacity: 0.32 }));
           shell.position.set(cfg.x, -1.7 + A.tank.maxH / 2, 0);
           scene.add(shell);
+          /* The tank is a vessel, so it gets the fittings of one: a base flange
+             it is bolted down with, a rim round the mouth, and a strap band. */
+          (function () {
+            var steel = ctx.material("machinedSteel", { color: 0x8d97a6 }); keep(steel);
+            var flange = new THREE.Mesh(
+              keep(ctx.roundedBox(A.tank.w * 1.22, 0.12, A.tank.d * 1.22, 0.03)), steel);
+            flange.position.set(cfg.x, -1.7 + 0.06, 0);
+            scene.add(flange);
+            var rim = new THREE.Mesh(
+              keep(ctx.roundedBox(A.tank.w * 1.14, 0.10, A.tank.d * 1.14, 0.028)), steel);
+            rim.position.set(cfg.x, -1.7 + A.tank.maxH, 0);
+            scene.add(rim);
+            var strap = new THREE.Mesh(
+              keep(ctx.roundedBox(A.tank.w * 1.08, 0.06, A.tank.d * 1.08, 0.02)), steel);
+            strap.position.set(cfg.x, -1.7 + A.tank.maxH * 0.45, 0);
+            scene.add(strap);
+          })();
           var fill = new THREE.Mesh(
             keep(ctx.roundedBox(A.tank.w * 0.82, 1, A.tank.d * 0.82)),
             mat({ color: cfg.fill, roughness: 0.45,
@@ -117,8 +172,18 @@
         rail.position.set(0, A.lever.y, A.lever.z);
         scene.add(rail);
 
+        /* the lever gets a collar, a shaft and end stops on the rail */
+        (function () {
+          var steel = ctx.material("machinedSteel", { color: 0x8d97a6 }); keep(steel);
+          [railL, railR].forEach(function (rx) {
+            var stop = new THREE.Mesh(keep(ctx.turnedCylinder(0.14, 0.16, 0.30, 0.03)), steel);
+            stop.rotation.z = Math.PI / 2;
+            stop.position.set(rx, A.lever.y, A.lever.z);
+            scene.add(stop);
+          });
+        })();
         var knob = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.lever.knob, 48, 32)),
+          keep(new THREE.SphereGeometry(A.lever.knob, 64, 40)),
           mat({ color: open ? A.lever.color : 0x5b6270, roughness: 0.35,
                 emissive: open ? A.lever.color : 0x000000, emissiveIntensity: 0.3 }));
         knob.position.set(railL, A.lever.y + 0.3, A.lever.z);
@@ -132,7 +197,7 @@
 
         // ---------- procurement wheel ----------
         var wheel = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.wheel.r, A.wheel.r, 0.24, 48)),
+          keep(ctx.turnedCylinder(A.wheel.r, A.wheel.r, 0.24)),
           mat({ color: A.wheel.color, roughness: 0.4,
                 emissive: A.wheel.color, emissiveIntensity: 0.22 }));
         wheel.rotation.x = Math.PI / 2;
@@ -204,6 +269,9 @@
           var m = model();
           var h = Math.max(0.25, (m.price / 100) * A.column.maxH);
           column.scale.y = h;
+            if (column.userData.crown) {
+              column.userData.crown.position.set(A.column.x, column.position.y + column.scale.y / 2 + 0.06, 0);
+            }
           column.position.set(A.column.x, -1.7 + h / 2, 0);
           columnCap.position.set(A.column.x, -1.7 + h + 0.06, 0);
           priceLabel.material.map = labelTex(

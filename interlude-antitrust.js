@@ -54,7 +54,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var labelTex = ctx.labelTexture;
         var makeLabel = ctx.makeLabel;
@@ -87,12 +87,7 @@
         var marbleH = ctx.surfaces.marble(1);
         var marbleN = ctx.normalTexture("marble", 512, 512, marbleH, 1.1, 3, 1);
         var marbleR = ctx.grayTexture("marbleR", 512, 512, marbleH, 3, 1);
-        var hillMat = keep(new THREE.MeshPhysicalMaterial({
-          color: A.hill.color, roughness: 0.42, metalness: 0.05,
-          normalMap: marbleN,
-          normalScale: new THREE.Vector2(0.45, 0.45),
-          roughnessMap: marbleR,
-          clearcoat: 0.4, clearcoatRoughness: 0.22 }));
+        var hillMat = keep(ctx.material("polishedStone", { color: A.hill.color }));
         var peakMat = mat({ color: A.hill.peak, roughness: 0.5,
                             emissive: A.hill.peak, emissiveIntensity: 0.3 });
         var segGeo = keep(ctx.roundedBox(1, A.hill.thickness, 0.5));
@@ -112,7 +107,7 @@
         }
         // summit flag over the sweet spot
         var flagPole = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.035, 0.035, 1.1, 48)),
+          keep(ctx.turnedCylinder(0.035, 0.035, 1.1)),
           mat({ color: 0xe8ecf2, roughness: 0.5 }));
         flagPole.position.set(curveX(5), curveY(5) + 0.62, 0);
         scene.add(flagPole);
@@ -121,12 +116,11 @@
 
         // ---------- the ball ----------
         var ball = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.ball.r, 48, 32)),
-          keep(new THREE.MeshStandardMaterial({
-            color: A.ball.color, roughness: 0.16, metalness: 0.85,
-            // kept emissive so it still reads against the dark hall, but far
-            // lower than before: the metal response now does most of the work
-            emissive: A.ball.color, emissiveIntensity: 0.22 })));
+          keep(new THREE.SphereGeometry(A.ball.r, 64, 40)),
+          keep(ctx.material("brass", {
+            // kept faintly emissive so the weight still reads against the dark
+            // hall; the brass response now does the rest
+            color: A.ball.color, emissive: A.ball.color, emissiveIntensity: 0.18 })));
         scene.add(ball);
 
         // ---------- firms on the floor ----------
@@ -176,6 +170,25 @@
                   emissive: color, emissiveIntensity: 0.32 }));
           b.position.set(x, -2.55, 3.4);
           scene.add(b);
+          /* A button, not a coloured box: a bezel it sits in, a chamfered cap
+             on the face and a machined collar round the base. */
+          (function () {
+            var steel = ctx.material("machinedSteel", { color: 0x79828e }); keep(steel);
+            var bezel = new THREE.Mesh(
+              keep(ctx.roundedBox(A.button.w * 1.22, A.button.h * 0.42, A.button.d * 1.24, 0.03)), steel);
+            bezel.position.set(x, -2.55 - A.button.h * 0.34, 3.4);
+            scene.add(bezel);
+            var capPlate = new THREE.Mesh(
+              keep(ctx.roundedBox(A.button.w * 0.70, A.button.h * 0.16, A.button.d * 0.66, 0.02)),
+              mat({ color: color, roughness: 0.3, emissive: color, emissiveIntensity: 0.5 }));
+            capPlate.position.set(x, -2.55 + A.button.h * 0.52, 3.4);
+            scene.add(capPlate);
+            [-1, 1].forEach(function (sg) {
+              var pin = new THREE.Mesh(keep(ctx.turnedCylinder(0.05, 0.05, 0.16, 0.015)), steel);
+              pin.position.set(x + sg * A.button.w * 0.52, -2.55 - A.button.h * 0.30, 3.4);
+              scene.add(pin);
+            });
+          })();
           var hit = new THREE.Mesh(
             keep(ctx.roundedBox(A.button.w * 1.3, A.button.h * 1.6, A.button.d * 2)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));

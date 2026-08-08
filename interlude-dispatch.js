@@ -184,6 +184,24 @@
             keep(new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.8 })));
           back.position.set(x, 0.3, 0);
           scene.add(back);
+          /* Housing trim: a foot the gauge stands on, a capping plate, and two
+             graduation bands up the face. Four more chamfered edges each, which
+             is the difference between an instrument and a rectangle. */
+          (function () {
+            var trim = ctx.material("machinedSteel", { color: 0x76808f }); keep(trim);
+            var pw = A.gauge.w * 1.34, pt = 0.07;
+            var foot = new THREE.Mesh(keep(ctx.roundedBox(pw, pt, 0.26, 0.02)), trim);
+            foot.position.set(x, 0.3 - A.gauge.h / 2 - pt / 2, 0);
+            scene.add(foot);
+            var cap = new THREE.Mesh(keep(ctx.roundedBox(pw * 0.88, pt * 0.8, 0.22, 0.018)), trim);
+            cap.position.set(x, 0.3 + A.gauge.h / 2 + pt * 0.4, 0);
+            scene.add(cap);
+            [0.28, 0.62].forEach(function (f) {
+              var band = new THREE.Mesh(keep(ctx.roundedBox(pw * 0.8, 0.03, 0.2, 0.01)), trim);
+              band.position.set(x, 0.3 - A.gauge.h / 2 + A.gauge.h * f, 0);
+              scene.add(band);
+            });
+          })();
           var h = Math.max(0.06, A.gauge.h * (Math.max(0, Math.min(100, value)) / 100));
           var fill = new THREE.Mesh(
             keep(ctx.roundedBox(A.gauge.w * 0.72, h, 0.16)),

@@ -132,7 +132,7 @@
 
         var disposables = [];
         function keep(o) { disposables.push(o); return o; }
-        function mat(opts) { return keep(new THREE.MeshStandardMaterial(opts)); }
+        function mat(opts) { return keep(ctx.tunedStandard(opts)); }
         function geo(g) { return keep(g); }
 
         // ---- static set: table + sound block ----
@@ -148,18 +148,47 @@
 
         var table = new THREE.Mesh(
           geo(ctx.roundedBox(A.table.w, A.table.h, A.table.d)),
-          keep(new THREE.MeshPhysicalMaterial({
-            color: A.table.color, roughness: 0.52, metalness: 0.04,
-            normalMap: woodNormal,
-            normalScale: new THREE.Vector2(0.5, 0.5),
-            roughnessMap: woodRough,
-            clearcoat: 0.3, clearcoatRoughness: 0.45,
-            envMapIntensity: 0.5 })));
+          keep(ctx.material("varnishedWood", { color: A.table.color })));
         scene.add(table);
 
+        /* A bench is not a slab. The apron below the top, the moulded lip that
+           runs round the front edge and the legs are what give it thickness and
+           somewhere for the key light to break. All are chamfered, so every one
+           of them carries its own highlight line. */
+        var benchDark = ctx.wood("walnut", { repeat: [3, 1] });
+        keep(benchDark);
+
+        var apron = new THREE.Mesh(
+          keep(ctx.roundedBox(A.table.w * 0.96, 0.30, A.table.d * 0.92, 0.03)),
+          benchDark);
+        apron.position.set(0, -A.table.h / 2 - 0.13, 0);
+        scene.add(apron);
+
+        // a moulded lip proud of the front edge, the detail closest to camera
+        var lip = new THREE.Mesh(
+          keep(ctx.roundedBox(A.table.w + 0.10, 0.10, 0.16, 0.04)),
+          benchDark);
+        lip.position.set(0, A.table.h / 2 - 0.045, A.table.d / 2 + 0.03);
+        scene.add(lip);
+
+        var legGeo = keep(ctx.roundedBox(0.28, 0.9, 0.28, 0.035));
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) {
+          var leg = new THREE.Mesh(legGeo, benchDark);
+          leg.position.set(c[0] * (A.table.w / 2 - 0.28),
+                           -A.table.h / 2 - 0.48,
+                           c[1] * (A.table.d / 2 - 0.28));
+          scene.add(leg);
+        });
+
+        // the sound block, turned: a chamfered rim and a dished top
+        var BR = A.block.r, BH = A.block.h;
         var block = new THREE.Mesh(
-          geo(new THREE.CylinderGeometry(A.block.r, A.block.r, A.block.h, 48)),
-          mat({ color: A.block.color, roughness: 0.5 }));
+          keep(new THREE.LatheGeometry([
+            [0, -BH / 2], [BR * 0.92, -BH / 2], [BR, -BH * 0.28],
+            [BR, BH * 0.28], [BR * 0.93, BH / 2],
+            [BR * 0.72, BH / 2], [BR * 0.66, BH * 0.34], [0, BH * 0.30]
+          ].map(function (q) { return new THREE.Vector2(q[0], q[1]); }), 128)),
+          ctx.wood("mahogany", { repeat: [2, 1] }));
         block.position.set(0, A.table.h / 2 + A.block.h / 2, -1.1);
         scene.add(block);
 
@@ -215,19 +244,88 @@
         var IS_GRANT = [true, false];
 
         // ---- gavel ----
-        var gavel = new THREE.Group();
-        var handle = new THREE.Mesh(
-          geo(new THREE.CylinderGeometry(A.gavel.handleR, A.gavel.handleR, A.gavel.handleL, 48)),
-          mat({ color: A.gavel.color, roughness: 0.55 }));
-        handle.rotation.z = Math.PI / 2;
-        handle.position.x = A.gavel.handleL / 2 - 0.1;
-        var head = new THREE.Mesh(
-          geo(new THREE.CylinderGeometry(A.gavel.headR, A.gavel.headR, A.gavel.headL, 48)),
-          mat({ color: A.gavel.color, roughness: 0.4, metalness: 0.1 }));
-        head.rotation.x = Math.PI / 2;
-        gavel.add(handle); gavel.add(head);
-        gavel.rotation.z = 0.25;
-        scene.add(gavel);
+        /* The gavel is a turned object, so it is built the way a turned object
+           is made: lathe profiles revolved about the axis. Two cylinders could
+           never carry the chamfered strike faces, the waist of the handle or
+           the swell at the butt, and those are the details that read as wood
+           on a workbench rather than as primitives.
+
+           Profiles are in lathe space: x is radius, y runs along the axis. */
+        function lathe(profile, segments) {
+          var pts = profile.map(function (p) { return new THREE.Vector2(p[0], p[1]); });
+          // the gavel is the object the player looks at most; 128 around the axis
+          return keep(new THREE.LatheGeometry(pts, segments || 128));
+        }
+
+        var HR = A.gavel.headR, HL = A.gavel.headL / 2;
+        var headGeo = lathe([
+          [0, -HL], [HR * 0.55, -HL], [HR * 0.86, -HL * 0.94],   // chamfered strike face
+          [HR * 0.99, -HL * 0.80], [HR * 0.96, -HL * 0.42],
+          [HR * 1.00, 0], [HR * 0.96, HL * 0.42],                 // slight belly
+          [HR * 0.99, HL * 0.80], [HR * 0.86, HL * 0.94],
+          [HR * 0.55, HL], [0, HL]
+        ]);
+
+        var hr = A.gavel.handleR, hl = A.gavel.handleL;
+        var handleGeo = lathe([
+          [0, 0], [hr * 0.90, 0], [hr * 1.02, hl * 0.03],         // butt, with a swell
+          [hr * 0.86, hl * 0.10], [hr * 0.74, hl * 0.42],         // waist
+          [hr * 0.78, hl * 0.72], [hr * 0.92, hl * 0.93],
+          [hr * 0.86, hl], [0, hl]
+        ]);
+
+        // the brass ferrule where the handle enters the head
+        var ferruleGeo = lathe([
+          [0, 0], [hr * 1.28, 0], [hr * 1.34, 0.03],
+          [hr * 1.34, 0.10], [hr * 1.22, 0.13], [0, 0.13]
+        ]);
+
+        var woodMat   = ctx.wood("walnut", { repeat: [2, 1] });
+        var brassMat  = ctx.material("brass");
+        keep(woodMat); keep(brassMat);
+
+        /* A gavel pivots at the hand. Everything hangs off this group, and it
+           is the group that moves between targets, so the head always travels
+           on an arc rather than sliding through the air. */
+        var gavelPivot = new THREE.Group();
+        var gavel = new THREE.Group();          // the tool itself, hung off the pivot
+        gavelPivot.add(gavel);
+
+        var handle = new THREE.Mesh(handleGeo, woodMat);
+        handle.rotation.z = Math.PI / 2;        // lay the axis along -x, butt at origin
+        handle.position.x = 0;
+        gavel.add(handle);
+
+        var ferrule = new THREE.Mesh(ferruleGeo, brassMat);
+        ferrule.rotation.z = Math.PI / 2;
+        ferrule.position.x = -hl * 0.86;
+        gavel.add(ferrule);
+
+        var head = new THREE.Mesh(headGeo, woodMat);
+        head.rotation.x = Math.PI / 2;          // barrel across the swing
+        head.position.x = -hl;
+        gavel.add(head);
+
+        /* Rest pose.
+
+           The tool hangs down and to the left of the hand, so at angle t the
+           head sits at hl*(-cos t, -sin t) from the pivot. The hand is placed
+           from that relation, not guessed, so the head hovers just clear of
+           whichever ruling paper is selected instead of floating off the bench.
+
+           Larger angle swings the head lower: RAISED is the shallow angle with
+           the head lifted, CONTACT the deep one with it down on the paper. */
+        var G_REST = 0.62, G_RAISED = 0.16, G_CONTACT = 0.98;
+        var GAVEL_HOVER = A.table.h / 2 + 0.46;   // head height above the bench
+        function pivotFor(x, z, angle) {
+          return new THREE.Vector3(
+            x + hl * Math.cos(angle),
+            GAVEL_HOVER + hl * Math.sin(angle),
+            z);
+        }
+        gavel.rotation.z = G_REST;
+        gavelPivot.position.copy(pivotFor(-1.75, 0.45 - 0.9, G_REST));
+        scene.add(gavelPivot);
 
         // ---- state ----
         var selected = 0;
@@ -596,9 +694,22 @@
             var targetX = papers[selected].position.x;
 
             if (state === "aim") {
-              gavel.position.x += (targetX - gavel.position.x) * Math.min(1, dt * 8);
-              gavel.position.y = A.gavel.hoverY + Math.sin(bob * 2.2) * 0.06;
-              gavel.position.z = papers[selected].position.z;
+              /* The pivot moves; the tool hangs off it. Swinging across to the
+                 other ruling therefore arcs, and the head lags a little behind
+                 the hand because it has mass. */
+              var want = pivotFor(targetX, papers[selected].position.z - 0.9, G_REST);
+              var dx = want.x - gavelPivot.position.x;
+              // the idle bob is part of the target, never added to the position:
+              // adding it each frame against a soft lerp integrates it into a
+              // swing many times its own amplitude, which is what was driving
+              // the head down through the ruling paper
+              want.y += Math.sin(bob * 2.2) * 0.035;
+              gavelPivot.position.lerp(want, Math.min(1, dt * 6));
+              // hard floor: the head may never reach the paper while idling
+              var minY = pivotFor(targetX, 0, G_REST).y - 0.02;
+              if (gavelPivot.position.y < minY) gavelPivot.position.y = minY;
+              // the head trails the hand while it travels, because it has mass
+              gavel.rotation.z += ((G_REST - dx * 0.22) - gavel.rotation.z) * Math.min(1, dt * 7);
 
               var k = ctx.keys;
               if (k.ArrowLeft && !prevKeys.ArrowLeft)  { selected = 0; highlight(); }
@@ -607,21 +718,40 @@
               prevKeys = { ArrowLeft: k.ArrowLeft, ArrowRight: k.ArrowRight,
                            Enter: k.Enter, Space: k.Space };
             } else if (state === "striking") {
+              /* Five beats, not one drop. The anticipation is the beat that
+                 sells the weight, and it is the one the old vertical slide had
+                 no room for. Angles are rotations of the tool about the hand,
+                 so the head always arrives on an arc and lands face-flat on
+                 the ruling paper. */
               strikeT += dt;
-              var down = 0.16;
-              if (strikeT <= down) {
-                var f = strikeT / down;
-                gavel.position.y = A.gavel.hoverY - (A.gavel.hoverY - A.gavel.strikeY) * f * f;
+              var LIFT = 0.14, SWING = 0.10;   // seconds
+              var REST = G_REST, RAISED = G_RAISED, CONTACT = G_CONTACT;
+              if (strikeT <= LIFT) {
+                // 1-2. settle and anticipate: rotate back, lifting the head away
+                var f = smooth(strikeT / LIFT);
+                gavel.rotation.z = REST + (RAISED - REST) * f;
+              } else if (strikeT <= LIFT + SWING) {
+                // 3. swing: accelerating, so it is fastest just before contact
+                var g = (strikeT - LIFT) / SWING;
+                gavel.rotation.z = RAISED + (CONTACT - RAISED) * (g * g);
               } else {
-                gavel.position.y = A.gavel.strikeY;
+                // 4. impact: hard stop, and everything fires on this frame
+                gavel.rotation.z = CONTACT;
                 papers[selected].scale.set(1.06, 1, 1.06);
+                ctx.shake(0.055, 0.16);
                 state = "verdict";
+                strikeT = 0;
                 registerRuling(selected);
               }
             } else {
+              // 5. recoil and settle: a small over-damped bounce back to rest
+              strikeT += dt;
+              var bounce = Math.exp(-strikeT * 7) * Math.sin(strikeT * 26) * 0.16;
+              gavel.rotation.z += ((G_REST + bounce) - gavel.rotation.z) * Math.min(1, dt * 9);
               papers[selected].scale.x += (1 - papers[selected].scale.x) * dt * 6;
               papers[selected].scale.z += (1 - papers[selected].scale.z) * dt * 6;
-              gavel.position.y += (A.gavel.strikeY + 0.25 - gavel.position.y) * dt * 4;
+              var rest = pivotFor(papers[selected].position.x, papers[selected].position.z - 0.9, G_REST);
+              gavelPivot.position.lerp(rest, Math.min(1, dt * 4));
             }
           },
 

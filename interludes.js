@@ -275,7 +275,7 @@ function play(id, params) {
        even overcast. Kept near the floor here so it barely lifts the ambient,
        then raised per material through envMapIntensity on the surfaces that
        should actually reflect: metal, glass, polished stone, varnish. */
-    scene.environmentIntensity = def.envIntensity != null ? def.envIntensity : 0.06;
+    scene.environmentIntensity = def.envIntensity != null ? def.envIntensity : 1.0;
     room.dispose && room.dispose();
     pmrem.dispose();
   }).catch((e) => {
@@ -311,7 +311,62 @@ function play(id, params) {
     // proportional by default, clamped so a thin panel cannot round itself away
     let r = radius != null ? radius : smallest * 0.09;
     r = Math.max(0.002, Math.min(r, smallest * 0.48));
-    return new RoundedBoxGeometry(w, h, d, segments || 3, r);
+    // 6 segments across the chamfer: at 3 the fillet itself facets, which
+    // defeats the point of having one
+    return new RoundedBoxGeometry(w, h, d, segments || 6, r);
+  }
+
+  /* A turned part rather than a raw cylinder. Real turned stock has a chamfer
+     where the wall meets the end face, and that chamfer is what reads as a
+     manufactured edge. Drop-in replacement for CylinderGeometry. */
+  function turnedCylinder(rTop, rBot, h, chamfer, segments) {
+    const rt = Math.abs(rTop), rb = Math.abs(rBot), hh = h / 2;
+    let c = chamfer != null ? chamfer : Math.min(rt, rb, h) * 0.10;
+    c = Math.max(0.001, Math.min(c, Math.min(rt, rb) * 0.4, hh * 0.4));
+    const pts = [
+      [0, -hh], [rb - c, -hh], [rb, -hh + c],
+      [rt, hh - c], [rt - c, hh], [0, hh]
+    ].map((q) => new THREE.Vector2(Math.max(0, q[0]), q[1]));
+    return new THREE.LatheGeometry(pts, segments || 64);
+  }
+
+  /* A base that reads as a built object: slab, moulded lip, apron. */
+  function plinth(w, h, d, mats, opts) {
+    const o = opts || {};
+    const top = mats.top || mats, sub = mats.sub || mats.top || mats;
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(roundedBox(w, h, d, o.radius), top));
+    const lipH = o.lipH != null ? o.lipH : Math.max(0.06, h * 0.34);
+    const lip = new THREE.Mesh(roundedBox(w + h * 0.30, lipH, h * 0.55, lipH * 0.35), sub);
+    lip.position.set(0, h / 2 - lipH * 0.55, d / 2 + h * 0.12);
+    g.add(lip);
+    const apron = new THREE.Mesh(roundedBox(w * 0.96, h * 0.95, d * 0.93, h * 0.12), sub);
+    apron.position.y = -h * 0.92;
+    g.add(apron);
+    return g;
+  }
+
+  /* Foot plate, capping plate and optional bands: the trim a manufactured bar
+     or column would carry. */
+  function fitTrim(target, opts) {
+    const o = opts || {};
+    const w = o.w, d = o.d != null ? o.d : o.w;
+    const mat = o.material || material("machinedSteel", { color: 0x8d97a6 });
+    const g = new THREE.Group();
+    const t = o.plate != null ? o.plate : Math.max(0.04, w * 0.09);
+    if (o.foot !== false) {
+      const foot = new THREE.Mesh(roundedBox(w * 1.34, t, d * 1.34, t * 0.3), mat);
+      foot.position.y = t / 2; g.add(foot);
+    }
+    if (o.cap !== false) {
+      const cap = new THREE.Mesh(roundedBox(w * 1.16, t * 0.8, d * 1.16, t * 0.28), mat);
+      cap.name = "trimCap"; g.add(cap);
+    }
+    for (let i = 1; i <= (o.bands || 0); i++) {
+      const b = new THREE.Mesh(roundedBox(w * 1.08, t * 0.45, d * 1.08, t * 0.16), mat);
+      b.name = "trimBand" + i; g.add(b);
+    }
+    return g;
   }
 
   /* Weld duplicated vertices so smooth shading works across a surface rather
@@ -322,6 +377,100 @@ function play(id, params) {
       merged.computeVertexNormals();
       return merged;
     } catch (e) { return geo; }
+  }
+
+  /* ---- material families ----------------------------------------------
+     envMapIntensity multiplies with scene.environmentIntensity and scales both
+     the diffuse and specular contribution of the environment. That dial is what
+     separates "reflective" from "flooded": the scene environment stays neutral
+     and each family decides how much of it it may take. */
+  const FAMILIES = {
+    varnishedWood: { roughness: 0.52, metalness: 0.04, envMapIntensity: 0.18,
+                     clearcoat: 0.30, clearcoatRoughness: 0.45, maps: "wood" },
+    rawTimber:     { roughness: 0.86, metalness: 0.00, envMapIntensity: 0.08, maps: "wood" },
+    paper:         { roughness: 0.94, metalness: 0.00, envMapIntensity: 0.04, maps: "paper" },
+    polishedStone: { roughness: 0.40, metalness: 0.05, envMapIntensity: 0.35,
+                     clearcoat: 0.35, clearcoatRoughness: 0.25, maps: "marble" },
+    machinedSteel: { roughness: 0.32, metalness: 1.00, envMapIntensity: 1.00, wear: 0.9 },
+    brass:         { roughness: 0.40, metalness: 1.00, envMapIntensity: 0.90, color: 0xb98f4a, wear: 1.1 },
+    paintedMetal:  { roughness: 0.45, metalness: 0.00, envMapIntensity: 0.45,
+                     clearcoat: 0.55, clearcoatRoughness: 0.30, wear: 0.8 },
+    rubber:        { roughness: 0.93, metalness: 0.00, envMapIntensity: 0.06, wear: 0.5 },
+    glass:         { roughness: 0.05, metalness: 0.00, envMapIntensity: 1.20,
+                     transmission: 1.0, thickness: 0.5, ior: 1.5, transparent: true }
+  };
+
+  const familyMaps = {};
+  function wearMap(key, tiles, strength) {
+    return grayTexture("wear_" + key, 512, 512,
+                       surfaces.grime(1, strength == null ? 1 : strength),
+                       tiles || 2, tiles || 2);
+  }
+  function mapsFor(kind) {
+    if (familyMaps[kind]) return familyMaps[kind];
+    let m = {};
+    if (kind === "wood") {
+      const h = surfaces.wood(11, 1.1);
+      m = { normalMap: normalTexture("f_wood", 512, 512, h, 1.5, 2, 1),
+            roughnessMap: grayTexture("f_woodR", 512, 512, h, 2, 1),
+            normalScale: new THREE.Vector2(0.5, 0.5) };
+    } else if (kind === "paper") {
+      m = { normalMap: normalTexture("f_paper", 256, 256, surfaces.paper(0.55), 0.55, 3, 4),
+            roughnessMap: grayTexture("f_paperR", 256, 256, surfaces.paper(0.35), 3, 4),
+            normalScale: new THREE.Vector2(0.3, 0.3) };
+    } else if (kind === "marble") {
+      const h = surfaces.marble(1);
+      m = { normalMap: normalTexture("f_marble", 512, 512, h, 1.1, 3, 1),
+            roughnessMap: grayTexture("f_marbleR", 512, 512, h, 3, 1),
+            normalScale: new THREE.Vector2(0.45, 0.45) };
+    }
+    familyMaps[kind] = m;
+    return m;
+  }
+
+  /* Boards and benches across the modules should read as timber, and as
+     different timber: a card table is not a laboratory bench. */
+  const WOOD_TONES = { walnut: 0x4a3324, oak: 0x8a6640, teak: 0x71492a,
+                       mahogany: 0x5e3324, ash: 0x9c7d58, ebony: 0x2e2620 };
+
+  function material(family, overrides) {
+    const f = FAMILIES[family];
+    if (!f) { console.warn("[interludes] unknown material family:", family);
+              return new THREE.MeshStandardMaterial(overrides || {}); }
+    const o = Object.assign({}, f, overrides || {});
+    const kind = o.maps; delete o.maps;
+    const wear = o.wear; delete o.wear;
+    if (kind) Object.assign(o, mapsFor(kind), overrides || {});
+    if (!kind && wear && !o.roughnessMap) o.roughnessMap = wearMap(String(wear), 2, wear);
+    const physical = o.clearcoat != null || o.transmission != null || o.ior != null;
+    return physical ? new THREE.MeshPhysicalMaterial(o) : new THREE.MeshStandardMaterial(o);
+  }
+
+  /* ctx.wood("oak", { repeat: [4, 2] }). Maps are shared, so a different repeat
+     clones the texture view: same image, different tiling. */
+  function wood(tone, opts) {
+    const o = Object.assign({}, opts || {});
+    const rep = o.repeat; delete o.repeat;
+    const raw = o.raw; delete o.raw;
+    const m = material(raw ? "rawTimber" : "varnishedWood",
+                       Object.assign({ color: WOOD_TONES[tone] != null ? WOOD_TONES[tone] : WOOD_TONES.oak }, o));
+    if (rep && m.normalMap) {
+      const n = m.normalMap.clone(); n.repeat.set(rep[0], rep[1]); n.needsUpdate = true;
+      const r = m.roughnessMap.clone(); r.repeat.set(rep[0], rep[1]); r.needsUpdate = true;
+      m.normalMap = n; m.roughnessMap = r;
+    }
+    return m;
+  }
+
+  /* What every scene's local mat() helper routes through, so nothing takes the
+     environment by accident and everything gets a faint wear layer. */
+  function tunedStandard(opts) {
+    const o = Object.assign({ envMapIntensity: 0.10 }, opts || {});
+    if (!o.roughnessMap && !o.map && o.transparent !== true) {
+      o.roughnessMap = wearMap("generic", 3, 0.55);
+    }
+    const physical = o.clearcoat != null || o.transmission != null || o.ior != null;
+    return physical ? new THREE.MeshPhysicalMaterial(o) : new THREE.MeshStandardMaterial(o);
   }
 
   const _bbSize = new THREE.Vector3();
@@ -549,6 +698,20 @@ function play(id, params) {
         return 0.5 + (g1 + g2) * 0.16 + (Math.random() - 0.5) * 0.05;
       };
     },
+    /* Wear and grime. Real surfaces are dirtier in the recesses and polished
+       where hands pass. Used to vary roughness rather than colour, so it reads
+       as a used surface instead of a dirty texture. */
+    grime(scale, strength) {
+      const k = scale || 1, a = strength == null ? 1 : strength;
+      return (x, y) => {
+        const u = (x / 512) * TAU * k, v = (y / 512) * TAU * k;
+        let t = Math.sin(u * 1.3 + Math.sin(v * 0.9) * 1.7) * 0.6;
+        t += Math.sin(u * 2.7 + v * 1.9) * 0.3;
+        t += Math.sin(u * 5.1 + Math.sin(v * 3.3) * 0.8) * 0.16;
+        t += (Math.random() - 0.5) * 0.10;
+        return 0.5 + t * 0.28 * a;
+      };
+    },
     // turbulent veining for polished stone
     marble(scale) {
       const k = scale || 1;
@@ -697,7 +860,8 @@ function play(id, params) {
     canvasTexture, labelTexture, makeLabel, tune, texScale,
     // procedural surface maps: ctx.surfaces.wood(), then grayTexture/normalTexture
     surfaces, grayTexture, normalTexture,
-    roundedBox, smoothGeometry,
+    roundedBox, smoothGeometry, turnedCylinder, plinth, fitTrim,
+    material, tunedStandard, families: FAMILIES, wood, woodTones: WOOD_TONES,
     pointer, raycaster, keys,
     quality: Quality,
     // scenes that add geometry after build call this so the new objects both

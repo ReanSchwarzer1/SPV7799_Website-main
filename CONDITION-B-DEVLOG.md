@@ -943,3 +943,242 @@ one app instance remains, and all 15 scenes still build at 120 fps with zero err
 `READ ME FIRST.txt` now tells testers that a second double-click is expected to do
 nothing.
 
+---
+
+## 18. Phase 2c — the material library
+
+### The dial that actually mattered
+
+Materials were being tuned per object, so wood in one module and a plinth in another were
+different substances. Nine named families now live in the harness and every scene draws
+from them: varnished hardwood, raw timber, paper, polished stone, machined steel, brass,
+painted metal, rubber, glass.
+
+The important field in each is `envMapIntensity`. In three it multiplies with
+`scene.environmentIntensity` and scales **both** the diffuse and the specular contribution
+of the environment. That single dial is what separates "reflective" from "flooded", and
+getting it wrong in either direction is exactly what made the two earlier passes look
+first plastic and then washed out.
+
+A problem 2a left behind, found while starting this: with the scene environment pushed
+down to 0.06, **no material in the game except the bench was getting any meaningful
+reflection at all.** That is why things still read as plastic after the lighting fix. 2a
+solved the flooding by removing the environment from everything rather than by
+redistributing it.
+
+The architecture is now the right way round:
+
+- `scene.environmentIntensity` is back to neutral (1.0)
+- each family decides how much of it it is allowed to take: paper 0.04, raw timber 0.08,
+  varnished wood 0.18, stone 0.35, painted metal 0.45, brass 0.90, steel 1.00, glass 1.20
+
+### The safety net
+
+Ten of the twelve scenes funnel every material through an identical local helper:
+
+```js
+function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+```
+
+Raising the scene environment to neutral would have given every one of those materials
+full environment by default and brought the flood straight back. All ten now route
+through `ctx.tunedStandard()`, which applies a deliberately low `envMapIntensity` of 0.10
+unless a material asks for more. Nothing takes the environment by accident; anything that
+should reflect has to say so.
+
+Verified: the courtroom keeps its low-key mood with the environment at neutral.
+
+### Adopted so far
+
+| Object | Family |
+|---|---|
+| Courtroom bench | `varnishedWood` |
+| Antitrust hill | `polishedStone` |
+| Antitrust ball | `brass` |
+
+`glass` is defined and ready but deliberately unapplied: transmission renders through a
+separate pass and belongs with the hero objects in 2d, where it can be measured.
+
+### Honest limit
+
+The library is in place, but the visible payoff is small so far, and the antitrust room
+shows why. Its hill is 57 thin box segments, so giving it a stone material cannot make it
+read as stone — the form is wrong, not the surface. The same is true of several scenes.
+
+**2c was the necessary groundwork, not the visible win.** The visible win is 2d: rebuilding
+the hero objects so there is something for these materials to sit on. That is where the
+gavel becomes a lathe with a brass band and a real strike, the sample domes and tubes
+become glass, and the hill becomes a continuous form.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| All 15 scenes build | yes, 0 console errors |
+| Frame budget | 120 fps, median 8.3 ms, p95 8.4 ms — unchanged since Phase 0 |
+| Flooding after raising the environment to neutral | none; courtroom mood preserved |
+| Legibility | unaffected |
+| Condition A untouched | yes |
+
+### Wooden bases
+
+The boards and platforms the props stand on were dark navy slabs, which is what made
+several modules read as diagrams rather than as places. Most are now timber, and
+deliberately *different* timber: a card table is not a laboratory bench.
+
+Six tones live in the harness (`walnut`, `oak`, `teak`, `mahogany`, `ash`, `ebony`) behind
+`ctx.wood(tone, { repeat })`. Grain maps are shared, so a different repeat clones the
+texture view rather than regenerating it: same image, different tiling.
+
+| Surface | Tone | Reasoning |
+|---|---|---|
+| Courtroom bench | varnished mid brown | the original, unchanged |
+| Market floor | oak, repeat 5x2 | a trading floor, pale and open |
+| Ward floor | walnut, repeat 4x2 | darker, closer, clinical |
+| Wage floor | teak, repeat 5x2 | warm, worn |
+| Patent race table | mahogany, repeat 3x2 | a card table, and the game is a gamble |
+| Clearing house board | ash, repeat 3x3 | reads as a drafting board |
+| Hall of systems floor | ebony, repeat 6x2 | still institutional, but timber not slab |
+
+Seven of the eight prop-bearing surfaces are now wood. The four record rooms and the
+reckoning keep their dark non-wood floors on purpose: the rooms are presentational and
+the monument should read as stone.
+
+Screenshots: `tools/verify-out-2c/`.
+
+---
+
+## 19. Phase 2d — the gavel
+
+### Models: what was actually available
+
+Poly Haven's model library is entirely CC0 and was the obvious first stop. It has wooden
+tables, desks and chairs. It has **no gavel or mallet of any kind**.
+
+The bench could have used a CC0 model, and it was rejected on merit rather than on effort:
+a coffee table or a school desk is the wrong object. A judge's bench is a wide, deep,
+panelled surface, and a correctly built procedural one reads better in context than a
+correctly licensed model of something else. So both hero objects are procedural, built
+properly.
+
+### The gavel is now a turned object
+
+Two cylinders can never carry the details that make a turned tool read as wood on a
+workbench. It is now three `LatheGeometry` profiles revolved about the axis:
+
+- **Head** — chamfered strike faces at both ends, a slight belly at the waist
+- **Handle** — a swell at the butt, a waist through the grip, thickening again at the neck
+- **Ferrule** — a brass band where the handle enters the head
+
+Materials come from the 2c library: `wood("walnut")` for the turned parts, `brass` for
+the ferrule, which is the first object in the build to use the metal family and actually
+reflect the environment.
+
+### The strike
+
+What it did before:
+
+```js
+gavel.rotation.z = 0.25;                                   // set once, never touched
+gavel.position.x += (targetX - gavel.position.x) * dt * 8; // slid sideways
+gavel.position.y  = hoverY - (hoverY - strikeY) * f * f;   // dropped straight down
+```
+
+It floated sideways and fell vertically, and it never rotated once. That is why it read as
+an object being moved rather than a tool being swung.
+
+Now everything is rotation about a pivot at the hand, and the head travels on an arc.
+
+**The pose is derived, not guessed.** At angle `t` the head sits at
+`hl * (-cos t, -sin t)` from the pivot, so `pivotFor(x, z, angle)` places the hand from
+that relation and the head lands exactly where it should. The first attempt hard-coded the
+pivot height and the gavel floated off the bench entirely, dragging the camera auto-fit
+out with it.
+
+**Five beats:**
+
+| Beat | What happens |
+|---|---|
+| Settle | the pivot eases to the chosen ruling; the head trails the hand, because it has mass |
+| Anticipation | rotate back to a shallow angle, lifting the head away. The beat that sells weight, and the one a vertical drop has no room for |
+| Swing | rotate forward on `g * g`, so it is fastest just before contact |
+| Impact | hard stop with the face flat on the paper. `ctx.shake(0.055, 0.16)` fires here, through the Phase 0 offset layer |
+| Recoil | `exp(-t * 7) * sin(t * 26)` — a small over-damped bounce back to rest |
+
+It strikes the **ruling paper**, as decided.
+
+### Verified
+
+Captured frame by frame through the debugger: rest (head hovering clear of the selected
+ruling, casting onto it), anticipation (head lifted, handle back), impact (head down flat
+on the paper, handle raised behind, camera kicked), and settle. No console errors, all 15
+scenes still building at 120 fps.
+
+Screenshots: `tools/verify-out-2d/`.
+
+---
+
+## 20. Phase 2e — not done
+
+Edge wear, grime in crevices and colour drift have **not** been implemented. 2d ran long:
+the gavel needed a geometry rebuild, an animation system and two attempts at the rest pose
+before it was right.
+
+2e is worth doing and it is the cheapest remaining item in the art direction document. It
+needs a grime and cavity map layered onto the existing procedural surfaces, plus edge wear
+on the brass and painted metal families. The material library from 2c already has the
+right shape for it: wear belongs on the family, not on individual objects.
+
+---
+
+## 21. The idle bob bug, and a detail pass
+
+### The gavel sank into the paper
+
+Reported after 2d: the gavel drifted down through the ruling paper while idling.
+
+The cause was an integration bug, not a clipping one:
+
+```js
+gavelPivot.position.lerp(want, Math.min(1, dt * 6));   // pull toward a target with no bob
+gavelPivot.position.y += Math.sin(bob * 2.2) * 0.04;   // then add the bob to the position
+```
+
+The bob was **added to the position every frame** while the lerp pulled toward a target
+that did not contain it. At 120 fps the lerp coefficient is about 0.05, so the addition
+integrates: the steady-state swing is roughly `amplitude / coefficient`, around 0.8 units
+rather than the 0.04 intended. Twenty times too far, and easily enough to drive the head
+through the paper.
+
+Fixed by putting the bob **in the target** instead of accumulating it onto the position,
+plus a hard floor so the head can never reach the paper while idling.
+
+Verified over six seconds of idle by sampling frames: the difference from the first frame
+oscillates (0.77, 0.16, 0.65, 0.66) rather than growing, which is the bob cycling. A
+sinking gavel would show a difference that climbs steadily.
+
+### Detail pass
+
+**Tessellation.** Chamfers on rounded boxes went from 3 segments to 6, because at 3 the
+fillet itself facets and defeats the point of having one. A further 73 curve segment
+counts were raised: cylinders and cones to 64, spheres to 64 x 40, torus to 32 x 128,
+capsules to 16 x 48, tubes to 128 x 24. The gavel's lathe profiles run at 128 around the
+axis, since it is the object the player looks at most.
+
+**The bench became furniture.** It was a slab. It now has an apron below the top, a
+moulded lip proud of the front edge (the detail closest to camera), and four legs, all
+chamfered so each carries its own highlight line, all in a darker walnut than the top.
+
+**The sound block became a turned piece** — a lathe profile with a chamfered rim and a
+dished top, in mahogany, instead of a plain cylinder.
+
+Frame cost of all of the above: none measurable. Still 120 fps, p95 8.4 ms, which has not
+moved since Phase 0.
+
+### Still outstanding in Phase 2
+
+- 2d: glass domes and tubes; the antitrust hill as a continuous form
+- 2d: the detail pass reached the courtroom properly. The other scenes have the
+  tessellation but not the sub-detail — no aprons, mouldings or fittings yet
+- 2e: wear and dirt, entirely
+

@@ -53,7 +53,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var labelTex = ctx.labelTexture;
         var makeLabel = ctx.makeLabel;
@@ -61,13 +61,35 @@
         // ---------- table ----------
         var table = new THREE.Mesh(
           keep(ctx.roundedBox(A.table.w, 0.3, A.table.d)),
-          mat({ color: A.table.color, roughness: 0.92 }));
+          ctx.wood("mahogany", { repeat: [3, 2] }));
         table.position.set(0, -0.15, 0);
         scene.add(table);
 
+        /* Substructure. A base with a moulded lip and an apron under it reads
+           as a built surface rather than a floating slab, and every one of
+           those edges is chamfered so it carries its own highlight. */
+        (function () {
+          var subMat = ctx.wood("walnut", { repeat: [3, 1] }); keep(subMat);
+          var W = A.table.w, H = 0.3, DD = A.table.d;
+          var lip = new THREE.Mesh(ctx.roundedBox(W + H * 0.5, H * 0.42, H * 0.7, H * 0.14), subMat);
+          lip.position.set(table.position.x, table.position.y + H * 0.30, table.position.z + DD / 2 + H * 0.12);
+          scene.add(lip);
+          var apron = new THREE.Mesh(ctx.roundedBox(W * 0.95, H * 0.9, DD * 0.92, H * 0.12), subMat);
+          apron.position.set(table.position.x, table.position.y - H * 0.85, table.position.z);
+          scene.add(apron);
+          var legGeo = ctx.roundedBox(H * 0.9, H * 3.2, H * 0.9, H * 0.12);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var leg = new THREE.Mesh(legGeo, subMat);
+            leg.position.set(table.position.x + c[0] * (W / 2 - H * 1.1),
+                             table.position.y - H * 2.3,
+                             table.position.z + c[1] * (DD / 2 - H * 1.1));
+            scene.add(leg);
+          });
+        })();
+
         // ---------- the prize ----------
         var prize = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.75, 0.75, 0.3, 48)),
+          keep(ctx.turnedCylinder(0.75, 0.75, 0.3)),
           mat({ color: 0xd9a441, roughness: 0.25, metalness: 0.4,
                 emissive: 0xd9a441, emissiveIntensity: 0.4 }));
         prize.position.set(0, 0.16, -2.9);
@@ -79,19 +101,28 @@
         // ---------- chip stacks ----------
         function makeStack(x, count, color, label, cost) {
           var grp = new THREE.Group();
-          var geo = keep(new THREE.CylinderGeometry(A.chip.r, A.chip.r, A.chip.h, 48));
+          var geo = keep(ctx.turnedCylinder(A.chip.r, A.chip.r, A.chip.h));
           var m = mat({ color: color, roughness: 0.4, metalness: 0.15,
                         emissive: color, emissiveIntensity: 0.22 });
+          // one geometry and one material for every chip in the stack, not one
+          // of each per chip
+          var rimGeo = keep(ctx.turnedCylinder(A.chip.r * 0.62, A.chip.r * 0.62,
+                                               A.chip.h * 1.04, A.chip.h * 0.2));
+          var rimMat = mat({ color: 0xf3f1ea, roughness: 0.55 });
           for (var i = 0; i < count; i++) {
             var c = new THREE.Mesh(geo, m);
             c.position.y = 0.06 + i * (A.chip.h + 0.008);
+            // an inlaid rim on the chip face, the way a real casino chip reads
+            var rim = new THREE.Mesh(rimGeo, rimMat);
+            rim.position.copy(c.position);
+            grp.add(rim);
             c.rotation.y = i * 0.24;
             grp.add(c);
           }
           grp.position.set(x, 0, 2.3);
           scene.add(grp);
           var hit = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(A.chip.r + 0.5, A.chip.r + 0.5, count * (A.chip.h + 0.008) + 0.7, 48)),
+            keep(ctx.turnedCylinder(A.chip.r + 0.5, A.chip.r + 0.5, count * (A.chip.h + 0.008) + 0.7)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.set(x, count * (A.chip.h + 0.008) / 2 + 0.2, 2.3);
           scene.add(hit);
@@ -106,6 +137,9 @@
         var stackLow = makeStack(3.6, A.chip.low, A.chip.lowColor, "LOW R&D", A.lowCost);
 
         // ---------- commit slot ----------
+        /* the commit slot is a machine, so it gets a mouth, a frame and feet */
+        var slotSteel = ctx.material("machinedSteel", { color: 0x8b949f });
+        keep(slotSteel);
         var slot = new THREE.Mesh(
           keep(ctx.roundedBox(A.slot.w, A.slot.h, A.slot.d)),
           mat({ color: A.slot.color, roughness: 0.7,
@@ -116,6 +150,23 @@
           { top: "COMMIT", sub: "your sealed bid", accent: "#fffb00", box: true }, 1.92, 0.96);
 
         // ---------- rival envelope ----------
+        (function () {
+          var mouth = new THREE.Mesh(
+            keep(ctx.roundedBox(A.slot.w * 1.10, 0.09, A.slot.d * 0.36, 0.025)), slotSteel);
+          mouth.position.set(slot.position.x, slot.position.y + A.slot.h * 0.5, slot.position.z + A.slot.d * 0.30);
+          scene.add(mouth);
+          var frame = new THREE.Mesh(
+            keep(ctx.roundedBox(A.slot.w * 1.16, 0.10, A.slot.d * 1.16, 0.03)), slotSteel);
+          frame.position.set(slot.position.x, slot.position.y - A.slot.h * 0.52, slot.position.z);
+          scene.add(frame);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var foot = new THREE.Mesh(keep(ctx.turnedCylinder(0.07, 0.09, 0.10, 0.02)), slotSteel);
+            foot.position.set(slot.position.x + c[0] * A.slot.w * 0.48,
+                              slot.position.y - A.slot.h * 0.62,
+                              slot.position.z + c[1] * A.slot.d * 0.44);
+            scene.add(foot);
+          });
+        })();
         var envelope = new THREE.Mesh(
           keep(ctx.roundedBox(2.0, 0.08, 1.3)),
           mat({ color: 0xe8e2cf, roughness: 0.85 }));

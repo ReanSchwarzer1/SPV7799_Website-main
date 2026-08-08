@@ -61,7 +61,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var labelTex = ctx.labelTexture;
         var makeLabel = ctx.makeLabel;
@@ -69,21 +69,84 @@
         // ---------- floor ----------
         var floor = new THREE.Mesh(
           keep(ctx.roundedBox(18, 0.3, 8)),
-          mat({ color: 0x141821, roughness: 0.93 }));
+          ctx.wood("teak", { repeat: [5, 2] }));
         floor.position.set(0, -0.15, 0);
         scene.add(floor);
+
+        /* Substructure. A base with a moulded lip and an apron under it reads
+           as a built surface rather than a floating slab, and every one of
+           those edges is chamfered so it carries its own highlight. */
+        (function () {
+          var subMat = ctx.wood("walnut", { repeat: [3, 1] }); keep(subMat);
+          var W = 18, H = 0.3, DD = 8;
+          var lip = new THREE.Mesh(ctx.roundedBox(W + H * 0.5, H * 0.42, H * 0.7, H * 0.14), subMat);
+          lip.position.set(floor.position.x, floor.position.y + H * 0.30, floor.position.z + DD / 2 + H * 0.12);
+          scene.add(lip);
+          var apron = new THREE.Mesh(ctx.roundedBox(W * 0.95, H * 0.9, DD * 0.92, H * 0.12), subMat);
+          apron.position.set(floor.position.x, floor.position.y - H * 0.85, floor.position.z);
+          scene.add(apron);
+          var legGeo = ctx.roundedBox(H * 0.9, H * 3.2, H * 0.9, H * 0.12);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var leg = new THREE.Mesh(legGeo, subMat);
+            leg.position.set(floor.position.x + c[0] * (W / 2 - H * 1.1),
+                             floor.position.y - H * 2.3,
+                             floor.position.z + c[1] * (DD / 2 - H * 1.1));
+            scene.add(leg);
+          });
+        })();
 
         // ---------- the worker ----------
         var worker = new THREE.Group();
         var body = new THREE.Mesh(
-          keep(new THREE.CapsuleGeometry(0.28, 0.75, 12, 32)),
+          // torso: tapered, not a plain capsule
+          keep(ctx.turnedCylinder(0.20, 0.30, 0.86, 0.05)),
           mat({ color: 0x9aa6b4, roughness: 0.7 }));
         body.position.y = 0.72;
         var head = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(0.24, 48, 32)),
+          keep(new THREE.SphereGeometry(0.24, 64, 40)),
           mat({ color: 0xb8c2cf, roughness: 0.6 }));
         head.position.y = 1.42;
+        /* Shoulders, arms, hips and legs, so the scene has a person standing in
+           it rather than a pill-shaped marker. All turned stock, so every limb
+           carries a chamfer at its ends. */
+        var skinMat = mat({ color: 0xb8c2cf, roughness: 0.62 });
+        var clothMat = mat({ color: 0x8b96a5, roughness: 0.78 });
+
+        var shoulders = new THREE.Mesh(keep(ctx.turnedCylinder(0.15, 0.15, 0.62, 0.04)), clothMat);
+        shoulders.rotation.z = Math.PI / 2;
+        shoulders.position.y = 1.10;
+
+        var neck = new THREE.Mesh(keep(ctx.turnedCylinder(0.075, 0.09, 0.14, 0.02)), skinMat);
+        neck.position.y = 1.22;
+
+        var armGeo = keep(ctx.turnedCylinder(0.068, 0.082, 0.66, 0.025));
+        var handGeo = keep(new THREE.SphereGeometry(0.075, 48, 32));
+        [-1, 1].forEach(function (sgn) {
+          var arm = new THREE.Mesh(armGeo, clothMat);
+          arm.position.set(sgn * 0.34, 0.80, 0);
+          arm.rotation.z = sgn * 0.13;
+          worker.add(arm);
+          var hand = new THREE.Mesh(handGeo, skinMat);
+          hand.position.set(sgn * 0.40, 0.46, 0);
+          worker.add(hand);
+        });
+
+        var hips = new THREE.Mesh(keep(ctx.turnedCylinder(0.28, 0.24, 0.20, 0.05)), clothMat);
+        hips.position.y = 0.31;
+
+        var legGeo = keep(ctx.turnedCylinder(0.095, 0.115, 0.62, 0.03));
+        var bootGeo = keep(ctx.roundedBox(0.20, 0.10, 0.30, 0.035));
+        [-1, 1].forEach(function (sgn) {
+          var leg = new THREE.Mesh(legGeo, clothMat);
+          leg.position.set(sgn * 0.13, 0.0, 0);
+          worker.add(leg);
+          var boot = new THREE.Mesh(bootGeo, mat({ color: 0x4a4f58, roughness: 0.85 }));
+          boot.position.set(sgn * 0.13, -0.34, 0.04);
+          worker.add(boot);
+        });
+
         worker.add(body); worker.add(head);
+        worker.add(shoulders); worker.add(neck); worker.add(hips);
         worker.position.set(-6.4, 0, 0);
         scene.add(worker);
         var wageLabel = makeLabel(-6.9, 3.3, 0,
@@ -92,13 +155,23 @@
 
         // ---------- one month of medicine ----------
         var bottle = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.42, 0.42, 1.0, 48)),
+          keep(ctx.turnedCylinder(0.42, 0.42, 1.0)),
           mat({ color: 0xd4573f, roughness: 0.35,
                 emissive: 0xd4573f, emissiveIntensity: 0.25 }));
         bottle.position.set(6.4, 0.5, 0);
         scene.add(bottle);
+        (function () {
+          var capMat = mat({ color: 0xe8e8ea, roughness: 0.42 });
+          var cap = new THREE.Mesh(keep(ctx.turnedCylinder(0.44, 0.46, 0.22, 0.03)), capMat);
+          cap.position.set(6.4, 1.11, 0); scene.add(cap);
+          var neck = new THREE.Mesh(keep(ctx.turnedCylinder(0.36, 0.36, 0.10, 0.02)), capMat);
+          neck.position.set(6.4, 0.98, 0); scene.add(neck);
+          var band = new THREE.Mesh(keep(ctx.turnedCylinder(0.435, 0.435, 0.34, 0.02)),
+                                    mat({ color: 0xf2efe6, roughness: 0.9 }));
+          band.position.set(6.4, 0.42, 0); scene.add(band);
+        })();
         var cap = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(0.46, 0.46, 0.2, 48)),
+          keep(ctx.turnedCylinder(0.46, 0.46, 0.2)),
           mat({ color: 0xe8ecf2, roughness: 0.4 }));
         cap.position.set(6.4, 1.08, 0);
         scene.add(cap);
@@ -143,6 +216,16 @@
             mat({ color: 0x2a3140, roughness: 0.75 }));
           base.position.set(x, 0.14, 2.9);
           scene.add(base);
+          (function () {
+            var steel = ctx.material("machinedSteel", { color: 0x8a939f }); keep(steel);
+            var boss = new THREE.Mesh(keep(ctx.turnedCylinder(0.10, 0.10, 0.62, 0.02)), steel);
+            boss.rotation.z = Math.PI / 2;
+            boss.position.copy(base.position); boss.position.y += 0.10;
+            scene.add(boss);
+            var plate = new THREE.Mesh(keep(ctx.roundedBox(1.72, 0.06, 0.98, 0.02)), steel);
+            plate.position.copy(base.position); plate.position.y -= 0.16;
+            scene.add(plate);
+          })();
           var lever = new THREE.Mesh(
             keep(ctx.roundedBox(A.switchGeom.w, A.switchGeom.h, A.switchGeom.d)),
             mat({ color: 0xd9a441, roughness: 0.35, metalness: 0.2,

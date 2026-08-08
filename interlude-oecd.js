@@ -56,7 +56,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var labelTex = ctx.labelTexture;
         var makeLabel = ctx.makeLabel;
@@ -70,9 +70,31 @@
 
         var floor = new THREE.Mesh(
           keep(ctx.roundedBox(19, 0.3, 6)),
-          mat({ color: 0x141821, roughness: 0.93 }));
+          ctx.wood("ebony", { repeat: [6, 2] }));
         floor.position.set(0, -1.85, 0);
         scene.add(floor);
+
+        /* Substructure. A base with a moulded lip and an apron under it reads
+           as a built surface rather than a floating slab, and every one of
+           those edges is chamfered so it carries its own highlight. */
+        (function () {
+          var subMat = ctx.wood("walnut", { repeat: [3, 1] }); keep(subMat);
+          var W = 19, H = 0.3, DD = 6;
+          var lip = new THREE.Mesh(ctx.roundedBox(W + H * 0.5, H * 0.42, H * 0.7, H * 0.14), subMat);
+          lip.position.set(floor.position.x, floor.position.y + H * 0.30, floor.position.z + DD / 2 + H * 0.12);
+          scene.add(lip);
+          var apron = new THREE.Mesh(ctx.roundedBox(W * 0.95, H * 0.9, DD * 0.92, H * 0.12), subMat);
+          apron.position.set(floor.position.x, floor.position.y - H * 0.85, floor.position.z);
+          scene.add(apron);
+          var legGeo = ctx.roundedBox(H * 0.9, H * 3.2, H * 0.9, H * 0.12);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var leg = new THREE.Mesh(legGeo, subMat);
+            leg.position.set(floor.position.x + c[0] * (W / 2 - H * 1.1),
+                             floor.position.y - H * 2.3,
+                             floor.position.z + c[1] * (DD / 2 - H * 1.1));
+            scene.add(leg);
+          });
+        })();
 
         // ---------- pedestals ----------
         var pods = [];
@@ -80,7 +102,7 @@
         A.systems.forEach(function (s, i) {
           var x = -((total - 1) * A.gap) / 2 + i * A.gap;
           var base = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(0.95, 1.05, 0.34, 48)),
+            keep(ctx.turnedCylinder(0.95, 1.05, 0.34)),
             mat({ color: 0x232a36, roughness: 0.8 }));
           base.position.set(x, -1.53, 0);
           scene.add(base);
@@ -93,6 +115,20 @@
                     emissive: color, emissiveIntensity: 0.22 }));
             m.position.set(x + offset, -1.36 + h / 2, 0);
             scene.add(m);
+            /* A bare extruded bar reads as a chart. A machined foot at the base
+               and a capping plate at the top give it two more chamfered edges
+               and make it a manufactured column standing on the pedestal. */
+            var trim = ctx.material("machinedSteel", { color: 0x8d97a6 });
+            keep(trim);
+            var foot = new THREE.Mesh(
+              keep(ctx.roundedBox(A.tower.w * 1.30, 0.09, A.tower.d * 1.30, 0.02)), trim);
+            foot.position.set(x + offset, -1.36 + 0.045, 0);
+            scene.add(foot);
+            var cap = new THREE.Mesh(
+              keep(ctx.roundedBox(A.tower.w * 1.16, 0.06, A.tower.d * 1.16, 0.018)), trim);
+            cap.position.set(x + offset, -1.36 + h + 0.03, 0);
+            scene.add(cap);
+            m.userData.cap = cap;
             return m;
           }
           var tv = tower(-0.38, s.volume, A.tower.volume);

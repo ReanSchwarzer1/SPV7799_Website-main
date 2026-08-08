@@ -59,7 +59,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         // ---------- shared label helper ----------
         var labelTex = ctx.labelTexture;
@@ -68,15 +68,59 @@
         // ---------- floor ----------
         var floor = new THREE.Mesh(
           keep(ctx.roundedBox(17, 0.3, 9)),
-          mat({ color: 0x141821, roughness: 0.92 }));
+          ctx.wood("walnut", { repeat: [4, 2] }));
         floor.position.set(0, -2.5, 0.6);
         scene.add(floor);
+
+        /* Substructure. A base with a moulded lip and an apron under it reads
+           as a built surface rather than a floating slab, and every one of
+           those edges is chamfered so it carries its own highlight. */
+        (function () {
+          var subMat = ctx.wood("ebony", { repeat: [3, 1] }); keep(subMat);
+          var W = 17, H = 0.3, DD = 9;
+          var lip = new THREE.Mesh(ctx.roundedBox(W + H * 0.5, H * 0.42, H * 0.7, H * 0.14), subMat);
+          lip.position.set(floor.position.x, floor.position.y + H * 0.30, floor.position.z + DD / 2 + H * 0.12);
+          scene.add(lip);
+          var apron = new THREE.Mesh(ctx.roundedBox(W * 0.95, H * 0.9, DD * 0.92, H * 0.12), subMat);
+          apron.position.set(floor.position.x, floor.position.y - H * 0.85, floor.position.z);
+          scene.add(apron);
+          var legGeo = ctx.roundedBox(H * 0.9, H * 3.2, H * 0.9, H * 0.12);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var leg = new THREE.Mesh(legGeo, subMat);
+            leg.position.set(floor.position.x + c[0] * (W / 2 - H * 1.1),
+                             floor.position.y - H * 2.3,
+                             floor.position.z + c[1] * (DD / 2 - H * 1.1));
+            scene.add(leg);
+          });
+        })();
 
         // ---------- the budget, as a block that never changes ----------
         var vault = new THREE.Mesh(
           keep(ctx.roundedBox(A.vault.w, A.vault.h, A.vault.d)),
           mat({ color: A.vault.color, roughness: 0.6, metalness: 0.15 }));
         vault.position.set(A.vault.x, -0.75, 0);
+        /* A strongbox, not a green slab: a base plinth, a lid with a raised
+           rim, corner brackets and a dial on the face. */
+        (function () {
+          var steel = ctx.material("machinedSteel", { color: 0x7d8794 }); keep(steel);
+          var brass = ctx.material("brass"); keep(brass);
+          var W = A.vault.w, H = A.vault.h, DD = A.vault.d, X = A.vault.x, Y = -0.75;
+          var plinth = new THREE.Mesh(keep(ctx.roundedBox(W * 1.12, 0.14, DD * 1.12, 0.03)), steel);
+          plinth.position.set(X, Y - H / 2 - 0.07, 0); scene.add(plinth);
+          var lid = new THREE.Mesh(keep(ctx.roundedBox(W * 1.06, 0.10, DD * 1.06, 0.025)), steel);
+          lid.position.set(X, Y + H / 2 + 0.05, 0); scene.add(lid);
+          var bracket = keep(ctx.roundedBox(0.10, H * 0.94, 0.10, 0.025));
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (c) {
+            var br = new THREE.Mesh(bracket, steel);
+            br.position.set(X + c[0] * W / 2, Y, c[1] * DD / 2); scene.add(br);
+          });
+          var dial = new THREE.Mesh(keep(ctx.turnedCylinder(0.16, 0.18, 0.06)), brass);
+          dial.rotation.x = Math.PI / 2;
+          dial.position.set(X, Y, DD / 2 + 0.04); scene.add(dial);
+          var spindle = new THREE.Mesh(keep(ctx.turnedCylinder(0.03, 0.03, 0.14)), brass);
+          spindle.rotation.x = Math.PI / 2;
+          spindle.position.set(X, Y, DD / 2 + 0.09); scene.add(spindle);
+        })();
         scene.add(vault);
         for (var b = 0; b < 4; b++) {
           var band = new THREE.Mesh(
@@ -90,24 +134,71 @@
             accent: "#9ad3ac", box: true, bigSize: 78 }, 2.64, 1.32);
 
         // ---------- the price wheel ----------
+        /* A cast handwheel, built the way one is made: a rim with a raised
+           tyre band and an inner channel, tapered spokes swelling where they
+           meet the hub, a turned hub with a bolt circle and a nut, and a
+           handle on a proper stem rather than a ball stuck to the rim. */
         var wheel = new THREE.Group();
+        var goldMat = mat({ color: A.wheel.color, roughness: 0.34, metalness: 0.45,
+                            emissive: A.wheel.color, emissiveIntensity: 0.22 });
+        var darkGold = mat({ color: 0xa87f2c, roughness: 0.5, metalness: 0.4 });
+        var steelMat = ctx.material("machinedSteel", { color: 0x8f98a4 }); keep(steelMat);
+
         var rim = new THREE.Mesh(
-          keep(new THREE.TorusGeometry(A.wheel.r, A.wheel.tube, 24, 96)),
-          mat({ color: A.wheel.color, roughness: 0.3, metalness: 0.25,
-                emissive: A.wheel.color, emissiveIntensity: 0.35 }));
+          keep(new THREE.TorusGeometry(A.wheel.r, A.wheel.tube, 32, 128)), goldMat);
         wheel.add(rim);
-        for (var s = 0; s < 6; s++) {
+        // a proud tyre band round the outside and a recessed channel inside it
+        wheel.add(new THREE.Mesh(
+          keep(new THREE.TorusGeometry(A.wheel.r + A.wheel.tube * 0.42,
+                                       A.wheel.tube * 0.30, 24, 128)), darkGold));
+        wheel.add(new THREE.Mesh(
+          keep(new THREE.TorusGeometry(A.wheel.r - A.wheel.tube * 0.52,
+                                       A.wheel.tube * 0.20, 20, 128)), darkGold));
+
+        // ten tapered spokes, thicker at the hub than at the rim
+        var SPOKES = 10;
+        for (var s = 0; s < SPOKES; s++) {
           var spoke = new THREE.Mesh(
-            keep(ctx.roundedBox(A.wheel.r * 2 - 0.1, 0.13, 0.13)),
-            mat({ color: 0xb98c30, roughness: 0.45 }));
-          spoke.rotation.z = (s / 6) * Math.PI;
+            keep(ctx.turnedCylinder(0.055, 0.115, A.wheel.r * 1.90, 0.02)), goldMat);
+          spoke.rotation.z = Math.PI / 2;                 // lay along the radius
+          var ang = (s / SPOKES) * Math.PI * 2;
+          spoke.position.set(Math.cos(ang) * A.wheel.r * 0.47,
+                             Math.sin(ang) * A.wheel.r * 0.47, 0);
+          spoke.rotation.z = ang + Math.PI / 2;
           wheel.add(spoke);
         }
+
+        // hub: a turned boss, a collar, a bolt circle and a centre nut
+        var hub = new THREE.Mesh(keep(ctx.turnedCylinder(0.40, 0.46, 0.34, 0.05)), goldMat);
+        hub.rotation.x = Math.PI / 2; wheel.add(hub);
+        var collar = new THREE.Mesh(keep(ctx.turnedCylinder(0.52, 0.52, 0.12, 0.03)), darkGold);
+        collar.rotation.x = Math.PI / 2; wheel.add(collar);
+        var boltGeo = keep(ctx.turnedCylinder(0.048, 0.055, 0.10, 0.012));
+        for (var q = 0; q < 6; q++) {
+          var bolt = new THREE.Mesh(boltGeo, steelMat);
+          var ba = (q / 6) * Math.PI * 2 + 0.3;
+          bolt.rotation.x = Math.PI / 2;
+          bolt.position.set(Math.cos(ba) * 0.30, Math.sin(ba) * 0.30, 0.20);
+          wheel.add(bolt);
+        }
+        var nut = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.15, 0.15, 0.13, 6)), steelMat);
+        nut.rotation.x = Math.PI / 2; nut.position.z = 0.24; wheel.add(nut);
+
+        // the grip: a turned handle on a stem, with a washer at its foot
+        var gripStem = new THREE.Mesh(keep(ctx.turnedCylinder(0.075, 0.085, 0.30, 0.02)), steelMat);
+        gripStem.rotation.x = Math.PI / 2;
+        gripStem.position.set(A.wheel.r, 0, 0.20);
+        wheel.add(gripStem);
+        var washer = new THREE.Mesh(keep(ctx.turnedCylinder(0.15, 0.16, 0.05, 0.015)), darkGold);
+        washer.rotation.x = Math.PI / 2;
+        washer.position.set(A.wheel.r, 0, 0.07);
+        wheel.add(washer);
         var pointerKnob = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(0.26, 48, 32)),
-          mat({ color: 0xffffff, roughness: 0.25,
-                emissive: 0xffffff, emissiveIntensity: 0.5 }));
-        pointerKnob.position.set(A.wheel.r, 0, 0.22);
+          keep(ctx.turnedCylinder(0.13, 0.115, 0.42, 0.055)),
+          mat({ color: 0xf4f6f8, roughness: 0.3, metalness: 0.05,
+                emissive: 0xffffff, emissiveIntensity: 0.28 }));
+        pointerKnob.rotation.x = Math.PI / 2;
+        pointerKnob.position.set(A.wheel.r, 0, 0.53);
         wheel.add(pointerKnob);
 
         // The wheel starts at the highest price, so only one direction can do
@@ -116,7 +207,7 @@
         var dirArrows = new THREE.Group();
         [0.55, 1.0, 1.45].forEach(function (a) {
           var cone = new THREE.Mesh(
-            keep(new THREE.ConeGeometry(0.16, 0.42, 48)),
+            keep(new THREE.ConeGeometry(0.16, 0.42, 64)),
             mat({ color: 0xffffff, roughness: 0.4,
                   emissive: 0xffffff, emissiveIntensity: 0.55 }));
           var rr = A.wheel.r + 0.62;
@@ -130,7 +221,7 @@
         scene.add(wheel);
 
         var wheelGrab = new THREE.Mesh(
-          keep(new THREE.CylinderGeometry(A.wheel.r + 0.45, A.wheel.r + 0.45, 0.7, 48)),
+          keep(ctx.turnedCylinder(A.wheel.r + 0.45, A.wheel.r + 0.45, 0.7)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         wheelGrab.rotation.x = Math.PI / 2;
         wheelGrab.position.copy(wheel.position);
@@ -143,7 +234,7 @@
 
         // ---------- the ward ----------
         var beds = [];
-        var bedGeo = keep(new THREE.CapsuleGeometry(A.bed.r, A.bed.len, 12, 32));
+        var bedGeo = keep(new THREE.CapsuleGeometry(A.bed.r, A.bed.len, 16, 48));
         var bedOn = mat({ color: A.bed.on, roughness: 0.4,
                           emissive: A.bed.on, emissiveIntensity: 0.5 });
         var bedOff = mat({ color: A.bed.off, roughness: 0.85 });
@@ -163,11 +254,30 @@
             accent: "#fffb00", box: true, bigSize: 80 }, 3.17, 1.58);
 
         // ---------- the life-years tower ----------
+        /* the life-years column gets a machined foot and a capping plate */
+        var towerTrim = ctx.material("machinedSteel", { color: 0x828c99 }); keep(towerTrim);
         var towerShell = new THREE.Mesh(
           keep(ctx.roundedBox(A.tower.w, A.tower.maxH, A.tower.w)),
           mat({ color: 0x1d2a22, roughness: 0.9, transparent: true, opacity: 0.3 }));
         towerShell.position.set(A.tower.x, -2.35 + A.tower.maxH / 2, 0);
         scene.add(towerShell);
+        /* The life-years column is a gauge, so it is fitted like one: a base
+           flange it stands on, a rim at the mouth, and graduation bands up the
+           face that give the reading a sense of scale. */
+        (function () {
+          var W = A.tower.w, BX = A.tower.x, BY = -2.35;
+          var flange = new THREE.Mesh(
+            keep(ctx.roundedBox(W * 1.30, 0.13, W * 1.30, 0.035)), towerTrim);
+          flange.position.set(BX, BY + 0.065, 0); scene.add(flange);
+          var rim = new THREE.Mesh(
+            keep(ctx.roundedBox(W * 1.16, 0.09, W * 1.16, 0.025)), towerTrim);
+          rim.position.set(BX, BY + A.tower.maxH, 0); scene.add(rim);
+          var bandGeo = keep(ctx.roundedBox(W * 1.08, 0.045, W * 1.08, 0.015));
+          [0.25, 0.5, 0.75].forEach(function (f) {
+            var band = new THREE.Mesh(bandGeo, towerTrim);
+            band.position.set(BX, BY + A.tower.maxH * f, 0); scene.add(band);
+          });
+        })();
         var tower = new THREE.Mesh(
           keep(ctx.roundedBox(A.tower.w * 0.8, 1, A.tower.w * 0.8)),
           mat({ color: A.tower.color, roughness: 0.4,

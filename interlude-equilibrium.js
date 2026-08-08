@@ -54,7 +54,7 @@
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
         var junk = [];
         function keep(o) { junk.push(o); return o; }
-        function mat(o) { return keep(new THREE.MeshStandardMaterial(o)); }
+        function mat(o) { return keep(ctx.tunedStandard(o)); }
 
         var GW = A.graph.w, GH = A.graph.h;
         function X(q) { return (q / A.graph.qMax) * GW - GW / 2; }
@@ -63,7 +63,7 @@
         // ---------- graph board ----------
         var board = new THREE.Mesh(
           keep(ctx.roundedBox(GW + 1.3, GH + 1.3, 0.2)),
-          mat({ color: A.graph.color, roughness: 0.9 }));
+          ctx.wood("ash", { repeat: [3, 3] }));
         board.position.z = -0.35;
         scene.add(board);
 
@@ -101,20 +101,20 @@
           // the grip: a chunky knurled handle sitting on the beam
           var handle = new THREE.Group();
           var barrel = new THREE.Mesh(
-            keep(new THREE.CylinderGeometry(0.34, 0.34, 0.62, 48)),
+            keep(ctx.turnedCylinder(0.34, 0.34, 0.62)),
             mat({ color: color, roughness: 0.25, metalness: 0.25,
                   emissive: color, emissiveIntensity: 0.55 }));
           barrel.rotation.x = Math.PI / 2;
           handle.add(barrel);
           var collar = new THREE.Mesh(
-            keep(new THREE.TorusGeometry(0.42, 0.05, 24, 96)),
+            keep(new THREE.TorusGeometry(0.42, 0.05, 32, 128)),
             mat({ color: 0xffffff, roughness: 0.3,
                   emissive: 0xffffff, emissiveIntensity: 0.3 }));
           handle.add(collar);
           // arrows showing which way it slides
           [-1, 1].forEach(function (s) {
             var a = new THREE.Mesh(
-              keep(new THREE.ConeGeometry(0.15, 0.34, 48)),
+              keep(new THREE.ConeGeometry(0.15, 0.34, 64)),
               mat({ color: 0xffffff, roughness: 0.4,
                     emissive: 0xffffff, emissiveIntensity: 0.45 }));
             a.rotation.z = s > 0 ? -Math.PI / 2 : Math.PI / 2;
@@ -152,7 +152,7 @@
 
         // ---------- equilibrium marker ----------
         var marker = new THREE.Mesh(
-          keep(new THREE.SphereGeometry(A.marker.r, 48, 32)),
+          keep(new THREE.SphereGeometry(A.marker.r, 64, 40)),
           mat({ color: A.marker.color, roughness: 0.25,
                 emissive: A.marker.color, emissiveIntensity: 0.6 }));
         scene.add(marker);
@@ -172,7 +172,7 @@
 
         // ---------- patients ----------
         var patients = [];
-        var pg = keep(new THREE.CapsuleGeometry(A.patient.r, A.patient.len, 12, 32));
+        var pg = keep(new THREE.CapsuleGeometry(A.patient.r, A.patient.len, 16, 48));
         var pOn = mat({ color: A.patient.on, roughness: 0.4,
                         emissive: A.patient.on, emissiveIntensity: 0.45 });
         var pOff = mat({ color: A.patient.off, roughness: 0.8 });
