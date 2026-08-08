@@ -90,6 +90,41 @@
         var hillMat = keep(ctx.material("polishedStone", { color: A.hill.color }));
         var peakMat = mat({ color: A.hill.peak, roughness: 0.5,
                             emissive: A.hill.peak, emissiveIntensity: 0.3 });
+        /* The curve was a ribbon of 57 thin segments with nothing under it, so
+           it read as a plotted line rather than a landform. The segments stay,
+           as the coloured cap rail that carries the zone shading, but they now
+           sit on a solid body extruded from the same curve: traced along the
+           top, dropped to a base line, and bevelled so the whole silhouette
+           carries an edge. */
+        (function () {
+          var shape = new THREE.Shape();
+          var BASE = -2.35;
+          var N = 96;
+          shape.moveTo(curveX(A.minFirms), BASE);
+          for (var i = 0; i <= N; i++) {
+            var n = A.minFirms + (i / N) * (A.maxFirms - A.minFirms);
+            shape.lineTo(curveX(n), curveY(n) - A.hill.thickness * 0.5);
+          }
+          shape.lineTo(curveX(A.maxFirms), BASE);
+          shape.closePath();
+          var body = new THREE.Mesh(
+            keep(new THREE.ExtrudeGeometry(shape, {
+              depth: 0.86, bevelEnabled: true, bevelThickness: 0.05,
+              bevelSize: 0.05, bevelSegments: 3, curveSegments: 12 })),
+            ctx.material("polishedStone", { color: 0x3c4350 }));
+          body.position.z = -0.43;
+          scene.add(body);
+          // a plinth the landform stands on, with feet under it
+          var plinth = new THREE.Mesh(
+            keep(ctx.roundedBox(A.hill.w * 1.12, 0.26, 1.5, 0.05)),
+            ctx.wood("ebony", { repeat: [4, 1] }));
+          plinth.position.set(0, BASE - 0.13, 0);
+          scene.add(plinth);
+          var pads = ctx.footPads(A.hill.w * 1.02, 1.3,
+                                  ctx.material("rubber", { color: 0x24262a }), 0.09);
+          pads.position.y = BASE - 0.28;
+          scene.add(pads);
+        })();
         var segGeo = keep(ctx.roundedBox(1, A.hill.thickness, 0.5));
         for (var s = 0; s < A.hill.samples; s++) {
           var n0 = A.minFirms + (s / A.hill.samples) * (A.maxFirms - A.minFirms);

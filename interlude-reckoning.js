@@ -145,6 +145,23 @@
           g.fillText(rec.levels + " of 10 objectives met", 256, 466);
           return keep(ctx.tune(new THREE.CanvasTexture(c)));
         }
+        /* The column of strata stood straight on the floor. A stepped base and
+           a cornice under the capstone make it a monument rather than a stack. */
+        (function () {
+          var stone = ctx.material("polishedStone", { color: 0x2b313c });
+          keep(stone);
+          [[1.66, 0.10, -2.16], [1.46, 0.09, -2.08], [1.28, 0.08, -2.02]].forEach(function (st) {
+            var step = new THREE.Mesh(
+              keep(ctx.turnedCylinder(A.column.r * st[0], A.column.r * st[0] * 1.04, st[1], 0.04)),
+              stone);
+            step.position.y = st[2];
+            scene.add(step);
+          });
+          var cornice = new THREE.Mesh(
+            keep(ctx.turnedCylinder(A.column.r * 1.26, A.column.r * 1.12, 0.18, 0.04)), stone);
+          cornice.position.y = -2.0 + mods.length * (A.column.strata + A.column.gap) + 0.07;
+          scene.add(cornice);
+        })();
         var capstone = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(3.0, 3.0)),
           keep(new THREE.MeshBasicMaterial({ map: capTex(), transparent: true })));

@@ -71,6 +71,57 @@
         // ---------- globe ----------
         var globe = new THREE.Group();
         scene.add(globe);
+        /* The globe hung in space with nothing holding it. It now sits in an
+           armillary cradle on a turned column and a plinth, the way a real one
+           does: a meridian ring, a support arm, a column with a collar, a base
+           with a bolt ring and feet. */
+        (function () {
+          var brass = ctx.material("brass"); keep(brass);
+          var steel = ctx.material("machinedSteel", { color: 0x8b949f }); keep(steel);
+          var R = A.globe.r;
+
+          /* Everything below the meridian has to live in the ~0.9 units between
+             the ring and the year rail, so the cradle is short and wide rather
+             than a tall pedestal. */
+          var meridian = new THREE.Mesh(
+            keep(new THREE.TorusGeometry(R * 1.14, R * 0.035, 24, 128)), brass);
+          meridian.rotation.y = Math.PI / 2;
+          scene.add(meridian);
+
+          var equator = new THREE.Mesh(
+            keep(new THREE.TorusGeometry(R * 1.14, R * 0.022, 20, 128)), steel);
+          equator.rotation.x = Math.PI / 2;
+          scene.add(equator);
+
+          var post = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.10, 0.15, 0.52, 0.03)), brass);
+          post.position.set(0, -R * 1.14 - 0.24, 0);
+          scene.add(post);
+
+          var collar = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.28, 0.28, 0.10, 0.03)), steel);
+          collar.position.set(0, -R * 1.14 - 0.50, 0);
+          scene.add(collar);
+
+          var column = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.19, 0.27, 0.30, 0.04)), brass);
+          column.position.set(0, -R * 1.14 - 0.70, 0);
+          scene.add(column);
+
+          var base = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.60, 0.74, 0.16, 0.04)), brass);
+          base.position.set(0, -R * 1.14 - 0.92, 0);
+          scene.add(base);
+
+          var bolts = ctx.boltRing(0.50, 8, 0.035, steel);
+          bolts.position.set(0, -R * 1.14 - 0.84, 0);
+          scene.add(bolts);
+
+          var pads = ctx.footPads(1.24, 1.24,
+                                  ctx.material("rubber", { color: 0x24262a }), 0.09);
+          pads.position.y = -R * 1.14 - 1.03;
+          scene.add(pads);
+        })();
         var ball = new THREE.Mesh(
           keep(new THREE.SphereGeometry(A.globe.r, 64, 40)),
           mat({ color: A.globe.color, roughness: 0.95, metalness: 0.05 }));
