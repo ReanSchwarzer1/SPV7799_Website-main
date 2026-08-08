@@ -625,6 +625,68 @@ function play(id, params) {
     return g;
   }
 
+  /* A firm on the floor. Both the market and the concentration room drew one
+     as a box with a plate on top, which is the shape of a building and none of
+     the detail of one. This is the same silhouette with the parts that make it
+     read at a glance: a base course, corner pilasters, banded window strips on
+     all four faces, a door, a parapet with a coping and a roof vent. Every
+     geometry is built once and shared across the instances, so a row of
+     fourteen costs one set of buffers. */
+  function blockBuilding(w, h, d, o) {
+    o = o || {};
+    const body = o.bodyMat, trim = o.trimMat || o.roofMat, glass = o.glassMat || o.roofMat;
+    const g = new THREE.Group();
+
+    g.add(new THREE.Mesh(roundedBox(w, h, d, Math.min(w, d) * 0.07), body));
+    const course = new THREE.Mesh(roundedBox(w * 1.12, h * 0.10, d * 1.12, w * 0.03), trim);
+    course.position.y = -h * 0.46;
+    g.add(course);
+
+    // corner pilasters, standing slightly proud of the wall
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach((c) => {
+      const pil = new THREE.Mesh(roundedBox(w * 0.16, h * 0.90, d * 0.16, w * 0.04), trim);
+      pil.position.set(c[0] * w * 0.50, 0, c[1] * d * 0.50);
+      g.add(pil);
+    });
+
+    // three window bands wrapping all four faces
+    const bandZ = roundedBox(w * 0.78, h * 0.11, d * 0.04, w * 0.02);
+    const bandX = roundedBox(w * 0.04, h * 0.11, d * 0.78, w * 0.02);
+    [0.24, 0.02, -0.20].forEach((f) => {
+      [-1, 1].forEach((c) => {
+        const bz = new THREE.Mesh(bandZ, glass);
+        bz.position.set(0, h * f, c * d * 0.51);
+        g.add(bz);
+        const bx = new THREE.Mesh(bandX, glass);
+        bx.position.set(c * w * 0.51, h * f, 0);
+        g.add(bx);
+      });
+    });
+
+    // a door on the front, with a lintel over it
+    const door = new THREE.Mesh(roundedBox(w * 0.26, h * 0.24, d * 0.05, w * 0.02), trim);
+    door.position.set(0, -h * 0.34, d * 0.51);
+    g.add(door);
+    const lintel = new THREE.Mesh(roundedBox(w * 0.36, h * 0.05, d * 0.07, w * 0.02), trim);
+    lintel.position.set(0, -h * 0.20, d * 0.52);
+    g.add(lintel);
+
+    // parapet: a wall round the roof with a coping on it, and a vent
+    const parapet = new THREE.Mesh(roundedBox(w * 1.06, h * 0.09, d * 1.06, w * 0.03), body);
+    parapet.position.y = h * 0.52;
+    g.add(parapet);
+    const coping = new THREE.Mesh(roundedBox(w * 1.16, h * 0.04, d * 1.16, w * 0.02), trim);
+    coping.position.y = h * 0.57;
+    g.add(coping);
+    const vent = new THREE.Mesh(turnedCylinder(w * 0.13, w * 0.16, h * 0.14, w * 0.04), trim);
+    vent.position.set(w * 0.20, h * 0.60, -d * 0.16);
+    g.add(vent);
+    const stack = new THREE.Mesh(roundedBox(w * 0.20, h * 0.20, d * 0.20, w * 0.04), body);
+    stack.position.set(-w * 0.20, h * 0.62, d * 0.10);
+    g.add(stack);
+    return g;
+  }
+
   /* A gauge track: the channel a meter bar runs in, with side rails, end caps
      and graduations, so a bar is a reading rather than a coloured rectangle. */
   function gaugeTrack(w, h, d, trackMat, steelMat, ticks) {
@@ -1149,7 +1211,7 @@ function play(id, params) {
     surfaces, grayTexture, normalTexture,
     roundedBox, smoothGeometry, turnedCylinder, plinth, fitTrim,
     boltHead, boltRing, rivetLine, footPads, nameplate,
-    toggleSwitch, intakeSlot, machineMount, gaugeTrack,
+    toggleSwitch, intakeSlot, machineMount, gaugeTrack, blockBuilding,
     material, tunedStandard, families: FAMILIES, wood, woodTones: WOOD_TONES,
     pointer, raycaster, keys,
     quality: Quality,

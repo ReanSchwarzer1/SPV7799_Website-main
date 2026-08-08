@@ -219,16 +219,13 @@
 
         // ---------- firms on the floor ----------
         var firmMeshes = [];
-        var fBody = keep(ctx.roundedBox(A.firm.w, A.firm.h, A.firm.d));
-        var fRoof = keep(ctx.roundedBox(A.firm.w * 1.16, 0.1, A.firm.d * 1.16));
         var fMat = mat({ color: A.firm.color, roughness: 0.7 });
         var rMat = mat({ color: A.firm.roof, roughness: 0.5 });
+        var fGlass = mat({ color: 0x24303f, roughness: 0.22, metalness: 0.35 });
+        var firmProto = ctx.blockBuilding(A.firm.w, A.firm.h, A.firm.d, {
+          bodyMat: fMat, trimMat: rMat, glassMat: fGlass });
         for (var i = 0; i < A.maxFirms; i++) {
-          var grp = new THREE.Group();
-          var bd = new THREE.Mesh(fBody, fMat);
-          var rf = new THREE.Mesh(fRoof, rMat);
-          rf.position.y = A.firm.h / 2 + 0.05;
-          grp.add(bd); grp.add(rf);
+          var grp = firmProto.clone();
           grp.position.set(-((A.maxFirms - 1) * 0.66) / 2 + i * 0.66, -2.55, 1.5);
           grp.scale.setScalar(0.001);
           grp.visible = false;
@@ -258,12 +255,68 @@
 
         // ---------- add / remove buttons ----------
         function makeButton(x, sign, title, color) {
+          /* The cap was the whole button, so it read as a coloured slab. It is
+             now a rocker sitting in a recessed housing: a domed cap on a
+             chamfered rocker, a bezel frame round the recess, corner screws,
+             a raised +/- glyph and a lamp beside it. */
           var b = new THREE.Mesh(
-            keep(ctx.roundedBox(A.button.w, A.button.h, A.button.d)),
-            mat({ color: color, roughness: 0.4, metalness: 0.15,
-                  emissive: color, emissiveIntensity: 0.32 }));
-          b.position.set(x, -2.55, 3.4);
+            keep(ctx.roundedBox(A.button.w * 0.86, A.button.h * 0.62, A.button.d * 0.80,
+                                A.button.h * 0.16)),
+            mat({ color: color, roughness: 0.34, metalness: 0.25,
+                  emissive: color, emissiveIntensity: 0.30 }));
+          b.position.set(x, -2.55 + A.button.h * 0.10, 3.4);
+          b.rotation.x = -0.13;
           scene.add(b);
+          (function () {
+            var steel = keep(ctx.material("machinedSteel", { color: 0x79828e }));
+            var dark = keep(ctx.material("paintedMetal", { color: 0x232a36 }));
+            var housing = new THREE.Mesh(
+              keep(ctx.roundedBox(A.button.w * 1.24, A.button.h * 0.66, A.button.d * 1.28, 0.04)),
+              dark);
+            housing.position.set(x, -2.55 - A.button.h * 0.12, 3.4);
+            scene.add(housing);
+            [[-1, 0], [1, 0]].forEach(function (c) {
+              var jamb = new THREE.Mesh(
+                keep(ctx.roundedBox(A.button.w * 0.11, A.button.h * 0.52, A.button.d * 1.10, 0.03)),
+                steel);
+              jamb.position.set(x + c[0] * A.button.w * 0.56, -2.55 + A.button.h * 0.08, 3.4);
+              scene.add(jamb);
+            });
+            [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) {
+              var sc = ctx.boltHead(0.030, steel);
+              sc.position.set(x + c[0] * A.button.w * 0.60, -2.55 + A.button.h * 0.20,
+                              3.4 + c[1] * A.button.d * 0.62);
+              scene.add(sc);
+            });
+            // the glyph on the cap: a bar, plus a crossbar when it is an add
+            var glyphMat = mat({ color: 0xffffff, roughness: 0.3,
+                                 emissive: 0xffffff, emissiveIntensity: 0.5 });
+            var barH = new THREE.Mesh(
+              keep(ctx.roundedBox(A.button.w * 0.28, A.button.h * 0.07,
+                                  A.button.d * 0.10, 0.015)), glyphMat);
+            barH.position.set(x, -2.55 + A.button.h * 0.44, 3.44);
+            barH.rotation.x = -0.13;
+            scene.add(barH);
+            if (sign > 0) {
+              var barV = new THREE.Mesh(
+                keep(ctx.roundedBox(A.button.h * 0.07, A.button.w * 0.28,
+                                    A.button.d * 0.10, 0.015)), glyphMat);
+              barV.position.set(x, -2.55 + A.button.h * 0.44, 3.44);
+              barV.rotation.x = -0.13;
+              scene.add(barV);
+            }
+            var lampRing = new THREE.Mesh(
+              keep(new THREE.TorusGeometry(0.075, 0.022, 10, 28)), steel);
+            lampRing.rotation.x = Math.PI / 2;
+            lampRing.position.set(x + A.button.w * 0.42, -2.55 + A.button.h * 0.24, 3.82);
+            scene.add(lampRing);
+            var lamp = new THREE.Mesh(
+              keep(new THREE.SphereGeometry(0.055, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.6)),
+              mat({ color: color, roughness: 0.25,
+                    emissive: color, emissiveIntensity: 0.75 }));
+            lamp.position.set(x + A.button.w * 0.42, -2.55 + A.button.h * 0.26, 3.82);
+            scene.add(lamp);
+          })();
           /* A button, not a coloured box: a bezel it sits in, a chamfered cap
              on the face and a machined collar round the base. */
           (function () {

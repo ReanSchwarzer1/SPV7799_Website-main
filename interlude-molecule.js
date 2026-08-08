@@ -83,7 +83,12 @@
         india:   { tint: 0x3fae6b, name: "INDIA", price: 1.50, pills: 120 },
         plinth: { r: 1.5, h: 0.18, color: 0x171b23 },
         tube:   { r: 0.62, h: 3.1, color: 0x8fb6d8 },
-        pill:   { r: 0.11, len: 0.26 },
+        /* A pill at r 0.11 and length 0.26 is 0.48 end to end against a tube
+           1.24 across, so barely two and a half fit side by side and a hundred
+           and twenty of them read as boulders. Sized against the tube instead:
+           about six across, which is what a capsule in a jar actually looks
+           like. Layers widen to match, so 120 still loads the tube. */
+        pill:   { r: 0.042, len: 0.105, perLevel: 15, levelGap: 0.115 },
         note:   { w: 1.5, h: 0.72 },
         snapDistance: 1.9,          // how close the drop has to be: generous
         camera: { elevationDeg: 14, margin: 1.14, lookAt: [0, 0.2, 0] }
@@ -243,13 +248,16 @@
             var m = new THREE.Mesh(pillGeo, mat);
             var seam = new THREE.Mesh(pillSeamGeo, pillSeamMat);
             m.add(seam);
-            var a = Math.random() * Math.PI * 2, rr = Math.random() * (A.tube.r - 0.18);
-            m.position.set(x + Math.cos(a) * rr, 2.6 + i * 0.16, Math.sin(a) * rr);
+            var a = Math.random() * Math.PI * 2;
+            var rr = Math.sqrt(Math.random()) * (A.tube.r - A.pill.len);
+            m.position.set(x + Math.cos(a) * rr, 2.6 + i * 0.06, Math.sin(a) * rr);
             m.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
             act2.add(m);
-            // stack height: pills settle in layers of ~9 per level
-            var level = Math.floor(i / 9);
-            pills.push({ mesh: m, targetY: 0.05 - A.tube.h / 2 + 0.16 + level * 0.2, vy: 0 });
+            // stack height: smaller pills pack more per layer and lie flatter
+            var level = Math.floor(i / A.pill.perLevel);
+            pills.push({ mesh: m,
+                         targetY: 0.05 - A.tube.h / 2 + 0.10 + level * A.pill.levelGap,
+                         vy: 0 });
           }
         }
 
@@ -276,21 +284,65 @@
                                              side: THREE.DoubleSide, toneMapped: false })));
         note.position.set(0, -1.15, 1.2);
         act2.add(note);
+        /* The frame was one olive slab behind the note, which from any angle
+           off-axis is all you saw. A banknote is engraved: a raised border on
+           all four sides, corner rosettes, a security thread down one side and
+           a foil patch. All of it parented to the note so it drags as one. */
         (function () {
-          var frameMat = ctx.material("paper", { color: 0xbfae6a });
-          keep(frameMat);
+          var frameMat = keep(ctx.material("paper", { color: 0xbfae6a }));
+          var inkMat = keep(ctx.material("paper", { color: 0x5c6b4a }));
+          var foilMat = keep(ctx.material("brass", { color: 0xc9a227 }));
+          var NW = A.note.w, NH = A.note.h;
+
           var frame = new THREE.Mesh(
-            keep(ctx.roundedBox(A.note.w * 1.045, A.note.h * 1.09, 0.008, 0.004)), frameMat);
-          frame.position.set(0, -1.15, 1.194);
-          act2.add(frame);
+            keep(ctx.roundedBox(NW * 1.045, NH * 1.09, 0.008, 0.004)), frameMat);
+          frame.position.z = -0.008;
+          note.add(frame);
+
+          [[0, NH * 0.44, NW * 0.94, NH * 0.055],
+           [0, -NH * 0.44, NW * 0.94, NH * 0.055]].forEach(function (r) {
+            var edge = new THREE.Mesh(
+              keep(ctx.roundedBox(r[2], r[3], 0.020, 0.006)), inkMat);
+            edge.position.set(r[0], r[1], 0.010);
+            note.add(edge);
+          });
+          [-1, 1].forEach(function (c) {
+            var edge = new THREE.Mesh(
+              keep(ctx.roundedBox(NH * 0.055, NH * 0.94, 0.020, 0.006)), inkMat);
+            edge.position.set(c * NW * 0.455, 0, 0.010);
+            note.add(edge);
+          });
+          [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) {
+            var rosette = new THREE.Mesh(
+              keep(ctx.turnedCylinder(NH * 0.075, NH * 0.085, 0.022, 0.006)), foilMat);
+            rosette.rotation.x = Math.PI / 2;
+            rosette.position.set(c[0] * NW * 0.435, c[1] * NH * 0.36, 0.012);
+            note.add(rosette);
+          });
+          var thread = new THREE.Mesh(
+            keep(ctx.roundedBox(NW * 0.022, NH * 0.86, 0.024, 0.005)), foilMat);
+          thread.position.set(-NW * 0.30, 0, 0.011);
+          note.add(thread);
+          var patch = new THREE.Mesh(
+            keep(ctx.roundedBox(NW * 0.10, NH * 0.26, 0.024, 0.008)), foilMat);
+          patch.position.set(NW * 0.36, -NH * 0.05, 0.011);
+          note.add(patch);
         })();
 
-        var slot = new THREE.Mesh(
-          keep(ctx.roundedBox(1.75, 0.16, 0.5)),
-          keep(new THREE.MeshStandardMaterial({ color: 0x2b3240, roughness: 0.6,
-                                                emissive: 0xfffb00, emissiveIntensity: 0.18 })));
-        slot.position.set(0, 0.55, 0);
-        act2.add(slot);
+        /* This is the slot the player pushes the note into, and it was a flat
+           bar. ctx.intakeSlot gives it the throat, lead-in bezel, rollers,
+           rails, bolted frame and lamps a note reader has. */
+        var slotUnit = ctx.intakeSlot({
+          w: 1.75, h: 0.16, d: 0.5,
+          bodyMat: keep(new THREE.MeshStandardMaterial({ color: 0x2b3240, roughness: 0.6,
+                                                         emissive: 0xfffb00,
+                                                         emissiveIntensity: 0.12 })),
+          throatMat: keep(ctx.tunedStandard({ color: 0x0e1219, roughness: 0.95 })),
+          steelMat: keep(ctx.material("machinedSteel", { color: 0x8d97a6 }))
+        });
+        slotUnit.group.position.set(0, 0.55, 0);
+        act2.add(slotUnit.group);
+        var slot = slotUnit.group;
         var slotSign = makeSign(0, 1.5, { top: "INSERT NOTE", sub: "buy in both markets",
                                           accent: "#fffb00" }, 2.6, 1.0);
         slotSign.visible = false;

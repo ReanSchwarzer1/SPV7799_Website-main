@@ -265,11 +265,36 @@
         var pOn = mat({ color: A.patient.on, roughness: 0.4,
                         emissive: A.patient.on, emissiveIntensity: 0.45 });
         var pOff = mat({ color: A.patient.off, roughness: 0.8 });
+        var pTrim = keep(ctx.material("machinedSteel", { color: 0x7c8694 }));
+        var headGeo = keep(new THREE.SphereGeometry(A.patient.r * 0.86, 32, 20));
+        var collarGeo = keep(ctx.turnedCylinder(A.patient.r * 0.80, A.patient.r * 1.02,
+                                                A.patient.r * 0.34, A.patient.r * 0.10));
+        var socketGeo = keep(ctx.turnedCylinder(A.patient.r * 1.15, A.patient.r * 1.42,
+                                                A.patient.r * 0.42, A.patient.r * 0.12));
+        var ringGeo = keep(new THREE.TorusGeometry(A.patient.r * 1.12, A.patient.r * 0.13, 10, 32));
         for (var i = 0; i < A.patient.count; i++) {
+          var px = -GW / 2 + 0.28 + i * (GW / A.patient.count);
+          var py = -GH / 2 - 1.15;
           var m = new THREE.Mesh(pg, pOff);
-          m.position.set(-GW / 2 + 0.28 + i * (GW / A.patient.count), -GH / 2 - 1.15, 0);
+          m.position.set(px, py, 0);
           scene.add(m);
           patients.push(m);
+          /* A row of bare capsules is a row of lozenges. Each one gets a head,
+             a collar, a socketed base and a shoulder ring, all from four shared
+             geometries so twenty-two of them cost four buffers. */
+          var head = new THREE.Mesh(headGeo, pTrim);
+          head.position.set(px, py + A.patient.len * 0.62 + A.patient.r * 0.5, 0);
+          scene.add(head);
+          var collar = new THREE.Mesh(collarGeo, pTrim);
+          collar.position.set(px, py + A.patient.len * 0.42, 0);
+          scene.add(collar);
+          var socket = new THREE.Mesh(socketGeo, pTrim);
+          socket.position.set(px, py - A.patient.len * 0.60, 0);
+          scene.add(socket);
+          var ring = new THREE.Mesh(ringGeo, pTrim);
+          ring.rotation.x = Math.PI / 2;
+          ring.position.set(px, py - A.patient.len * 0.52, 0);
+          scene.add(ring);
         }
         makeLabel(0, -GH / 2 - 2.1, 0,
           { top: "PATIENTS SERVED AT THE CLEARING PRICE", accent: "#9aa6b4" }, 5.63, 0.97);

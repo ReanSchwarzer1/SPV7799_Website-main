@@ -482,16 +482,14 @@
         var firmGroup = new THREE.Group();
         scene.add(firmGroup);
         var firmMeshes = [];
-        var firmBody = keep(ctx.roundedBox(A.firm.w, A.firm.h, A.firm.d));
-        var firmRoof = keep(ctx.roundedBox(A.firm.w * 1.15, 0.12, A.firm.d * 1.15));
         var firmMat = mat({ color: A.firm.color, roughness: 0.7 });
         var roofMat = mat({ color: A.firm.roof, roughness: 0.5 });
+        var firmGlass = mat({ color: 0x24303f, roughness: 0.22, metalness: 0.35 });
+        /* Built once and cloned, so fourteen firms cost one set of buffers. */
+        var firmProto = ctx.blockBuilding(A.firm.w, A.firm.h, A.firm.d, {
+          bodyMat: firmMat, trimMat: roofMat, glassMat: firmGlass });
         for (var i = 0; i < A.firm.maxShown; i++) {
-          var grp = new THREE.Group();
-          var b = new THREE.Mesh(firmBody, firmMat);
-          var r = new THREE.Mesh(firmRoof, roofMat);
-          r.position.y = A.firm.h / 2 + 0.06;
-          grp.add(b); grp.add(r);
+          var grp = firmProto.clone();
           var col = i % 7, row = Math.floor(i / 7);
           grp.position.set(-3.15 + col * 1.05, -1.25, 1.35 + row * 1.0);
           grp.scale.setScalar(0.001);
