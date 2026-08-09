@@ -1,7 +1,7 @@
 {
   "name": "one-molecule-two-markets",
   "productName": "One Molecule, Two Markets",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Condition B: gamified 3D interactive artifact on the economics of generic drugs.",
   "main": "electron-main.js",
   "private": true,
@@ -25,6 +25,7 @@
       "electron-main.js",
       "preload.js",
       "index-gamified.html",
+      "il-audio.js",
       "script.js",
       "game.js",
       "interludes.js",
