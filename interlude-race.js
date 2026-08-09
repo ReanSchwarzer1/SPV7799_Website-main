@@ -168,6 +168,7 @@
           var hit = new THREE.Mesh(
             keep(ctx.turnedCylinder(A.chip.r + 0.5, A.chip.r + 0.5, count * (A.chip.h + 0.008) + 0.7)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
+          hit.userData.rimTarget = grp;       // the stack of chips
           hit.position.set(x, count * (A.chip.h + 0.008) / 2 + 0.2, 2.3);
           scene.add(hit);
           ctx.pickables.push(hit);
@@ -420,8 +421,8 @@
           },
           onPointerDown: function (h) {
             if (!h) return;
-            if (h.object === stackHigh.hit) commit("high");
-            else if (h.object === stackLow.hit) commit("low");
+            if (h.object === stackHigh.hit) { ctx.sfx("slot"); commit("high"); }
+            else if (h.object === stackLow.hit) { ctx.sfx("slot"); commit("low"); }
           },
           onPointerMove: function (h) {
             ctx.renderer.domElement.style.cursor = h ? "pointer" : "default";

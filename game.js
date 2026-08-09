@@ -64,11 +64,28 @@
       '<div class="meters">' +
         '<div class="meter access"><div class="lbl"><span>Access</span><b id="m-access">10</b></div><div class="track"><div class="fill" id="f-access"></div></div></div>' +
         '<div class="meter innov"><div class="lbl"><span>Innovation</span><b id="m-innov">50</b></div><div class="track"><div class="fill" id="f-innov"></div></div></div>' +
+        /* One action, always on screen, and it persists across sessions. The
+           brief calls this a requirement: sessions run in shared rooms. */
+        '<button id="m-mute" class="hud-mute" type="button" title="Mute sound (M)" aria-label="Mute sound">&#9835;</button>' +
       '</div>' +
       '<div class="progress">Levels <b id="m-prog">0</b>/10</div>' +
       '<div class="score"><small>Score</small><b id="m-score">60</b></div>';
     document.body.appendChild(hud);
     document.body.classList.add("gamified");
+    (function () {
+      var b = $("m-mute");
+      if (!b || !window.Sfx) return;
+      function paint() {
+        var m = window.Sfx.muted();
+        b.innerHTML = m ? "&#128263;" : "&#9835;";
+        b.classList.toggle("off", m);
+        b.setAttribute("aria-pressed", m ? "true" : "false");
+        b.title = m ? "Unmute sound (M)" : "Mute sound (M)";
+      }
+      b.addEventListener("click", function () { window.Sfx.toggleMute(); });
+      document.addEventListener("sfx:mute", paint);
+      paint();
+    })();
     updateHUD();
   }
 
@@ -76,14 +93,75 @@
     var n = 0; for (var k in g.done) if (g.done[k]) n++; return n;
   }
 
+  /* The bar already eased, because the CSS transitions its width, but the
+     number above it jumped. A readout that snaps from 10 to 45 tells you the
+     value changed; one that counts up tells you how far it moved, and which
+     direction, without reading it twice. The bar also flashes: gold when a
+     meter gains, red when it loses, so a drop is not silently absorbed into a
+     shrinking bar the player was not looking at.
+
+     Reduced motion snaps both and skips the flash. Participants sit with this
+     for half an hour and a repeated flash is exactly the thing to suppress. */
+  var hudShown = { access: null, innov: null };
+  var hudRaf = 0;
+
+  function hudCalm() {
+    try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+    catch (e) { return false; }
+  }
+
+  function flashMeter(cls, gain) {
+    /* Audio first: a participant on reduced motion still gets the score
+       feedback, they just do not get the flash. */
+    try { if (window.Sfx) window.Sfx.play(gain ? "gain" : "loss"); } catch (e) {}
+    var el = document.querySelector("#game-hud .meter." + cls);
+    if (!el || hudCalm()) return;
+    var mark = gain ? "flash-gain" : "flash-loss";
+    el.classList.remove("flash-gain", "flash-loss");
+    void el.offsetWidth;                 // restart the animation
+    el.classList.add(mark);
+    setTimeout(function () { el.classList.remove(mark); }, 620);
+  }
+
+  function hudTick() {
+    hudRaf = 0;
+    var moving = false;
+    [["access", "m-access"], ["innov", "m-innov"]].forEach(function (p) {
+      var target = Math.round(g[p[0]]);
+      var shown = hudShown[p[0]];
+      if (shown === null) { hudShown[p[0]] = shown = target; }
+      if (shown !== target) {
+        // move at least one whole unit a frame, so it always arrives
+        var step = Math.max(1, Math.abs(target - shown) * 0.18);
+        shown = target > shown ? Math.min(target, shown + step)
+                               : Math.max(target, shown - step);
+        hudShown[p[0]] = shown;
+        moving = true;
+      }
+      var el = $(p[1]);
+      if (el) el.textContent = Math.round(shown);
+    });
+    if (moving) hudRaf = requestAnimationFrame(hudTick);
+    var sc = $("m-score");
+    if (sc) sc.textContent = Math.round(hudShown.access) + Math.round(hudShown.innov);
+  }
+
   function updateHUD() {
     var a = Math.round(g.access), i = Math.round(g.innov);
-    if ($("m-access")) $("m-access").textContent = a;
-    if ($("m-innov")) $("m-innov").textContent = i;
+    if (hudShown.access === null) { hudShown.access = a; hudShown.innov = i; }
+    if (a !== Math.round(hudShown.access)) flashMeter("access", a > hudShown.access);
+    if (i !== Math.round(hudShown.innov)) flashMeter("innov", i > hudShown.innov);
+    if (hudCalm()) {
+      hudShown.access = a; hudShown.innov = i;
+      if ($("m-access")) $("m-access").textContent = a;
+      if ($("m-innov")) $("m-innov").textContent = i;
+      if ($("m-score")) $("m-score").textContent = a + i;
+    } else if (!hudRaf) {
+      hudRaf = requestAnimationFrame(hudTick);
+    }
     if ($("f-access")) $("f-access").style.width = a + "%";
     if ($("f-innov")) $("f-innov").style.width = i + "%";
     if ($("m-prog")) $("m-prog").textContent = levelsDone();
-    if ($("m-score")) $("m-score").textContent = a + i;
   }
 
   // -------- goal cards --------

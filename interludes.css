@@ -16,6 +16,35 @@
 @media (max-width: 720px) { .il-overlay { top: 104px; } }
 .il-overlay[hidden] { display: none; }
 
+/* Phase 5 — entry and exit.
+
+   Deliberately an animation and not a transition. An animation with no
+   fill-mode returns the element to its base style when it ends, so the resting
+   state is opacity 1 no matter what: if the class were never applied, or the
+   animation were interrupted, the overlay is visible rather than blank. A
+   transition from opacity 0 would leave a black screen on any failure, which
+   is exactly the way this went wrong once before.
+
+   The scale is tiny on purpose. It reads as the scene settling into place
+   rather than as a slide, and it keeps the eye where the previous scene left
+   it instead of throwing the frame around. */
+@keyframes il-enter {
+  from { opacity: 0; transform: scale(.994); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes il-leave {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: scale(.997); }
+}
+.il-overlay { animation: il-enter .3s cubic-bezier(.33, 0, .2, 1); }
+.il-overlay.il-leaving {
+  animation: il-leave .22s cubic-bezier(.4, 0, .8, 1) forwards;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .il-overlay, .il-overlay.il-leaving { animation: none; }
+}
+
 .il-head {
   display: flex; align-items: baseline; gap: 12px;
   padding: 14px 20px 10px; border-bottom: 1px solid rgba(255,255,255,.08);

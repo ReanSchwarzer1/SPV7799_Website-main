@@ -225,6 +225,7 @@
                 emissive: A.rail.color, emissiveIntensity: 0.45 }));
         knob.position.set(railL, A.rail.y + 0.28, A.rail.z);
         scene.add(knob);
+        knob.userData.sfxDown = "grab";     // it is a handle, not a button
         ctx.pickables.push(knob);
         /* The year handle was a ball floating over the rail. Stem, collar,
            carriage, bolts and a pointer, all parented to the knob so the whole

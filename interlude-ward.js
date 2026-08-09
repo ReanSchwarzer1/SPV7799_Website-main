@@ -245,6 +245,7 @@
           keep(ctx.turnedCylinder(A.wheel.r + 0.45, A.wheel.r + 0.45, 0.7)),
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         wheelGrab.rotation.x = Math.PI / 2;
+        wheelGrab.userData.rimTarget = wheel;
         wheelGrab.position.copy(wheel.position);
         scene.add(wheelGrab);
         ctx.pickables.push(wheelGrab);
@@ -352,6 +353,7 @@
           } catch (e) {}
         }
         var angle = 0;              // accumulated wheel rotation
+        var shownAngle = 0;   // what the wheel shows; `angle` is what the hand asked for
         var dragging = false;
         var lastAngle = 0;
         var won = false;
@@ -452,7 +454,12 @@
         return {
           update: function (dt) {
             pulse += dt;
-            wheel.rotation.z = angle;
+            /* The wheel is heavy, so it arrives where the hand put it a moment
+               later rather than instantly. Fast enough to read as mass and not
+               as lag; the price itself still tracks the hand, because that is a
+               readout rather than a thing being pushed. */
+            shownAngle += (angle - shownAngle) * Math.min(1, dt * 12);
+            wheel.rotation.z = shownAngle;
             // the wheel beckons until it has been used
             var want = (!won && cost === A.costMax) ? 1 + Math.sin(pulse * 3.4) * 0.045 : 1;
             wheel.scale.setScalar(wheel.scale.x + (want - wheel.scale.x) * Math.min(1, dt * 8));
@@ -463,6 +470,7 @@
             var a = pointerAngle();
             if (a === null) return;
             dragging = true;
+            ctx.sfx("grab");
             lastAngle = a;
           },
 
@@ -484,7 +492,7 @@
             var next = cost - (d / (Math.PI * 2)) * span * 1.15;
             next = Math.max(A.costMin, Math.min(A.costMax, next));
             next = Math.round(next / A.costStep) * A.costStep;
-            if (next !== cost) { cost = next; pushToPage(); refresh(); }
+            if (next !== cost) { cost = next; ctx.sfx("wheel"); pushToPage(); refresh(); }
           },
 
           onPointerUp: function () {

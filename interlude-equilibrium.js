@@ -155,11 +155,18 @@
           var m = new THREE.Mesh(
             keep(ctx.roundedBox(1, A.supply.thickness, A.supply.thickness)),
             mat({ color: color, roughness: 0.35, emissive: color, emissiveIntensity: 0.3 }));
-          scene.add(m);
+          /* The beam hangs off a holder so it can lag the hand without fighting
+             layoutBeam(), which sets the beam's own transform from the model
+             every refresh. The holder carries the lag, the beam carries the
+             economics, and neither overwrites the other. */
+          var holder = new THREE.Group();
+          scene.add(holder);
+          holder.add(m);
           // fat invisible grab volume so the whole beam is easy to catch
           var grab = new THREE.Mesh(
             keep(ctx.roundedBox(1, 0.95, 0.6)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
+          grab.userData.rimTarget = m;        // the beam, not the grab volume
           scene.add(grab);
           ctx.pickables.push(grab);
 
@@ -192,7 +199,7 @@
           var tag = makeLabel(0, 0, 0.3,
             { top: title, sub: note, accent: "#" + color.toString(16).padStart(6, "0"), box: true },
             3.0, 1.5);
-          return { beam: m, grab: grab, handle: handle, tag: tag };
+          return { beam: m, grab: grab, handle: handle, tag: tag, holder: holder };
         }
         var supply = makeBeam(A.supply.color, "SUPPLY", "grab and drag →");
         var demand = makeBeam(A.demand.color, "DEMAND", "grab and drag →");
@@ -313,6 +320,7 @@
         }
         var sShift = inherited, dShift = 0;
         var dragging = null, lastX = 0;
+        var dragVel = 0, beamLag = 0;   // how hard the beam is being shoved, and how far it trails
         var won = false;
         var plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
         var hitPt = new THREE.Vector3();
@@ -413,6 +421,15 @@
         var pulse = 0;
         return {
           update: function (dt) {
+            /* A beam that pins itself to the cursor has no weight. This trails
+               it by an amount proportional to how fast it is being shoved and
+               springs back when the hand stops, which costs nothing in the
+               model: only the holder moves. */
+            var want = dragging ? Math.max(-0.55, Math.min(0.55, -dragVel * 6)) : 0;
+            beamLag += (want - beamLag) * Math.min(1, dt * 9);
+            dragVel *= Math.max(0, 1 - dt * 9);
+            supply.holder.position.x = dragging === "supply" ? beamLag : 0;
+            demand.holder.position.x = dragging === "demand" ? beamLag : 0;
             pulse += dt;
             marker.scale.setScalar(1 + Math.sin(pulse * 3) * 0.09);
             // the supply grip beckons until the player has actually used it,
@@ -443,6 +460,8 @@
             if (!w) return;
             var dx = w.x - lastX;
             lastX = w.x;
+            dragVel = dx;            // fed to the lag in update()
+            if (Math.abs(dx) > 0.02) ctx.sfx("tick");
             // scene units -> shift units, tuned so a full sweep covers the range
             var perUnit = A.supply.maxShift / (GW * 0.85);
             if (dragging === "supply") {

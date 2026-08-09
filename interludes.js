@@ -54,6 +54,17 @@ let Interludes_postDefault = false;   // Phase 3 flips this to true
 
 /* Participants sit with this for half an hour and some are motion sensitive.
    Camera kicks and any rapid flashing check this before they run. */
+/* Audio is optional infrastructure. If il-audio.js failed to load, or the
+   context has not been unlocked by a gesture yet, every call here is a no-op
+   rather than a thrown error — a study build must not lose a scene because a
+   sound could not play. */
+function sfx(name, opts) {
+  try { if (window.Sfx) window.Sfx.play(name, opts); } catch (e) { /* silent */ }
+}
+function sfxAmbience(o) {
+  try { if (window.Sfx) window.Sfx.ambience(o); } catch (e) { /* silent */ }
+}
+
 let reducedMotionOverride = null;      // null = follow the OS setting
 function prefersReducedMotion() {
   if (reducedMotionOverride !== null) return reducedMotionOverride;
@@ -886,18 +897,276 @@ function play(id, params) {
      it. Instead the offset is applied around the render call and removed
      immediately after, so the scene's own transform is never disturbed. */
   const camOffset = new THREE.Vector3();
+  const _shakeVec = new THREE.Vector3();
   const _camSaved = new THREE.Vector3();
   let shakeLeft = 0, shakeDur = 0, shakeAmp = 0;
 
+  /* Phase 5 — the entry sweep.
+
+     A scene used to appear already framed, which made the term read as fifteen
+     loading screens rather than one place. The camera now starts pulled back
+     along its own view axis and settles into the fitted pose.
+
+     It rides the offset layer rather than writing camera.position, which is the
+     whole reason that layer exists: the offset is added around the draw and
+     removed after, so frameScene() and fitCamera() are never disturbed and a
+     resize mid-sweep still re-fits correctly. Because the pull-back is computed
+     from the camera's own orientation, it works in every scene without any of
+     them knowing about it. */
+  const INTRO_DUR = 0.7;
+  let introLeft = 0;
+  const introVec = new THREE.Vector3();
+  const _introBack = new THREE.Vector3();
+  const _introUp = new THREE.Vector3();
+
+  function beginIntro() {
+    if (prefersReducedMotion()) { introLeft = 0; return; }
+    camera.updateMatrixWorld();
+    // camera local +Z points backwards out of the screen
+    _introBack.set(0, 0, 1).applyQuaternion(camera.quaternion);
+    _introUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+    const d = Math.max(1, camera.position.length());
+    introVec.copy(_introBack).multiplyScalar(d * 0.17)
+            .addScaledVector(_introUp, d * 0.035);
+    introLeft = INTRO_DUR;
+  }
+
   function updateCamOffset(dt) {
     camOffset.set(0, 0, 0);
+    if (introLeft > 0) {
+      introLeft = Math.max(0, introLeft - dt);
+      const t = 1 - introLeft / INTRO_DUR;          // 0 at the start, 1 at rest
+      // ease-in-out-cubic: starts still, accelerates, decelerates into place
+      const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      camOffset.addScaledVector(introVec, 1 - e);
+    }
     if (shakeLeft > 0) {
       shakeLeft = Math.max(0, shakeLeft - dt);
       const k = shakeDur > 0 ? shakeLeft / shakeDur : 0;
       const a = shakeAmp * k * k;                       // quadratic decay
       // shake across the camera's own screen axes, not world axes
-      camOffset.set((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a, 0)
+      // add, not set: an impact during the entry sweep must not cancel it
+      _shakeVec.set((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a, 0)
                .applyQuaternion(camera.quaternion);
+      camOffset.add(_shakeVec);
+    }
+  }
+
+  /* ---- Phase 4: impact debris -------------------------------------------
+     A hard contact that produces nothing but a sound and a shake reads as a
+     scripted animation. A little dust thrown off the point of impact is what
+     makes it read as two objects meeting. One pool, allocated once, reused by
+     whatever asks for it. */
+  const DUST_MAX = 90;
+  let dustGeo = null, dustPts = null, dustMat = null;
+  const dustLife = new Float32Array(DUST_MAX);
+  const dustMaxLife = new Float32Array(DUST_MAX);
+  const dustVel = new Float32Array(DUST_MAX * 3);
+  let dustNext = 0, dustActive = 0;
+
+  function dustSprite() {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g = c.getContext("2d");
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, "rgba(255,255,255,1)");
+    grd.addColorStop(0.45, "rgba(255,255,255,0.45)");
+    grd.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  function ensureDust() {
+    if (dustPts) return;
+    dustGeo = new THREE.BufferGeometry();
+    const pos = new Float32Array(DUST_MAX * 3);
+    // park the whole pool far below the floor until it is used
+    for (let i = 0; i < DUST_MAX; i++) pos[i * 3 + 1] = -9999;
+    dustGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    dustMat = new THREE.PointsMaterial({
+      size: 0.075, map: dustSprite(), transparent: true, opacity: 0.0,
+      depthWrite: false, sizeAttenuation: true, color: 0xcbbfa8, fog: false
+    });
+    dustPts = new THREE.Points(dustGeo, dustMat);
+    dustPts.frustumCulled = false;    // the pool spans wherever it was fired
+    dustPts.renderOrder = 4;
+    scene.add(dustPts);
+  }
+
+  function burst(pos, opts) {
+    const o = opts || {};
+    ensureDust();
+    /* Reduced motion does not mean no feedback, it means no violent motion, so
+       the dust is thinned and slowed rather than removed. The camera shake is
+       separately suppressed in shake(). */
+    const calm = prefersReducedMotion();
+    const n = Math.round((o.count || 26) * (calm ? 0.4 : 1));
+    const spread = (o.spread || 1.6) * (calm ? 0.5 : 1);
+    const p = dustGeo.attributes.position.array;
+    for (let k = 0; k < n; k++) {
+      const i = dustNext; dustNext = (dustNext + 1) % DUST_MAX;
+      p[i * 3] = pos.x; p[i * 3 + 1] = pos.y; p[i * 3 + 2] = pos.z;
+      // outward and up, biased to a shallow cone so it skims the surface
+      const a = Math.random() * Math.PI * 2;
+      const up = 0.35 + Math.random() * 0.75;
+      const out = (0.5 + Math.random() * 0.9) * spread;
+      dustVel[i * 3] = Math.cos(a) * out;
+      dustVel[i * 3 + 1] = up * spread;
+      dustVel[i * 3 + 2] = Math.sin(a) * out;
+      dustMaxLife[i] = dustLife[i] = (o.life || 0.55) * (0.6 + Math.random() * 0.7);
+    }
+    dustActive = Math.max(dustActive, 1);
+    dustGeo.attributes.position.needsUpdate = true;
+  }
+
+  function updateDust(dt) {
+    if (!dustPts) return;
+    const p = dustGeo.attributes.position.array;
+    let alive = 0, maxL = 0;
+    for (let i = 0; i < DUST_MAX; i++) {
+      if (dustLife[i] <= 0) continue;
+      dustLife[i] -= dt;
+      if (dustLife[i] <= 0) { p[i * 3 + 1] = -9999; continue; }
+      alive++;
+      maxL = Math.max(maxL, dustLife[i] / dustMaxLife[i]);
+      dustVel[i * 3 + 1] -= 2.6 * dt;                 // gravity
+      const drag = Math.max(0, 1 - 1.9 * dt);          // air, so it settles
+      dustVel[i * 3] *= drag; dustVel[i * 3 + 2] *= drag;
+      p[i * 3] += dustVel[i * 3] * dt;
+      p[i * 3 + 1] += dustVel[i * 3 + 1] * dt;
+      p[i * 3 + 2] += dustVel[i * 3 + 2] * dt;
+    }
+    dustActive = alive;
+    // one shared opacity, driven by the longest-lived particle in flight
+    dustMat.opacity = alive ? 0.5 * maxL : 0;
+    dustGeo.attributes.position.needsUpdate = true;
+  }
+
+  /* ---- Phase 4: hover affordance ----------------------------------------
+     Most pickables in these scenes are invisible proxies — a big box over a
+     tower, a cylinder around a wheel — because that is what makes them easy to
+     click. Outlining the proxy would draw a rim round thin air, so a pickable
+     names the thing the player actually sees with userData.rimTarget, and
+     anything that does not name one gets no rim rather than a wrong one.
+
+     A single Mesh target gets a real Fresnel rim: the same geometry drawn
+     again, additively, brightest where the surface turns away from the eye.
+     That reads as light catching an edge rather than as a UI outline. A Group
+     target cannot share one geometry, so it gets a small emissive lift
+     instead, which is the same idea carried by the materials it already has. */
+  const RIM_COLOR = new THREE.Color(0xffe6a8);
+  const _lift = new THREE.Vector3();
+  let rimMesh = null, hovered = null, hoverT = 0;
+  const _emisSaved = new Map();
+
+  function ensureRim() {
+    if (rimMesh) return;
+    const m = new THREE.ShaderMaterial({
+      uniforms: { rimColor: { value: RIM_COLOR }, rimStrength: { value: 0 } },
+      vertexShader:
+        "varying vec3 vN; varying vec3 vV;\n" +
+        "void main() {\n" +
+        "  vec4 wp = modelMatrix * vec4(position, 1.0);\n" +
+        "  vN = normalize(mat3(modelMatrix) * normal);\n" +
+        "  vV = normalize(cameraPosition - wp.xyz);\n" +
+        "  gl_Position = projectionMatrix * viewMatrix * wp;\n" +
+        "}",
+      fragmentShader:
+        "uniform vec3 rimColor; uniform float rimStrength;\n" +
+        "varying vec3 vN; varying vec3 vV;\n" +
+        "void main() {\n" +
+        "  float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));\n" +
+        "  gl_FragColor = vec4(rimColor, pow(f, 2.4) * rimStrength);\n" +
+        "}",
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    rimMesh = new THREE.Mesh(new THREE.BufferGeometry(), m);
+    rimMesh.visible = false;
+    rimMesh.frustumCulled = false;
+    rimMesh.renderOrder = 3;
+    scene.add(rimMesh);
+  }
+
+  function rimTargetOf(hit) {
+    if (!hit || !hit.object) return null;
+    const t = hit.object.userData && hit.object.userData.rimTarget;
+    if (t) return t;
+    // a pickable that is drawn at all can speak for itself; an invisible proxy
+    // has nothing to light, so it opts out
+    const m = hit.object.material;
+    const drawn = m && (Array.isArray(m) ? m.some((x) => x && x.visible !== false)
+                                         : m.visible !== false);
+    return drawn ? hit.object : null;
+  }
+
+  function setHovered(target) {
+    if (target === hovered) return;
+    // put whatever we lifted back exactly as we found it
+    _emisSaved.forEach((v, mat) => {
+      if (mat.emissive) mat.emissive.copy(v.color);
+      mat.emissiveIntensity = v.intensity;
+    });
+    _emisSaved.clear();
+    // and set down whatever we picked up
+    if (hovered && hovered.userData._homeZ) {
+      hovered.position.copy(hovered.userData._homeZ);
+    }
+    hovered = target;
+    hoverT = 0;
+    // a soft tick as the pointer crosses onto something live. Throttled in the
+    // mixer, because this fires on every boundary crossing.
+    if (hovered) sfx("hover");
+    if (!hovered) { if (rimMesh) rimMesh.visible = false; return; }
+    if (hovered.isMesh && hovered.geometry) {
+      ensureRim();
+      rimMesh.geometry = hovered.geometry;
+      rimMesh.visible = true;
+    } else {
+      if (rimMesh) rimMesh.visible = false;
+      hovered.traverse((o) => {
+        if (!o.isMesh) return;
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach((mat) => {
+          if (!mat || !mat.emissive || _emisSaved.has(mat)) return;
+          _emisSaved.set(mat, {
+            color: mat.emissive.clone(),
+            intensity: mat.emissiveIntensity == null ? 1 : mat.emissiveIntensity
+          });
+        });
+      });
+    }
+  }
+
+  function updateHover(dt) {
+    if (!hovered) {
+      if (rimMesh && rimMesh.visible) rimMesh.material.uniforms.rimStrength.value = 0;
+      return;
+    }
+    hoverT = Math.min(1, hoverT + dt * 6);
+    const k = hoverT * hoverT * (3 - 2 * hoverT);     // smoothstep in
+    /* A flat card facing the camera has no Fresnel to speak of — the surface
+       never turns away from the eye — so a rim does nothing for it. What makes
+       a card read as an object lying on a desk is picking it up, so anything
+       carrying userData.hoverLift rises toward the camera instead. */
+    if (hovered.userData.hoverLift) {
+      if (!hovered.userData._homeZ) hovered.userData._homeZ = hovered.position.clone();
+      _lift.copy(camera.position).sub(hovered.userData._homeZ).normalize();
+      hovered.position.copy(hovered.userData._homeZ)
+             .addScaledVector(_lift, hovered.userData.hoverLift * k);
+    }
+    if (rimMesh && rimMesh.visible) {
+      hovered.updateWorldMatrix(true, false);
+      rimMesh.matrix.copy(hovered.matrixWorld);
+      rimMesh.matrixAutoUpdate = false;
+      rimMesh.material.uniforms.rimStrength.value = 0.55 * k;
+    } else {
+      _emisSaved.forEach((v, mat) => {
+        mat.emissive.copy(v.color).lerp(RIM_COLOR, 0.55 * k);
+        mat.emissiveIntensity = v.intensity + 0.30 * k;
+      });
     }
   }
 
@@ -908,6 +1177,7 @@ function play(id, params) {
   // Declared here, not next to buildComposer(), because resize() runs during
   // setup and reads `composer`. A `let` further down leaves it in the temporal
   // dead zone at that point and play() aborts before the render loop starts.
+  let torn = false;                             // teardown is idempotent
   let composer = null, composerState = "idle";   // idle | loading | ready | failed
   // master switch for the composer. Off by default until Phase 3 lands real
   // passes; flipped at runtime via Interludes.setPost() during verification.
@@ -1220,6 +1490,11 @@ function play(id, params) {
     refitLights() { applyShadowFlags(scene); fitShadowCamera(); },
     // a decaying camera kick, in world units, applied around the draw only.
     // Scenes call this; they must never write camera.position for effects.
+    // a puff of dust at a world point, for impacts
+    burst(pos, opts) { burst(pos, opts); },
+    // scenes name the event; the mixer decides what it sounds like
+    sfx(name, opts) { sfx(name, opts); },
+    ambience(o) { sfxAmbience(o); },
     shake(amplitude, seconds) {
       if (prefersReducedMotion()) return;
       shakeAmp = Math.max(shakeAmp, amplitude || 0.06);
@@ -1229,6 +1504,7 @@ function play(id, params) {
     complete() {
       if (completed) return;
       completed = true;
+      sfx("complete");
       statusEl.textContent = "Goal complete";
       statusEl.classList.add("done");
       goBtn.disabled = false;
@@ -1351,8 +1627,25 @@ function play(id, params) {
     const hits = raycaster.intersectObjects(ctx.pickables, false);
     return hits.length ? hits[0] : null;
   }
-  function onDown(ev) { setPointer(ev); instance.onPointerDown && instance.onPointerDown(firstHit(), ev); }
-  function onMove(ev) { setPointer(ev); instance.onPointerMove && instance.onPointerMove(firstHit(), ev); }
+  function onDown(ev) {
+    setPointer(ev);
+    const hit = firstHit();
+    /* Every pickable in every scene answers to the pointer here, so wiring the
+       click sound at this one point covers all of them — including any scene
+       added later — instead of relying on twelve files each remembering to. A
+       scene that wants a specific sound for a specific object plays it on top
+       from its own handler. */
+    if (hit) sfx(hit.object.userData && hit.object.userData.sfxDown || "select");
+    instance.onPointerDown && instance.onPointerDown(hit, ev);
+  }
+  function onMove(ev) {
+    setPointer(ev);
+    const hit = firstHit();
+    // the hover affordance rides the raycast the scene was going to get anyway
+    setHovered(rimTargetOf(hit));
+    renderer.domElement.style.cursor = hit ? "pointer" : "";
+    instance.onPointerMove && instance.onPointerMove(hit, ev);
+  }
   function onUp(ev) { instance.onPointerUp && instance.onPointerUp(ev); }
   renderer.domElement.addEventListener("pointerdown", onDown);
   renderer.domElement.addEventListener("pointermove", onMove);
@@ -1411,6 +1704,8 @@ function play(id, params) {
     instance.update && instance.update(dt);
     updateLabels(dt);
     updateCamOffset(dt);
+    updateDust(dt);
+    updateHover(dt);
 
     // apply the offset only for the draw, then put the camera back exactly
     // where the scene left it
@@ -1422,13 +1717,31 @@ function play(id, params) {
     Perf.sample(dtMs);
     raf = requestAnimationFrame(frame);
   }
+  // the scene is built and fitted by now, so the sweep knows where it lands
+  beginIntro();
+  sfx("enter");
+  /* Room tone. A scene may declare its own; everything else gets a quiet bed
+     so the term sounds like one building rather than fifteen silent rooms. */
+  sfxAmbience(def.ambience || { level: 0.16, busy: 0.05 });
   Perf.reset(id);
   raf = requestAnimationFrame(frame);
   if (Quality.post && postEnabled) buildComposer();
 
   function teardown() {
+    if (torn) return;
+    torn = true;
+    try { if (window.Sfx) window.Sfx.stopAmbience(); } catch (e) { /* silent */ }
+    if (endTimer) { clearTimeout(endTimer); endTimer = 0; }
     cancelAnimationFrame(raf);
     if (composer) { try { composer.dispose(); } catch (e) { /* older builds */ } composer = null; }
+    setHovered(null);
+    if (rimMesh) { rimMesh.material.dispose(); rimMesh = null; }
+    if (dustPts) {
+      dustGeo.dispose();
+      if (dustMat.map) dustMat.map.dispose();
+      dustMat.dispose();
+      dustPts = null; dustGeo = null; dustMat = null;
+    }
     if (envRT) { try { envRT.dispose(); } catch (e) {} envRT = null; scene.environment = null; }
     composerState = "idle";
     window.removeEventListener("resize", resize);
@@ -1450,13 +1763,34 @@ function play(id, params) {
     active = null;
   }
 
-  function endSession(finished) {
-    if (finished && def.onComplete) { try { def.onComplete(); } catch (e) {} }
+  /* Exit is a fade rather than a cut, but the game flow must not be held
+     hostage to an animation. onComplete() still runs immediately, so the HUD
+     meters start counting while the scene is still on screen; only the
+     teardown and the end event wait for the fade.
+
+     Two races to guard. A second close during the fade must tear down at once
+     rather than start another timer, and play() starting a new scene must not
+     leave this one's animation loop running behind a removed overlay. */
+  let ending = false, endTimer = 0;
+
+  function finishEnd(finished) {
+    if (endTimer) { clearTimeout(endTimer); endTimer = 0; }
     teardown();
     // let the page (the game director) react to the scene ending
     document.dispatchEvent(new CustomEvent("interlude:end", {
       detail: { id, finished: !!finished }
     }));
+  }
+
+  function endSession(finished) {
+    if (ending) { finishEnd(finished); return; }
+    ending = true;
+    sfx("leave");
+    try { if (window.Sfx) window.Sfx.stopAmbience(); } catch (e) { /* silent */ }
+    if (finished && def.onComplete) { try { def.onComplete(); } catch (e) {} }
+    if (prefersReducedMotion()) { finishEnd(finished); return; }
+    overlay.classList.add("il-leaving");
+    endTimer = setTimeout(() => { endTimer = 0; finishEnd(finished); }, 220);
   }
 
   goBtn.addEventListener("click", () => {

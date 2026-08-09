@@ -437,6 +437,7 @@
           keep(new THREE.CylinderGeometry(WR + 0.12, WR + 0.12, 0.5, 16)),
           new THREE.MeshBasicMaterial({ visible: false }));
         wheelHit.rotation.x = Math.PI / 2;
+        wheelHit.userData.rimTarget = wheel;
         wheel.add(wheelHit);
         ctx.pickables.push(wheelHit);
 
@@ -500,6 +501,7 @@
 
         // ---------- state ----------
         var N = 1, procurement = 1;
+        var knobTargetX = null;      // where the hand wants the lever (see update)
         var dragging = false;
         var won = false;
         var dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -A.lever.z);
@@ -648,6 +650,23 @@
         return {
           update: function (dt) {
             wheel.rotation.z += dt * (0.25 + procurement * 0.45);
+            if (knobTargetX !== null) {
+              var d = knobTargetX - knob.position.x;
+              if (Math.abs(d) > 0.0005) {
+                knob.position.x += d * Math.min(1, dt * 11);
+                var t = (knob.position.x - railL) / (railR - railL);
+                var newN = Math.max(1, Math.round(1 + t * 49));
+                if (newN !== N) {
+                  N = newN;
+                  ctx.sfx("tick");
+                  /* The floor gets busier as competitors are admitted. This is
+                     the brief's crossfading trading floor, done as a parameter
+                     on the bed rather than a second recording. */
+                  ctx.ambience({ level: 0.16, busy: Math.min(1, (N - 1) / 24) });
+                  pushToPage(); refresh();
+                }
+              }
+            }
             for (var k = 0; k < firmMeshes.length; k++) {
               var f = firmMeshes[k];
               var want = f.visible ? 1 : 0.001;
@@ -657,8 +676,9 @@
 
           onPointerDown: function (hitObj) {
             if (!hitObj) return;
-            if (hitObj.object === knob && open) { dragging = true; return; }
+            if (hitObj.object === knob && open) { dragging = true; ctx.sfx("grab"); return; }
             if (hitObj.object === wheelHit) {
+              ctx.sfx("ratchet");
               procurement = procurement >= 3 ? 1 : procurement + 1;
               pushToPage();
               refresh();
@@ -673,11 +693,12 @@
             ctx.renderer.domElement.style.cursor = "grabbing";
             var w = pointerOnRail();
             if (!w) return;
-            var x = Math.max(railL, Math.min(railR, w.x));
-            knob.position.x = x;
-            var t = (x - railL) / (railR - railL);
-            var newN = Math.max(1, Math.round(1 + t * 49));
-            if (newN !== N) { N = newN; pushToPage(); refresh(); }
+            /* The pointer sets a target, not the position. update() carries
+               the lever toward it, and the firm count is read off where the
+               lever actually is — so the number follows the object rather than
+               the hand, and the whole thing has weight instead of being welded
+               to the cursor. */
+            knobTargetX = Math.max(railL, Math.min(railR, w.x));
           },
 
           onPointerUp: function () {

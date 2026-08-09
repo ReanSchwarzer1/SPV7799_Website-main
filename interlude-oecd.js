@@ -224,6 +224,9 @@
           var hit = new THREE.Mesh(
             keep(ctx.roundedBox(2.1, 6.2, 2.0)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
+          // a pair of towers is a Group's worth of meshes, so this one takes
+          // the emissive lift rather than a rim
+          hit.userData.rimTarget = tv;
           hit.position.set(x, 1.2, 0);
           scene.add(hit);
           ctx.pickables.push(hit);
@@ -379,9 +382,9 @@
           },
           onPointerDown: function (h) {
             if (!h) return;
-            if (h.object === plaque) { lockIn(); return; }
+            if (h.object === plaque) { ctx.sfx("press"); lockIn(); return; }
             for (var i = 0; i < pods.length; i++) {
-              if (h.object === pods[i].hit) { select(i); return; }
+              if (h.object === pods[i].hit) { ctx.sfx("card"); select(i); return; }
             }
           },
           onPointerMove: function (h) {

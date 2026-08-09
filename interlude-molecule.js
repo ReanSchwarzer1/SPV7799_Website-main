@@ -493,17 +493,20 @@
               var d = subject.position.distanceTo(target.position);
               ctx.setStatus(d <= A.snapDistance ? "Release to compare"
                                                 : "Bring the samples together", false);
-              if (d <= A.snapDistance * 0.55) { dragging = null; mergeSamples(); }
+              if (d <= A.snapDistance * 0.55) { dragging = null; ctx.sfx("press"); mergeSamples(); }
             } else if (dragging === "note") {
               note.position.set(w.x, w.y, 1.2);
-              if (note.position.distanceTo(slot.position) <= 1.25) { dragging = null; buy(); }
+              if (note.position.distanceTo(slot.position) <= 1.25) {
+                dragging = null;
+            ctx.sfx("release"); ctx.sfx("slot"); buy();
+              }
             }
           },
 
           onPointerUp: function () {
             if (dragging === "sample") {
               var d = subject.position.distanceTo(target.position);
-              if (d <= A.snapDistance) { dragging = null; mergeSamples(); return; }
+              if (d <= A.snapDistance) { dragging = null; ctx.sfx("press"); mergeSamples(); return; }
             }
             dragging = null;
             ctx.renderer.domElement.style.cursor = "default";

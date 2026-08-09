@@ -1,5 +1,5 @@
 {
-  "when": "2026-08-09T04:46:12.962Z",
+  "when": "2026-08-09T04:16:27.140Z",
   "quality": {
     "tier": "high",
     "locked": true,
@@ -8,142 +8,142 @@
     "shadowMapSize": 2048
   },
   "post": false,
-  "settleMs": 1500,
-  "measureMs": 2500,
+  "settleMs": 120,
+  "measureMs": 260,
   "scenes": [
     {
       "scene": "molecule",
       "built": true,
-      "fps": 120,
+      "fps": 51.8,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 243.1,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "courtroom",
       "built": true,
-      "fps": 120,
-      "medianMs": 8.3,
-      "p95Ms": 8.4,
-      "tier": "high",
+      "fps": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "tier": null,
       "errors": []
     },
     {
       "scene": "market-floor",
       "built": true,
-      "fps": 120,
-      "medianMs": 8.3,
-      "p95Ms": 8.4,
-      "tier": "high",
+      "fps": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "tier": null,
       "errors": []
     },
     {
       "scene": "equilibrium",
       "built": true,
-      "fps": 120,
+      "fps": 100.3,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 33.2,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "ward",
       "built": true,
-      "fps": 120,
+      "fps": 63.8,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 141.6,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "globe",
       "built": true,
-      "fps": 120,
+      "fps": 73.2,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 100,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "wage",
       "built": true,
-      "fps": 120,
-      "medianMs": 8.3,
-      "p95Ms": 8.4,
-      "tier": "high",
+      "fps": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "tier": null,
       "errors": []
     },
     {
       "scene": "antitrust",
       "built": true,
-      "fps": 120,
+      "fps": 93.3,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 33.3,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "race",
       "built": true,
-      "fps": 120,
+      "fps": 101.6,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 25.1,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "oecd",
       "built": true,
-      "fps": 120,
+      "fps": 83.9,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 41.7,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "dispatch",
       "built": true,
-      "fps": 120,
+      "fps": 52,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 224.97,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "dispatch-market",
       "built": true,
-      "fps": 120,
+      "fps": 97.8,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 33.3,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "dispatch-reach",
       "built": true,
-      "fps": 120,
+      "fps": 100.7,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 33.3,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "dispatch-power",
       "built": true,
-      "fps": 120,
+      "fps": 99.3,
       "medianMs": 8.3,
-      "p95Ms": 8.4,
+      "p95Ms": 33.4,
       "tier": "high",
       "errors": []
     },
     {
       "scene": "reckoning",
       "built": true,
-      "fps": 120,
-      "medianMs": 8.3,
-      "p95Ms": 8.4,
-      "tier": "high",
+      "fps": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "tier": null,
       "errors": []
     }
   ]

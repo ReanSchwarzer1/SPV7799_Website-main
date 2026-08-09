@@ -244,6 +244,8 @@
             [side, side, top, side, side, side]);
           p.position.set(x, A.table.h / 2 + A.paper.t / 2, 0.45);
           scene.add(p);
+          // the paper is what the player is aiming at, so it is what lights up
+          p.userData.rimTarget = p;
           ctx.pickables.push(p);
           return p;
         }
@@ -343,6 +345,7 @@
         var selected = 0;
         var state = "aim";            // aim -> striking -> verdict
         var strikeT = 0;
+        var _impactPt = new THREE.Vector3();
         var prevKeys = {};
         var bob = 0;
         var ruledThisSession = 0;
@@ -751,6 +754,15 @@
                 gavel.rotation.z = CONTACT;
                 papers[selected].scale.set(1.06, 1, 1.06);
                 ctx.shake(0.055, 0.16);
+                /* The shake alone reads as the camera being bumped. The dust is
+                   what makes it read as the head hitting the paper, because it
+                   comes off the contact point rather than the whole frame. */
+                papers[selected].getWorldPosition(_impactPt);
+                _impactPt.y += A.paper.t;
+                ctx.burst(_impactPt, { count: 30, spread: 1.35, life: 0.5 });
+                // crack, body and weight — see the gavel voice in il-audio.js
+                ctx.sfx("gavel");
+                ctx.sfx("paper");
                 state = "verdict";
                 strikeT = 0;
                 registerRuling(selected);
@@ -778,6 +790,7 @@
             // the file can be picked up and put down at any time
             if (hit.object === leftPage || hit.object === rightPage) {
               docHeld = !docHeld;
+              ctx.sfx("paper");
               ctx.setHint(docHeld
                 ? "Click the file again to close it and rule."
                 : INSTR);

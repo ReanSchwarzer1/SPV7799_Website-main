@@ -340,6 +340,7 @@
             keep(ctx.roundedBox(A.button.w * 1.3, A.button.h * 1.6, A.button.d * 2)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
           hit.position.copy(b.position);
+          hit.userData.rimTarget = b;         // the rocker cap, not the hit box
           scene.add(hit);
           ctx.pickables.push(hit);
           makeLabel(x, -3.55, 4.4,
@@ -481,7 +482,11 @@
             if (h.object === btnAdd.hit) next = Math.min(A.maxFirms, firms + 1);
             else if (h.object === btnRemove.hit) next = Math.max(A.minFirms, firms - 1);
             else return;
-            if (next !== firms) { firms = next; pushToPage(); refresh(); }
+            if (next !== firms) {
+              firms = next; ctx.sfx("press"); pushToPage(); refresh();
+            } else {
+              ctx.sfx("denied");        // already at the end of the range
+            }
           },
           onPointerMove: function (h) {
             ctx.renderer.domElement.style.cursor = h ? "pointer" : "default";

@@ -294,6 +294,7 @@
           var hit = new THREE.Mesh(
             keep(ctx.roundedBox(1.7, 1.6, 1.2)),
             keep(new THREE.MeshBasicMaterial({ visible: false })));
+          hit.userData.rimTarget = lever;     // the paddle the player flips
           hit.position.set(x, 0.6, 2.9);
           scene.add(hit);
           ctx.pickables.push(hit);
@@ -486,13 +487,19 @@
             if (!h) return;
             if (h.object === swWage.hit) {
               wageKey = wageKey === "unskilled" ? "salaried" : "unskilled";
+              ctx.sfx("switch");
               pushToPage(); refresh();
             } else if (h.object === swDrug.hit) {
               if (!genericExists) {
+                /* The brief asked for this one specifically: the switch the
+                   player's own earlier ruling closed has to sound like a thing
+                   that will not move, not like a click that did nothing. */
+                ctx.sfx("switchBlocked");
                 ctx.setHint("Welded shut. The licence you denied is why this market has no generic.");
                 return;
               }
               drugKey = drugKey === "patented" ? "generic" : "patented";
+              ctx.sfx("switch");
               pushToPage(); refresh();
             }
           },

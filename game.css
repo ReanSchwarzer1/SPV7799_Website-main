@@ -38,6 +38,35 @@ body.gamified {
 .meter .fill { height:100%; width:10%; border-radius:5px; transition:width .5s ease; }
 .meter.access  .fill { background:#3fae6b; }
 .meter.innov   .fill { background:#4f86c6; }
+
+/* Phase 4 — a meter that moves should say which way it went. Gold for a gain,
+   red for a loss, on the bar itself so the eye is already in the right place.
+   Both are suppressed under prefers-reduced-motion; see flashMeter(). */
+@keyframes meter-gain {
+  0%   { box-shadow:0 0 0 0 rgba(255,251,0,0); filter:brightness(1); }
+  25%  { box-shadow:0 0 10px 2px rgba(255,251,0,.75); filter:brightness(1.5); }
+  100% { box-shadow:0 0 0 0 rgba(255,251,0,0); filter:brightness(1); }
+}
+@keyframes meter-loss {
+  0%   { box-shadow:0 0 0 0 rgba(212,87,63,0); filter:brightness(1); }
+  25%  { box-shadow:0 0 10px 2px rgba(212,87,63,.8); filter:brightness(1.35) saturate(1.4); }
+  100% { box-shadow:0 0 0 0 rgba(212,87,63,0); filter:brightness(1); }
+}
+.meter.flash-gain .fill { animation:meter-gain .6s ease-out; }
+.meter.flash-loss .fill { animation:meter-loss .6s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .meter .fill { transition:none; }
+  .meter.flash-gain .fill, .meter.flash-loss .fill { animation:none; }
+}
+.hud-mute {
+  flex:0 0 auto; width:30px; height:30px; border-radius:8px; cursor:pointer;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+  color:#cbd2da; font-size:14px; line-height:1; padding:0;
+}
+.hud-mute:hover { background:rgba(255,255,255,.12); color:#fff; }
+.hud-mute.off { color:#d4573f; border-color:rgba(212,87,63,.45); }
+.hud-mute:focus-visible { outline:2px solid #fffb00; outline-offset:2px; }
+
 #game-hud .progress { font-size:12px; color:#cbd2da; white-space:nowrap; font-variant-numeric:tabular-nums; }
 #game-hud .progress b { color:#fffb00; }
 #game-hud .score { text-align:right; white-space:nowrap; }

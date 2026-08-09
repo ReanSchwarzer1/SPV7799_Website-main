@@ -108,6 +108,27 @@
         }
 
         // ---------- the monument ----------
+        /* Sub-bass under stone, per the brief. The monument scene is the only
+           one that gets a drone; everywhere else the bed stays neutral. */
+        ctx.ambience({ level: 0.26, busy: 0.12, drone: 0.05, droneHz: 46 });
+
+        /* One chime per lit stratum, walked up the column in the order the
+           modules were played, so the result is heard as a sequence rather
+           than read as a total. */
+        /* The ids are kept because the sequence runs for up to three seconds
+           and a player who skips out of the scene would otherwise hear the
+           chimes land over the next one. dispose() clears them. */
+        var chimeTimers = [];
+        (function () {
+          var lit = 0;
+          for (var ci = 0; ci < mods.length; ci++) {
+            if (!mods[ci].ok) continue;
+            chimeTimers.push(setTimeout(function () { ctx.sfx("gain"); },
+                                        420 + lit * 260));
+            lit++;
+          }
+        })();
+
         var column = new THREE.Group();
         scene.add(column);
         for (var i = 0; i < mods.length; i++) {
@@ -338,7 +359,10 @@
             ctx.renderer.domElement.style.cursor = "default";
           },
           onResize: fitCamera,
-          dispose: function () { junk.forEach(function (d) { try { d.dispose(); } catch (e) {} }); }
+          dispose: function () {
+            chimeTimers.forEach(clearTimeout);
+            junk.forEach(function (d) { try { d.dispose(); } catch (e) {} });
+          }
         };
       }
     });
