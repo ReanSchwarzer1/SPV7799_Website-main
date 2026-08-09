@@ -488,6 +488,7 @@
             if (h.object === swWage.hit) {
               wageKey = wageKey === "unskilled" ? "salaried" : "unskilled";
               ctx.sfx("switch");
+              ctx.shake(0.012, 0.07);     // the bench takes the throw
               pushToPage(); refresh();
             } else if (h.object === swDrug.hit) {
               if (!genericExists) {
@@ -495,6 +496,7 @@
                    player's own earlier ruling closed has to sound like a thing
                    that will not move, not like a click that did nothing. */
                 ctx.sfx("switchBlocked");
+                ctx.shake(0.02, 0.09);     // it refuses to move, and that is felt
                 ctx.setHint("Welded shut. The licence you denied is why this market has no generic.");
                 return;
               }

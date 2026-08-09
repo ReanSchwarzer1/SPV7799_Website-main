@@ -421,8 +421,8 @@
           },
           onPointerDown: function (h) {
             if (!h) return;
-            if (h.object === stackHigh.hit) { ctx.sfx("slot"); commit("high"); }
-            else if (h.object === stackLow.hit) { ctx.sfx("slot"); commit("low"); }
+            if (h.object === stackHigh.hit) { ctx.sfx("slot"); ctx.shake(0.018, 0.10); commit("high"); }
+            else if (h.object === stackLow.hit) { ctx.sfx("slot"); ctx.shake(0.018, 0.10); commit("low"); }
           },
           onPointerMove: function (h) {
             ctx.renderer.domElement.style.cursor = h ? "pointer" : "default";

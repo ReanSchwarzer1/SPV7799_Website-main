@@ -751,8 +751,8 @@ function play(id, params) {
     paper:         { roughness: 0.94, metalness: 0.00, envMapIntensity: 0.04, maps: "paper" },
     polishedStone: { roughness: 0.40, metalness: 0.05, envMapIntensity: 0.35,
                      clearcoat: 0.35, clearcoatRoughness: 0.25, maps: "marble" },
-    machinedSteel: { roughness: 0.32, metalness: 1.00, envMapIntensity: 1.00, wear: 0.9 },
-    brass:         { roughness: 0.40, metalness: 1.00, envMapIntensity: 0.90, color: 0xb98f4a, wear: 1.1 },
+    machinedSteel: { maps: "cast", roughness: 0.32, metalness: 1.00, envMapIntensity: 1.00, wear: 0.9 },
+    brass:         { maps: "cast", roughness: 0.40, metalness: 1.00, envMapIntensity: 0.90, color: 0xb98f4a, wear: 1.1 },
     paintedMetal:  { roughness: 0.45, metalness: 0.00, envMapIntensity: 0.45,
                      clearcoat: 0.55, clearcoatRoughness: 0.30, wear: 0.8 },
     rubber:        { roughness: 0.93, metalness: 0.00, envMapIntensity: 0.06, wear: 0.5 },
@@ -778,6 +778,11 @@ function play(id, params) {
       m = { normalMap: normalTexture("f_paper", 256, 256, surfaces.paper(0.55), 0.55, 3, 4),
             roughnessMap: grayTexture("f_paperR", 256, 256, surfaces.paper(0.35), 3, 4),
             normalScale: new THREE.Vector2(0.3, 0.3) };
+    } else if (kind === "cast") {
+      const h = surfaces.cast(1);
+      m = { normalMap: normalTexture("f_cast", 512, 512, h, 0.8, 3, 3),
+            roughnessMap: grayTexture("f_castR", 512, 512, surfaces.cast(0.7), 3, 3),
+            normalScale: new THREE.Vector2(0.22, 0.22) };
     } else if (kind === "marble") {
       const h = surfaces.marble(1);
       m = { normalMap: normalTexture("f_marble", 512, 512, h, 1.1, 3, 1),
@@ -1140,6 +1145,43 @@ function play(id, params) {
     }
   }
 
+  /* ---- press feedback --------------------------------------------------
+     A click that changes a number somewhere else is information; a click that
+     moves the thing under the cursor is contact. Every pickable gets this,
+     wired once here rather than per scene, for the same reason the click sound
+     is: nothing can be missed by omission.
+
+     It is a critically-damped spring on scale, not a tween, so a rapid series
+     of clicks compounds into one continuous motion instead of restarting and
+     snapping. Scenes that animate their own scale (the antitrust buttons
+     beckon, the ward wheel pulses) are left alone via userData.noPunch. */
+  const punches = [];
+
+  function punch(obj, depth) {
+    if (!obj || obj.userData.noPunch) return;
+    let p = punches.find((q) => q.obj === obj);
+    if (!p) {
+      p = { obj: obj, base: obj.scale.clone(), v: 0, x: 0 };
+      punches.push(p);
+    }
+    p.v -= (depth || 0.06) * 26;      // a shove inward; the spring does the rest
+  }
+
+  function updatePunches(dt) {
+    for (let i = punches.length - 1; i >= 0; i--) {
+      const p = punches[i];
+      // spring toward zero displacement, damped just short of oscillating
+      p.v += (-p.x * 190 - p.v * 19) * dt;
+      p.x += p.v * dt;
+      if (Math.abs(p.x) < 0.0004 && Math.abs(p.v) < 0.004) {
+        p.obj.scale.copy(p.base);
+        punches.splice(i, 1);
+        continue;
+      }
+      p.obj.scale.set(p.base.x * (1 + p.x), p.base.y * (1 + p.x), p.base.z * (1 + p.x));
+    }
+  }
+
   function updateHover(dt) {
     if (!hovered) {
       if (rimMesh && rimMesh.visible) rimMesh.material.uniforms.rimStrength.value = 0;
@@ -1302,6 +1344,23 @@ function play(id, params) {
   /* Height functions. All are periodic in x and y so they tile cleanly. */
   const TAU = Math.PI * 2;
   const surfaces = {
+    /* Sand-cast metal. Wood and paper had height functions and metal did not,
+       which is why every brass and steel surface in the game was mathematically
+       perfect and read as plastic: a flat surface with a single roughness
+       reflects the light identically everywhere, and the eye takes that as
+       injection moulding. Real cast brass has slow blotches from the mould and
+       a fine tooth over the top. Both are here, and both are tiny — this is
+       meant to break up a highlight, not to look dirty. */
+    cast(amp) {
+      const a = amp == null ? 1 : amp;
+      return (x, y) => {
+        const u = (x / 512) * TAU, v = (y / 512) * TAU;
+        const blotch = Math.sin(u * 3.1 + Math.sin(v * 2.3) * 1.4) * 0.5 +
+                       Math.sin(v * 4.7 + Math.cos(u * 1.9) * 1.1) * 0.32 +
+                       Math.sin((u + v) * 7.3) * 0.16;
+        return 0.5 + blotch * 0.14 * a + (Math.random() - 0.5) * 0.30 * a;
+      };
+    },
     // fine tooth of thick paper: white noise, no structure
     paper(amp) {
       const a = amp == null ? 0.5 : amp;
@@ -1494,6 +1553,8 @@ function play(id, params) {
     burst(pos, opts) { burst(pos, opts); },
     // scenes name the event; the mixer decides what it sounds like
     sfx(name, opts) { sfx(name, opts); },
+    // a spring shove on an object, for contact the player should feel
+    punch(obj, depth) { punch(obj, depth); },
     ambience(o) { sfxAmbience(o); },
     shake(amplitude, seconds) {
       if (prefersReducedMotion()) return;
@@ -1635,7 +1696,11 @@ function play(id, params) {
        added later — instead of relying on twelve files each remembering to. A
        scene that wants a specific sound for a specific object plays it on top
        from its own handler. */
-    if (hit) sfx(hit.object.userData && hit.object.userData.sfxDown || "select");
+    if (hit) {
+      sfx(hit.object.userData && hit.object.userData.sfxDown || "select");
+      // the visible object takes the hit, not the invisible proxy that caught it
+      punch(rimTargetOf(hit), hit.object.userData && hit.object.userData.punch);
+    }
     instance.onPointerDown && instance.onPointerDown(hit, ev);
   }
   function onMove(ev) {
@@ -1706,6 +1771,7 @@ function play(id, params) {
     updateCamOffset(dt);
     updateDust(dt);
     updateHover(dt);
+    updatePunches(dt);
 
     // apply the offset only for the draw, then put the camera back exactly
     // where the scene left it

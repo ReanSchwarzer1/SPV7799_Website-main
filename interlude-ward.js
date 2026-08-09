@@ -170,6 +170,40 @@
                              Math.sin(ang) * A.wheel.r * 0.47, 0);
           spoke.rotation.z = ang + Math.PI / 2;
           wheel.add(spoke);
+
+          /* The spokes run through the rim and stop, which left ten flat-cut
+             rods sticking out like dowels. On a real helm those protrusions are
+             the handles, so they get turned: a swell, a collar where they leave
+             the rim, and a rounded cap. */
+          var reach = A.wheel.r + A.wheel.tube * 0.55;
+          var grip = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.062, 0.098, A.wheel.r * 0.30, 0.028)), goldMat);
+          grip.position.set(Math.cos(ang) * (reach + A.wheel.r * 0.15),
+                            Math.sin(ang) * (reach + A.wheel.r * 0.15), 0);
+          grip.rotation.z = ang + Math.PI / 2;
+          wheel.add(grip);
+
+          var ferrule = new THREE.Mesh(
+            keep(ctx.turnedCylinder(0.105, 0.105, 0.07, 0.022)), darkGold);
+          ferrule.position.set(Math.cos(ang) * reach, Math.sin(ang) * reach, 0);
+          ferrule.rotation.z = ang + Math.PI / 2;
+          wheel.add(ferrule);
+
+          var capEnd = new THREE.Mesh(
+            keep(new THREE.SphereGeometry(0.072, 24, 16)), goldMat);
+          capEnd.position.set(Math.cos(ang) * (reach + A.wheel.r * 0.30),
+                              Math.sin(ang) * (reach + A.wheel.r * 0.30), 0);
+          wheel.add(capEnd);
+
+          /* A helm rim is built from segments butted together at the spokes,
+             not bent from one piece. The joint bands say so. */
+          var joint = new THREE.Mesh(
+            keep(ctx.turnedCylinder(A.wheel.tube * 1.16, A.wheel.tube * 1.16,
+                                    A.wheel.tube * 0.34, A.wheel.tube * 0.10)), darkGold);
+          joint.position.set(Math.cos(ang + Math.PI / SPOKES) * A.wheel.r,
+                             Math.sin(ang + Math.PI / SPOKES) * A.wheel.r, 0);
+          joint.rotation.z = ang + Math.PI / SPOKES + Math.PI / 2;
+          wheel.add(joint);
         }
 
         // hub: a turned boss, a collar, a bolt circle and a centre nut
@@ -209,15 +243,24 @@
         // anything. Say which, in the world, rather than letting the player
         // turn the dead way and think the thing is broken.
         var dirArrows = new THREE.Group();
+        var arrowMat = mat({ color: 0xffffff, roughness: 0.4,
+                             emissive: 0xffffff, emissiveIntensity: 0.55 });
+        var headGeo = keep(new THREE.ConeGeometry(0.13, 0.34, 48));
+        var shaftGeo = keep(ctx.turnedCylinder(0.045, 0.045, 0.30, 0.015));
         [0.55, 1.0, 1.45].forEach(function (a) {
-          var cone = new THREE.Mesh(
-            keep(new THREE.ConeGeometry(0.16, 0.42, 64)),
-            mat({ color: 0xffffff, roughness: 0.4,
-                  emissive: 0xffffff, emissiveIntensity: 0.55 }));
+          /* Three bare cones read as blobs. A head on a shaft reads as an
+             arrow, which is the only thing they are here to do. */
+          var g = new THREE.Group();
           var rr = A.wheel.r + 0.62;
-          cone.position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.1);
-          cone.rotation.z = a;          // tangential, pointing counter-clockwise
-          dirArrows.add(cone);
+          var head = new THREE.Mesh(headGeo, arrowMat);
+          head.position.y = 0.20;
+          g.add(head);
+          var shaft = new THREE.Mesh(shaftGeo, arrowMat);
+          shaft.position.y = -0.10;
+          g.add(shaft);
+          g.position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.1);
+          g.rotation.z = a;             // tangential, pointing counter-clockwise
+          dirArrows.add(g);
         });
         dirArrows.position.set(A.wheel.x, A.wheel.y, A.wheel.z);
         scene.add(dirArrows);
@@ -228,7 +271,8 @@
            housing on a bolted flange, neck, collar, column, base and feet. */
         var mount = ctx.machineMount({
           r: A.wheel.tube * 1.5, drop: A.wheel.y + 1.55,
-          mat: keep(ctx.material("paintedMetal", { color: 0x2c3340 })),
+          // patinated bronze, not navy: the mount belongs to the wheel it holds
+          mat: keep(ctx.material("brass", { color: 0x6b5a2e, roughness: 0.52 })),
           steelMat: steelMat,
           footMat: keep(ctx.material("rubber", { color: 0x24262a }))
         });
@@ -246,6 +290,8 @@
           keep(new THREE.MeshBasicMaterial({ visible: false })));
         wheelGrab.rotation.x = Math.PI / 2;
         wheelGrab.userData.rimTarget = wheel;
+        // the wheel already pulses to beckon, so it drives its own scale
+        wheel.userData.noPunch = true;
         wheelGrab.position.copy(wheel.position);
         scene.add(wheelGrab);
         ctx.pickables.push(wheelGrab);
@@ -354,6 +400,33 @@
         }
         var angle = 0;              // accumulated wheel rotation
         var shownAngle = 0;   // what the wheel shows; `angle` is what the hand asked for
+        var spin = 0, lastDetent = 0;   // momentum left over when the hand lets go
+        /* Pointer moves do not carry a delta time, so the spin estimate uses
+           the wall clock between them. Clamped, because a stalled frame would
+           otherwise read as an enormous flick. */
+        /* One place turns rotation into price, so the hand and the coast cannot
+           drift apart. Before this the wheel kept spinning after release while
+           the number sat still, which made the momentum decorative — the thing
+           the player is holding has to be the thing that sets the price whether
+           or not they are still holding it. */
+        function applyTurn(d) {
+          // a full turn sweeps roughly the whole price range
+          var span = A.costMax - A.costMin;
+          var next = cost - (d / (Math.PI * 2)) * span * 1.15;
+          var clamped = Math.max(A.costMin, Math.min(A.costMax, next));
+          // a coast that has run into either end of the range should stop, not
+          // keep spinning against a number that cannot move
+          if (clamped !== next) spin = 0;
+          next = Math.round(clamped / A.costStep) * A.costStep;
+          if (next !== cost) { cost = next; ctx.sfx("wheel"); pushToPage(); refresh(); }
+        }
+
+        var _lastMoveAt = 0;
+        function dt0() {
+          var t = performance.now(), d = (t - _lastMoveAt) / 1000;
+          _lastMoveAt = t;
+          return Math.min(0.05, Math.max(0.008, d));
+        }
         var dragging = false;
         var lastAngle = 0;
         var won = false;
@@ -458,6 +531,17 @@
                later rather than instantly. Fast enough to read as mass and not
                as lag; the price itself still tracks the hand, because that is a
                readout rather than a thing being pushed. */
+            /* Let go of a heavy wheel and it keeps going. The spin carries on
+               after the hand leaves and dies against friction, and each detent
+               it passes still clicks — so the coast is heard as well as seen. */
+            if (!dragging && Math.abs(spin) > 0.0005) {
+              var dd = spin * dt;
+              angle += dd;
+              applyTurn(dd);              // the coast turns the price too
+              spin *= Math.max(0, 1 - dt * 2.4);
+              var det = Math.floor(angle / 0.42);
+              if (det !== lastDetent) { lastDetent = det; ctx.sfx("tick"); }
+            }
             shownAngle += (angle - shownAngle) * Math.min(1, dt * 12);
             wheel.rotation.z = shownAngle;
             // the wheel beckons until it has been used
@@ -470,6 +554,7 @@
             var a = pointerAngle();
             if (a === null) return;
             dragging = true;
+            spin = 0;
             ctx.sfx("grab");
             lastAngle = a;
           },
@@ -487,15 +572,12 @@
             while (d < -Math.PI) d += Math.PI * 2;
             lastAngle = a;
             angle += d;
-            // a full turn sweeps roughly the whole price range
-            var span = A.costMax - A.costMin;
-            var next = cost - (d / (Math.PI * 2)) * span * 1.15;
-            next = Math.max(A.costMin, Math.min(A.costMax, next));
-            next = Math.round(next / A.costStep) * A.costStep;
-            if (next !== cost) { cost = next; ctx.sfx("wheel"); pushToPage(); refresh(); }
+            spin = d / Math.max(0.008, dt0());   // hand speed, for the coast
+            applyTurn(d);
           },
 
           onPointerUp: function () {
+            if (dragging) ctx.sfx("release");
             dragging = false;
             ctx.renderer.domElement.style.cursor = "default";
           },

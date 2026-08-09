@@ -483,7 +483,8 @@
             else if (h.object === btnRemove.hit) next = Math.max(A.minFirms, firms - 1);
             else return;
             if (next !== firms) {
-              firms = next; ctx.sfx("press"); pushToPage(); refresh();
+              firms = next; ctx.sfx("press"); ctx.shake(0.010, 0.06);
+              pushToPage(); refresh();
             } else {
               ctx.sfx("denied");        // already at the end of the range
             }
