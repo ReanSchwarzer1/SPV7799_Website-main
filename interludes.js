@@ -1226,6 +1226,12 @@ function play(id, params) {
   // setup and reads `composer`. A `let` further down leaves it in the temporal
   // dead zone at that point and play() aborts before the render loop starts.
   let torn = false;                             // teardown is idempotent
+  /* Identity for this session, created here and published at the end of play().
+     teardown() clears the global `active` only if it still points at *this*
+     session. Without that check a scene switched during the exit fade would be
+     killed by its predecessor: play() starts the new session, then the old
+     one's 220ms fade timer fires and nulls `active` out from under it. */
+  const session = {};
   let composer = null, composerState = "idle";   // idle | loading | ready | failed
   // master switch for the composer. Off by default until Phase 3 lands real
   // passes; flipped at runtime via Interludes.setPost() during verification.
@@ -1813,16 +1819,44 @@ function play(id, params) {
      Note these labels were never blocking input: they are not in ctx.pickables
      and the raycast passes straight through them. The problem was purely that
      the player could not see the beam or the slot underneath. */
+  /* Rects are remembered between solves and only replaced when they move by
+     more than a hair. Several scenes animate a pickable to beckon — the
+     concentration room pulses its add and remove buttons by about five per
+     cent — and without this the rect breathes, the labels beside it are pushed
+     in and out in sympathy, and nothing ever comes to rest. Real movement, like
+     the ball rolling along the curve, is far outside the deadband and still
+     tracks normally. */
+  const _koCache = new WeakMap();
+  const KO_DEADBAND = 0.014;
+
   function keepOutRects() {
     const out = [];
     const seen = new Set();
     const consider = (o) => {
       if (!o || seen.has(o)) return;
       seen.add(o);
+      /* A registered label must never become a keep-out volume. It is already
+         handled by label-vs-label separation, and counting it here makes it
+         push itself: the push moves the label, the move changes its screen
+         rect, so on the next pass it pushes itself again and never settles.
+         The lock-in plaque is both a label and a click target, which is how it
+         ended up oscillating and shoving the pedestal names around with it. */
+      if (o.userData && o.userData.label) return;
       // an invisible hit proxy stands in for something real; measure that
       const t = (o.userData && o.userData.rimTarget) || o;
-      const r = screenRectOf(t);
-      if (r) out.push(r);
+      if (t.userData && t.userData.label) return;   // same reason as above
+      let r = screenRectOf(t);
+      if (!r) return;
+      const prev = _koCache.get(t);
+      if (prev && Math.abs(prev.x - r.x) < KO_DEADBAND &&
+                  Math.abs(prev.y - r.y) < KO_DEADBAND &&
+                  Math.abs(prev.hx - r.hx) < KO_DEADBAND &&
+                  Math.abs(prev.hy - r.hy) < KO_DEADBAND) {
+        r = prev;                       // inside the deadband: nothing changed
+      } else {
+        _koCache.set(t, r);
+      }
+      out.push(r);
     };
     for (const p of pickables) consider(p);
     scene.traverse((o) => { if (o.userData && o.userData.keepClear) consider(o); });
@@ -2200,7 +2234,7 @@ function play(id, params) {
     labels.length = 0;
     renderer.dispose();
     overlay.remove();
-    active = null;
+    if (active === session) active = null;
   }
 
   /* Exit is a fade rather than a cut, but the game flow must not be held
@@ -2247,8 +2281,10 @@ function play(id, params) {
     briefToggle.textContent = collapsed ? "Read brief" : "Hide";
   });
 
-  active = { id, close: endSession,
-             _internals: { ctx, get instance() { return instance; }, camera, scene, labels } };
+  session.id = id;
+  session.close = endSession;
+  session._internals = { ctx, get instance() { return instance; }, camera, scene, labels };
+  active = session;
 }
 
 function close(finished) { if (active) active.close(finished); }

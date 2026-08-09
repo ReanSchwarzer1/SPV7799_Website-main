@@ -1,5 +1,5 @@
 {
-  "when": "2026-08-09T06:09:47.339Z",
+  "when": "2026-08-09T08:30:16.760Z",
   "quality": {
     "tier": "high",
     "locked": true,
@@ -14,10 +14,10 @@
     {
       "scene": "molecule",
       "built": true,
-      "fps": 120,
-      "medianMs": 8.3,
-      "p95Ms": 8.4,
-      "tier": "high",
+      "fps": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "tier": null,
       "errors": []
     },
     {
