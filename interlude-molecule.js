@@ -105,37 +105,15 @@
         var LX = -3.1, RX = 3.1;
 
         // ---------- diegetic signage ----------
-        function signTexture(lines) {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = 512, _H = 256;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.clearRect(0, 0, _W, _H);
-          g.fillStyle = "rgba(8,10,15,0.9)";
-          g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = lines.accent; g.lineWidth = 7;
-          g.strokeRect(4, 4, _W - 8, _H - 8);
-          g.textAlign = "center";
-          g.fillStyle = lines.accent;
-          g.font = "bold 36px system-ui, sans-serif";
-          g.fillText(lines.top || "", _W / 2, 62, _W - 40);
-          if (lines.big) {
-            g.fillStyle = "#fff";
-            g.font = "bold 88px system-ui, sans-serif";
-            g.fillText(lines.big, _W / 2, 158, _W - 40);
-          }
-          if (lines.sub) {
-            g.fillStyle = "#94a0b0";
-            g.font = "26px system-ui, sans-serif";
-            g.fillText(lines.sub, _W / 2, 216, _W - 40);
-          }
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
-        }
+        /* The comparison bench used to paint its own signs — same fields as
+           every other plaque in the game, different plate, different border,
+           different type. It delegates now, so the sealed-sample signs are the
+           same object as the readouts in every other module. */
 
         function makeSign(x, y, lines, w, h) {
           var m = new THREE.Mesh(
-            keep(new THREE.PlaneGeometry(w || 2.3, h || 1.15)),
-            keep(new THREE.MeshBasicMaterial({ map: signTexture(lines), transparent: true })));
+            keep(new THREE.PlaneGeometry(w || 3.20, h || 1.60)),
+            keep(new THREE.MeshBasicMaterial({ map: ctx.labelTexture(lines), transparent: true })));
           m.position.set(x, y, 0);
           scene.add(m);
           return m;
@@ -346,7 +324,7 @@
         act2.add(slotUnit.group);
         var slot = slotUnit.group;
         var slotSign = makeSign(0, 1.5, { top: "INSERT NOTE", sub: "buy in both markets",
-                                          accent: "#fffb00" }, 2.6, 1.0);
+                                          accent: "#fffb00" }, 3.20, 1.60);
         slotSign.visible = false;
 
         // ---------- state ----------
@@ -373,10 +351,10 @@
           ctx.pickables.length = 0;
           flash = 1;
 
-          signL.material.map = signTexture(
+          signL.material.map = ctx.labelTexture(
             { top: "IDENTICAL", sub: "same compound, both vials", accent: "#fffb00" });
           signL.material.needsUpdate = true;
-          signR.material.map = signTexture(
+          signR.material.map = ctx.labelTexture(
             { top: "IMATINIB", sub: "C29H31N7O · PubChem CID 5291", accent: "#3fae6b" });
           signR.material.needsUpdate = true;
 

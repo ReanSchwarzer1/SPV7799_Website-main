@@ -151,7 +151,7 @@
         // ---------- beams ----------
         // Each beam carries a visible, labelled grip. Without one the player
         // cannot tell what is draggable, which was the whole confusion here.
-        function makeBeam(color, title, note) {
+        function makeBeam(color, title, note, tagY) {
           var m = new THREE.Mesh(
             keep(ctx.roundedBox(1, A.supply.thickness, A.supply.thickness)),
             mat({ color: color, roughness: 0.35, emissive: color, emissiveIntensity: 0.3 }));
@@ -196,13 +196,18 @@
           handle.position.z = 0.22;
           scene.add(handle);
 
-          var tag = makeLabel(0, 0, 0.3,
+          /* Pinned to the left margin, clear of the board, rather than riding the
+             beam. Tracking the beam is what put these two boxes across the
+             middle of the graph and over the thing the player has to drag. They
+             mirror the readouts on the right, and the accent keeps each tag tied
+             to the beam it names. */
+          var tag = makeLabel(-GW / 2 - 2.15, tagY, 0.3,
             { top: title, sub: note, accent: "#" + color.toString(16).padStart(6, "0"), box: true },
             3.0, 1.5);
           return { beam: m, grab: grab, handle: handle, tag: tag, holder: holder };
         }
-        var supply = makeBeam(A.supply.color, "SUPPLY", "grab and drag →");
-        var demand = makeBeam(A.demand.color, "DEMAND", "grab and drag →");
+        var supply = makeBeam(A.supply.color, "SUPPLY", "grab and drag →", -1.05);
+        var demand = makeBeam(A.demand.color, "DEMAND", "grab and drag →", 1.05);
 
         function layoutBeam(obj, p0, p1) {
           var v0 = new THREE.Vector3(X(0), Y(p0), 0);
@@ -219,7 +224,11 @@
           obj.handle.position.set(mid.x, mid.y, 0.22);
           obj.handle.quaternion.setFromUnitVectors(
             new THREE.Vector3(1, 0, 0), dir.clone().normalize());
-          obj.tag.position.set(mid.x, mid.y + 1.15, 0.3);
+          /* The tag is deliberately not moved here. updateLabels() rewrites a
+             label's position from its `home` every frame, so assigning
+             tag.position was overwritten before it was ever drawn — the tags
+             sat wherever they were created, which was the middle of the board.
+             They are placed once, at the margin, in makeBeam. */
         }
 
         // ---------- equilibrium marker ----------
@@ -260,10 +269,10 @@
 
         var priceLabel = makeLabel(GW / 2 + 3.1, 2.6, 0,
           { top: "CLEARING PRICE", big: "100", sub: "target: 70 or less",
-            accent: "#fffb00", box: true }, 2.82, 1.41);
+            accent: "#fffb00", box: true }, 3.20, 1.60);
         var qtyLabel = makeLabel(GW / 2 + 3.1, 0.0, 0,
           { top: "QUANTITY", big: "40", sub: "units reaching patients",
-            accent: "#3fae6b", box: true }, 2.82, 1.41);
+            accent: "#3fae6b", box: true }, 3.20, 1.60);
         // (the beams label themselves at their grips, so no side legend here)
 
         // ---------- patients ----------
@@ -303,8 +312,13 @@
           ring.position.set(px, py - A.patient.len * 0.52, 0);
           scene.add(ring);
         }
-        makeLabel(0, -GH / 2 - 2.1, 0,
-          { top: "PATIENTS SERVED AT THE CLEARING PRICE", accent: "#9aa6b4" }, 5.63, 0.97);
+        /* Was 5.63 x 0.97 — a 5.8:1 plane carrying a 2:1 canvas, which is why
+           the caption looked squashed. At 2:1 and one step up the ladder it is
+           legible, and it can afford the room now that the hint bubble has left
+           the bottom of the screen. */
+        makeLabel(0, -GH / 2 - 2.85, 0,
+          { top: "PATIENTS SERVED", sub: "at the clearing price",
+            accent: "#9aa6b4" }, 4.00, 2.00);
 
         // ---------- state ----------
         // Competitors admitted on the market floor are already in this market:

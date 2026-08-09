@@ -131,7 +131,7 @@
         }
         makeLabel(A.vault.x, 1.6, 0,
           { top: "PUBLIC BUDGET", big: "$10M", sub: "fixed for the year",
-            accent: "#9ad3ac", box: true, bigSize: 78 }, 2.64, 1.32);
+            accent: "#9ad3ac", box: true, bigSize: 78 }, 3.20, 1.60);
 
         // ---------- the price wheel ----------
         /* A cast handwheel, built the way one is made: a rim with a raised
@@ -298,7 +298,7 @@
 
         var priceLabel = makeLabel(A.wheel.x, A.wheel.y - 2.35, A.wheel.z + 1.1,
           { top: "COST PER PATIENT / YEAR", big: "$30,000", sub: "turn the wheel LEFT to lower it",
-            accent: "#d9a441", box: true, bigSize: 72 }, 3.17, 1.58);
+            accent: "#d9a441", box: true, bigSize: 72 }, 3.20, 1.60);
 
         // ---------- the ward ----------
         var beds = [];
@@ -347,7 +347,7 @@
         }
         var wardLabel = makeLabel(0, 2.9, -2.4,
           { top: "PATIENTS TREATED", big: "333", sub: "each mark is 50 patients",
-            accent: "#fffb00", box: true, bigSize: 80 }, 3.17, 1.58);
+            accent: "#fffb00", box: true, bigSize: 80 }, 3.20, 1.60);
 
         // ---------- the life-years tower ----------
         /* the life-years column gets a machined foot and a capping plate */
@@ -383,7 +383,7 @@
         scene.add(tower);
         var towerLabel = makeLabel(A.tower.x, 4.15, 0,
           { top: "LIFE-YEARS GAINED", big: "1,665", sub: "5 QALYs per patient treated",
-            accent: "#3fae6b", box: true, bigSize: 70 }, 2.99, 1.50);
+            accent: "#3fae6b", box: true, bigSize: 70 }, 3.20, 1.60);
 
         // ---------- state ----------
         // The price the market settled at in the clearing house is the price

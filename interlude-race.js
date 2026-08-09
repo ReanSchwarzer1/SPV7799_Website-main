@@ -107,6 +107,7 @@
             keep(new THREE.TorusGeometry(0.755, 0.055, 20, 128)), deep);
           bezel.rotation.x = Math.PI / 2;
           bezel.position.set(PX, PY + 0.10, PZ);
+          bezel.userData.keepClear = true;      // the prize is the thing on show
           scene.add(bezel);
 
           var knurlGeo = keep(ctx.roundedBox(0.05, 0.26, 0.06, 0.014));
@@ -140,7 +141,7 @@
 
         makeLabel(0, 1.5, -2.9,
           { top: "THE PATENT", big: "$1,000M", sub: "winner takes all",
-            accent: "#d9a441", box: true, bigSize: 72 }, 2.72, 1.36);
+            accent: "#d9a441", box: true, bigSize: 72 }, 3.20, 1.60);
 
         // ---------- chip stacks ----------
         function makeStack(x, count, color, label, cost) {
@@ -175,7 +176,7 @@
           // label sits on the table in front of its stack, clear of the matrix
           var lab = makeLabel(x, -0.55, 4.15,
             { top: label, big: "$" + cost + "M", sub: "click to commit",
-              accent: "#" + color.toString(16).padStart(6, "0"), box: true, bigSize: 68 }, 2.32, 1.16);
+              accent: "#" + color.toString(16).padStart(6, "0"), box: true, bigSize: 68 }, 3.20, 1.60);
           return { grp: grp, hit: hit, label: lab, x: x };
         }
         var stackHigh = makeStack(-3.6, A.chip.high, A.chip.highColor, "HIGH R&D", A.highCost);
@@ -196,11 +197,15 @@
           throatMat: mat({ color: 0x11151d, roughness: 0.95 }),
           steelMat: keep(ctx.material("machinedSteel", { color: 0x8d97a6 }))
         });
+        /* Not pickable — the player clicks the chip stacks, not the slot — so
+           the layout solver would happily park a plaque on the throat the chips
+           have to go into. This says otherwise. */
+        slotUnit.group.userData.keepClear = true;
         slotUnit.group.position.set(0, 0.11, 0.9);
         scene.add(slotUnit.group);
         var slot = slotUnit.group;
         makeLabel(0, 1.05, 0.55,
-          { top: "COMMIT", sub: "your sealed bid", accent: "#fffb00", box: true }, 1.92, 0.96);
+          { top: "COMMIT", sub: "your sealed bid", accent: "#fffb00", box: true }, 3.20, 1.60);
 
         // ---------- rival envelope ----------
         (function () {
@@ -247,7 +252,7 @@
         })();
 
         var rivalLabel = makeLabel(0, 2.15, -1.15,
-          { top: "FIRM B", sub: "sealed until you commit", accent: "#9aa6b4", box: true }, 2.40, 1.20);
+          { top: "FIRM B", sub: "sealed until you commit", accent: "#9aa6b4", box: true }, 3.20, 1.60);
 
         // ---------- payoff matrix ----------
         var cells = [];
@@ -291,7 +296,7 @@
         });
         makeLabel(-4.85, 4.55, -3.4,
           { top: "THE PAYOFF MATRIX", sub: "your net profit, then theirs",
-            accent: "#9aa6b4", box: true }, 2.72, 1.12);
+            accent: "#9aa6b4", box: true }, 3.20, 1.60);
 
         var resultLabel = makeLabel(6.3, 3.3, -1.0,
           { top: "NO CALL MADE", sub: "commit a stack to run the race",

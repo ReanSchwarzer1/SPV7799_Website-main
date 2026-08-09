@@ -280,16 +280,16 @@
 
         var yearLabel = makeLabel(0, A.rail.y + 1.45, A.rail.z,
           { top: "YEAR", big: "2000", sub: "drag the handle forward",
-            accent: "#fffb00", box: true, bigSize: 78 }, 2.75, 1.38);
+            accent: "#fffb00", box: true, bigSize: 78 }, 3.20, 1.60);
         var exportLabel = makeLabel(-6.9, 2.9, 0,
           { top: "INDIAN PHARMA EXPORTS", big: "$1.5B", sub: "Pharmexcil, annual",
-            accent: "#3fae6b", box: true, bigSize: 70 }, 3.01, 1.50);
+            accent: "#3fae6b", box: true, bigSize: 70 }, 3.20, 1.60);
         var penLabel = makeLabel(6.9, 2.9, 0,
           { top: "GLOBAL PENETRATION", big: "2%", sub: "logistic diffusion",
-            accent: "#4f86c6", box: true, bigSize: 78 }, 3.01, 1.50);
+            accent: "#4f86c6", box: true, bigSize: 78 }, 3.20, 1.60);
         var regionLabel = makeLabel(6.9, -1.1, 0,
           { top: "DESTINATION", sub: "click a marker on the globe",
-            accent: "#9aa6b4", box: true }, 3.01, 1.50);
+            accent: "#9aa6b4", box: true }, 3.20, 1.60);
 
         // ---------- API switch ----------
         var apiSwitch = new THREE.Mesh(
@@ -300,7 +300,7 @@
         ctx.pickables.push(apiSwitch);
         var apiLabel = makeLabel(-6.9, 0.75, 0,
           { top: "API SUPPLY LINE", sub: "OFF · click to reveal",
-            accent: "#8b2f2f", box: true }, 2.75, 1.38);
+            accent: "#8b2f2f", box: true }, 3.20, 1.60);
 
         // ---------- state ----------
         var year = A.yearMin;

@@ -55,8 +55,11 @@
         card:   { w: 2.9, h: 2.0, gap: 0.35 },
         gauge:  { w: 0.55, h: 4.2, access: 0x3fae6b, innov: 0x4f86c6 },
         wall:   { color: 0x141821 },
-        plaque: { w: 4.6, h: 0.9, color: 0x2a3140, accent: 0xfffb00 },
-        camera: { elevationDeg: 6, margin: 1.1, lookAt: [0, 0.2, 0] }
+        plaque: { w: 4.00, h: 2.00, color: 0x2a3140, accent: 0xfffb00 },
+        /* Aimed higher and pulled back a little so the masthead clears the
+        // instruction bubble, which now lives at the top of the stage. Raising
+        // lookAt moves the content down in frame; the margin gives the band. */
+        camera: { elevationDeg: 6, margin: 1.18, lookAt: [0, 0.95, 0] }
       },
 
       build: function (ctx) {
@@ -84,12 +87,22 @@
           var _S = ctx.texScale, _W = 1400, _H = 300;
           c.width = _W * _S; c.height = _H * _S;
           var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "rgba(10,12,18,0.94)"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 6;
-          g.beginPath(); g.moveTo(0, 3); g.lineTo(_W, 3); g.stroke();
-          g.fillStyle = "#fffb00";
-          g.font = "bold 30px system-ui, sans-serif";
+          /* Masthead treatment, shared by all four rooms: a plate that shades
+             rather than a flat fill, the module's rule across the top, and a
+             hairline under the title so the prose below reads as a standfirst
+             rather than as more of the heading. Body coordinates underneath are
+             untouched — the rule sits in space that was already empty. */
+          var _pg = g.createLinearGradient(0, 0, 0, _H);
+          _pg.addColorStop(0, "rgba(24,29,40,.96)");
+          _pg.addColorStop(1, "rgba(11,14,20,.96)");
+          g.fillStyle = _pg; g.fillRect(0, 0, _W, _H);
+          g.fillStyle = "#fffb00"; g.fillRect(0, 0, _W, 6);
+          g.fillStyle = "#fffb00"; g.font = "bold 30px system-ui, sans-serif";
+          if (g.letterSpacing !== undefined) g.letterSpacing = "2.2px";
           g.fillText("THE RECORD SO FAR", 44, 62);
+          if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+          g.strokeStyle = "rgba(255,255,255,.16)"; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(44, 82); g.lineTo(_W - 44, 82); g.stroke();
           g.fillStyle = "#e6e9ee";
           g.font = "26px Georgia, serif";
           var line1 = rec && rec.viaMoleculeScene
@@ -112,52 +125,27 @@
         var header = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(10.5, 2.25)),
           keep(new THREE.MeshBasicMaterial({ map: headerTexture(), transparent: true })));
-        header.position.set(0, 3.6, 0);
+        // lifted clear of the top card row now the camera has the headroom
+        header.position.set(0, 4.15, 0);
         scene.add(header);
 
         // ---------- case files ----------
         function cardTexture(r, expanded) {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = expanded ? 1100 : 580, _H = expanded ? 760 : 400;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#f4efe2"; g.fillRect(0, 0, _W, _H);
-          var accent = r.granted ? "#b5402c" : "#1d6b3a";
-          g.strokeStyle = accent; g.lineWidth = expanded ? 12 : 8;
-          g.strokeRect(6, 6, _W - 12, _H - 12);
-          var pad = expanded ? 52 : 34;
-          g.fillStyle = "#8a1c1c";
-          g.font = "bold " + (expanded ? 26 : 19) + "px Georgia, serif";
-          g.fillText("CASE 00" + r.num, pad, expanded ? 74 : 52);
-          g.fillStyle = "#15161a";
-          g.font = "bold " + (expanded ? 40 : 27) + "px Georgia, serif";
-          var y = wrapText(g, r.title, pad, expanded ? 128 : 92, _W - pad * 2,
-                           expanded ? 46 : 32, expanded ? 3 : 2);
-          g.fillStyle = "#3a4048";
-          g.font = "italic " + (expanded ? 24 : 17) + "px Georgia, serif";
-          y = wrapText(g, r.drug, pad, y + (expanded ? 16 : 8), _W - pad * 2,
-                       expanded ? 30 : 22, 2);
-
-          g.fillStyle = accent;
-          g.font = "bold " + (expanded ? 28 : 20) + "px system-ui, sans-serif";
-          y = wrapText(g, "YOU RULED: " + r.action.toUpperCase(), pad, y + (expanded ? 44 : 30),
-                       _W - pad * 2, expanded ? 34 : 24, 2);
-
-          if (expanded && r.outcome) {
-            g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
-            g.beginPath(); g.moveTo(pad, y + 18); g.lineTo(_W - pad, y + 18); g.stroke();
-            g.fillStyle = "#7a6320";
-            g.font = "bold 22px Georgia, serif";
-            g.fillText("WHAT FOLLOWED", pad, y + 58);
-            g.fillStyle = "#111318";
-            g.font = "27px Georgia, serif";
-            wrapText(g, r.outcome, pad, y + 96, _W - pad * 2, 35);
-          } else if (!expanded) {
-            g.fillStyle = "#7b828c";
-            g.font = "italic 16px system-ui, sans-serif";
-            g.fillText("click to read what followed", pad, _H - 34);
-          }
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          /* The ruling card. Delegates to the shared document surface so all
+             four record rooms print on the same stock; expanding scales the
+             canvas with the plane, so a card that grows stays crisp instead of
+             being resampled up. */
+          var k = expanded ? 1.9 : 1;
+          return keep(ctx.docCard(A.card.w * k, A.card.h * k, {
+            accent: r.granted ? "#b5402c" : "#1d6b3a",
+            eyebrow: "CASE 00" + r.num,
+            title: r.title,
+            meta: r.drug,
+            status: "YOU RULED: " + r.action.toUpperCase(),
+            body: expanded ? r.outcome : null,
+            bodyLabel: "WHAT FOLLOWED",
+            footer: expanded ? null : "click to read what followed"
+          }));
         }
 
         var cards = [];
@@ -238,25 +226,17 @@
 
         // ---------- proceed plaque ----------
         function plaqueTexture() {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = 900, _H = 180;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#1d2431"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 7;
-          g.strokeRect(5, 5, _W - 10, _H - 10);
-          g.textAlign = "center"; g.fillStyle = "#fffb00";
-          g.font = "bold 44px system-ui, sans-serif";
-          g.fillText("PROCEED TO MODULE 3", _W / 2, 78);
-          g.fillStyle = "#9aa6b4";
-          g.font = "24px system-ui, sans-serif";
-          g.fillText("the market your rulings created", _W / 2, 128);
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          /* The room's primary action. Uses the shared plaque, so it matches
+             the lock-in action in the hall of systems and every readout in the
+             game rather than being a fifth kind of panel. */
+          return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 3",
+            sub: "the market your rulings created", accent: "#fffb00", box: true, topSize: 34 }));
         }
         var plaque = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(A.plaque.w, A.plaque.h)),
           keep(new THREE.MeshBasicMaterial({ map: plaqueTexture(), transparent: true })));
-        plaque.position.set(0, -3.15, 0);
+        // dropped clear of the bottom card row: the action plaque is 2.0 tall now
+        plaque.position.set(0, -4.15, 0);
         scene.add(plaque);
         ctx.pickables.push(plaque);
 
@@ -365,7 +345,10 @@
       assets: {
         card: { w: 3.15, h: 2.3, gap: 0.4 },
         gauge: { w: 0.55, h: 4.2, access: 0x3fae6b, innov: 0x4f86c6 },
-        camera: { elevationDeg: 6, margin: 1.1, lookAt: [0, 0.2, 0] }
+        /* Aimed higher and pulled back a little so the masthead clears the
+        // instruction bubble, which now lives at the top of the stage. Raising
+        // lookAt moves the content down in frame; the margin gives the band. */
+        camera: { elevationDeg: 6, margin: 1.18, lookAt: [0, 0.95, 0] }
       },
 
       build: function (ctx) {
@@ -402,11 +385,22 @@
           var _S = ctx.texScale, _W = 1400, _H = 300;
           c.width = _W * _S; c.height = _H * _S;
           var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "rgba(10,12,18,0.94)"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 6;
-          g.beginPath(); g.moveTo(0, 3); g.lineTo(_W, 3); g.stroke();
+          /* Masthead treatment, shared by all four rooms: a plate that shades
+             rather than a flat fill, the module's rule across the top, and a
+             hairline under the title so the prose below reads as a standfirst
+             rather than as more of the heading. Body coordinates underneath are
+             untouched — the rule sits in space that was already empty. */
+          var _pg = g.createLinearGradient(0, 0, 0, _H);
+          _pg.addColorStop(0, "rgba(24,29,40,.96)");
+          _pg.addColorStop(1, "rgba(11,14,20,.96)");
+          g.fillStyle = _pg; g.fillRect(0, 0, _W, _H);
+          g.fillStyle = "#fffb00"; g.fillRect(0, 0, _W, 6);
           g.fillStyle = "#fffb00"; g.font = "bold 30px system-ui, sans-serif";
+          if (g.letterSpacing !== undefined) g.letterSpacing = "2.2px";
           g.fillText("THE MARKET YOU RAN", 44, 62);
+          if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+          g.strokeStyle = "rgba(255,255,255,.16)"; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(44, 82); g.lineTo(_W - 44, 82); g.stroke();
           g.fillStyle = "#e6e9ee"; g.font = "26px Georgia, serif";
           var l1 = open
             ? "You let " + Math.round(firms) + (Math.round(firms) === 1 ? " firm" : " firms") +
@@ -425,7 +419,8 @@
         var header = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(10.5, 2.25)),
           keep(new THREE.MeshBasicMaterial({ map: headerTexture(), transparent: true })));
-        header.position.set(0, 3.5, 0);
+        // lifted clear of the top card row now the camera has the headroom
+        header.position.set(0, 4.15, 0);
         scene.add(header);
 
         var CARDS = [
@@ -459,34 +454,16 @@
         ];
 
         function cardTexture(cd, expanded) {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = expanded ? 1100 : 620, _H = expanded ? 720 : 460;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#f4efe2"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = cd.accent; g.lineWidth = expanded ? 12 : 9;
-          g.strokeRect(6, 6, _W - 12, _H - 12);
-          var pad = expanded ? 54 : 36;
-          g.fillStyle = "#6b6250";
-          g.font = "bold " + (expanded ? 26 : 21) + "px system-ui, sans-serif";
-          g.fillText(cd.t, pad, expanded ? 76 : 62);
-          g.fillStyle = "#15161a";
-          g.font = "bold " + (expanded ? 92 : 84) + "px system-ui, sans-serif";
-          g.fillText(cd.v, pad, expanded ? 182 : 168);
-          g.fillStyle = "#3a4048";
-          g.font = "italic " + (expanded ? 25 : 21) + "px Georgia, serif";
-          var y = wrapText(g, cd.s, pad, expanded ? 234 : 218, _W - pad * 2,
-                           expanded ? 32 : 27, 2);
-          if (expanded) {
-            g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
-            g.beginPath(); g.moveTo(pad, y + 16); g.lineTo(_W - pad, y + 16); g.stroke();
-            g.fillStyle = "#111318"; g.font = "27px Georgia, serif";
-            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 35);
-          } else {
-            g.fillStyle = "#7b828c"; g.font = "italic 17px system-ui, sans-serif";
-            g.fillText("click to read", pad, _H - 34);
-          }
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          // the stat card: a figure rather than a title carries the top of it
+          var k = expanded ? 1.9 : 1;
+          return keep(ctx.docCard(A.card.w * k, A.card.h * k, {
+            accent: cd.accent,
+            eyebrow: cd.t,
+            value: cd.v,
+            meta: cd.s,
+            body: expanded ? cd.d : null,
+            footer: expanded ? null : "click to read"
+          }));
         }
 
         var cards = [];
@@ -542,23 +519,17 @@
         makeGauge(5.6, "INNOVATION", rec.innov || 0, A.gauge.innov);
 
         function plaqueTexture() {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = 900, _H = 180;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#1d2431"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 7; g.strokeRect(5, 5, _W - 10, _H - 10);
-          g.textAlign = "center"; g.fillStyle = "#fffb00";
-          g.font = "bold 44px system-ui, sans-serif";
-          g.fillText("PROCEED TO MODULE 5", _W / 2, 78);
-          g.fillStyle = "#9aa6b4"; g.font = "24px system-ui, sans-serif";
-          g.fillText("what a fixed budget buys in years of life", _W / 2, 128);
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          /* The room's primary action. Uses the shared plaque, so it matches
+             the lock-in action in the hall of systems and every readout in the
+             game rather than being a fifth kind of panel. */
+          return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 5",
+            sub: "what a fixed budget buys in years of life", accent: "#fffb00", box: true, topSize: 34 }));
         }
         var plaque = new THREE.Mesh(
-          keep(new THREE.PlaneGeometry(4.6, 0.9)),
+          keep(new THREE.PlaneGeometry(4.00, 2.00)),
           keep(new THREE.MeshBasicMaterial({ map: plaqueTexture(), transparent: true })));
-        plaque.position.set(0, -3.35, 0);
+        // dropped clear of the bottom card row: the action plaque is 2.0 tall now
+        plaque.position.set(0, -4.15, 0);
         scene.add(plaque);
         ctx.pickables.push(plaque);
 
@@ -657,7 +628,10 @@
       assets: {
         card: { w: 3.15, h: 2.3, gap: 0.4 },
         gauge: { w: 0.55, h: 4.2, access: 0x3fae6b, innov: 0x4f86c6 },
-        camera: { elevationDeg: 6, margin: 1.1, lookAt: [0, 0.2, 0] }
+        /* Aimed higher and pulled back a little so the masthead clears the
+        // instruction bubble, which now lives at the top of the stage. Raising
+        // lookAt moves the content down in frame; the margin gives the band. */
+        camera: { elevationDeg: 6, margin: 1.18, lookAt: [0, 0.95, 0] }
       },
 
       build: function (ctx) {
@@ -687,11 +661,22 @@
           var _S = ctx.texScale, _W = 1400, _H = 300;
           c.width = _W * _S; c.height = _H * _S;
           var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "rgba(10,12,18,0.94)"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 6;
-          g.beginPath(); g.moveTo(0, 3); g.lineTo(_W, 3); g.stroke();
+          /* Masthead treatment, shared by all four rooms: a plate that shades
+             rather than a flat fill, the module's rule across the top, and a
+             hairline under the title so the prose below reads as a standfirst
+             rather than as more of the heading. Body coordinates underneath are
+             untouched — the rule sits in space that was already empty. */
+          var _pg = g.createLinearGradient(0, 0, 0, _H);
+          _pg.addColorStop(0, "rgba(24,29,40,.96)");
+          _pg.addColorStop(1, "rgba(11,14,20,.96)");
+          g.fillStyle = _pg; g.fillRect(0, 0, _W, _H);
+          g.fillStyle = "#fffb00"; g.fillRect(0, 0, _W, 6);
           g.fillStyle = "#fffb00"; g.font = "bold 30px system-ui, sans-serif";
+          if (g.letterSpacing !== undefined) g.letterSpacing = "2.2px";
           g.fillText("WHAT THE MEDICINE REACHED", 44, 62);
+          if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+          g.strokeStyle = "rgba(255,255,255,.16)"; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(44, 82); g.lineTo(_W - 44, 82); g.stroke();
           g.fillStyle = "#e6e9ee"; g.font = "26px Georgia, serif";
           var l1 = "You brought the cost of a year of treatment to $" +
                    (isNaN(cost) ? "--" : cost.toLocaleString("en-US")) +
@@ -710,7 +695,8 @@
         var header = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(10.5, 2.25)),
           keep(new THREE.MeshBasicMaterial({ map: headerTexture(), transparent: true })));
-        header.position.set(0, 3.5, 0);
+        // lifted clear of the top card row now the camera has the headroom
+        header.position.set(0, 4.15, 0);
         scene.add(header);
 
         var CARDS = [
@@ -735,34 +721,16 @@
         ];
 
         function cardTexture(cd, expanded) {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = expanded ? 1100 : 620, _H = expanded ? 720 : 460;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#f4efe2"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = cd.accent; g.lineWidth = expanded ? 12 : 9;
-          g.strokeRect(6, 6, _W - 12, _H - 12);
-          var pad = expanded ? 54 : 36;
-          g.fillStyle = "#6b6250";
-          g.font = "bold " + (expanded ? 26 : 21) + "px system-ui, sans-serif";
-          g.fillText(cd.t, pad, expanded ? 76 : 62);
-          g.fillStyle = "#15161a";
-          g.font = "bold " + (expanded ? 84 : 76) + "px system-ui, sans-serif";
-          g.fillText(cd.v, pad, expanded ? 182 : 168);
-          g.fillStyle = "#3a4048";
-          g.font = "italic " + (expanded ? 25 : 21) + "px Georgia, serif";
-          var y = wrapText(g, cd.s, pad, expanded ? 234 : 218, _W - pad * 2,
-                           expanded ? 32 : 27, 2);
-          if (expanded) {
-            g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
-            g.beginPath(); g.moveTo(pad, y + 16); g.lineTo(_W - pad, y + 16); g.stroke();
-            g.fillStyle = "#111318"; g.font = "27px Georgia, serif";
-            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 35);
-          } else {
-            g.fillStyle = "#7b828c"; g.font = "italic 17px system-ui, sans-serif";
-            g.fillText("click to read", pad, _H - 34);
-          }
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          // the stat card: a figure rather than a title carries the top of it
+          var k = expanded ? 1.9 : 1;
+          return keep(ctx.docCard(A.card.w * k, A.card.h * k, {
+            accent: cd.accent,
+            eyebrow: cd.t,
+            value: cd.v,
+            meta: cd.s,
+            body: expanded ? cd.d : null,
+            footer: expanded ? null : "click to read"
+          }));
         }
 
         var cards = [];
@@ -815,23 +783,17 @@
         makeGauge(5.6, "INNOVATION", rec.innov || 0, A.gauge.innov);
 
         function plaqueTexture() {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = 900, _H = 180;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#1d2431"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 7; g.strokeRect(5, 5, _W - 10, _H - 10);
-          g.textAlign = "center"; g.fillStyle = "#fffb00";
-          g.font = "bold 44px system-ui, sans-serif";
-          g.fillText("PROCEED TO MODULE 7", _W / 2, 78);
-          g.fillStyle = "#9aa6b4"; g.font = "24px system-ui, sans-serif";
-          g.fillText("what the price costs in days of work", _W / 2, 128);
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          /* The room's primary action. Uses the shared plaque, so it matches
+             the lock-in action in the hall of systems and every readout in the
+             game rather than being a fifth kind of panel. */
+          return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 7",
+            sub: "what the price costs in days of work", accent: "#fffb00", box: true, topSize: 34 }));
         }
         var plaque = new THREE.Mesh(
-          keep(new THREE.PlaneGeometry(4.6, 0.9)),
+          keep(new THREE.PlaneGeometry(4.00, 2.00)),
           keep(new THREE.MeshBasicMaterial({ map: plaqueTexture(), transparent: true })));
-        plaque.position.set(0, -3.35, 0);
+        // dropped clear of the bottom card row: the action plaque is 2.0 tall now
+        plaque.position.set(0, -4.15, 0);
         scene.add(plaque); ctx.pickables.push(plaque);
 
         var expandedCard = null, pulse = 0;
@@ -928,7 +890,10 @@
       assets: {
         card: { w: 3.15, h: 2.3, gap: 0.4 },
         gauge: { w: 0.55, h: 4.2, access: 0x3fae6b, innov: 0x4f86c6 },
-        camera: { elevationDeg: 6, margin: 1.1, lookAt: [0, 0.2, 0] }
+        /* Aimed higher and pulled back a little so the masthead clears the
+        // instruction bubble, which now lives at the top of the stage. Raising
+        // lookAt moves the content down in frame; the margin gives the band. */
+        camera: { elevationDeg: 6, margin: 1.18, lookAt: [0, 0.95, 0] }
       },
 
       build: function (ctx) {
@@ -966,11 +931,22 @@
           var _S = ctx.texScale, _W = 1400, _H = 300;
           c.width = _W * _S; c.height = _H * _S;
           var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "rgba(10,12,18,0.94)"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 6;
-          g.beginPath(); g.moveTo(0, 3); g.lineTo(_W, 3); g.stroke();
+          /* Masthead treatment, shared by all four rooms: a plate that shades
+             rather than a flat fill, the module's rule across the top, and a
+             hairline under the title so the prose below reads as a standfirst
+             rather than as more of the heading. Body coordinates underneath are
+             untouched — the rule sits in space that was already empty. */
+          var _pg = g.createLinearGradient(0, 0, 0, _H);
+          _pg.addColorStop(0, "rgba(24,29,40,.96)");
+          _pg.addColorStop(1, "rgba(11,14,20,.96)");
+          g.fillStyle = _pg; g.fillRect(0, 0, _W, _H);
+          g.fillStyle = "#fffb00"; g.fillRect(0, 0, _W, 6);
           g.fillStyle = "#fffb00"; g.font = "bold 30px system-ui, sans-serif";
+          if (g.letterSpacing !== undefined) g.letterSpacing = "2.2px";
           g.fillText("THE PRICE, MEASURED IN PEOPLE", 44, 62);
+          if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+          g.strokeStyle = "rgba(255,255,255,.16)"; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(44, 82); g.lineTo(_W - 44, 82); g.stroke();
           g.fillStyle = "#e6e9ee"; g.font = "26px Georgia, serif";
           var l1 = "For " + WNAME[wg] + ", one month of " + MNAME[mk] + " costs " +
                    days.toLocaleString("en-US") + " days of work. The WHO calls a medicine " +
@@ -988,7 +964,8 @@
         var header = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(10.5, 2.25)),
           keep(new THREE.MeshBasicMaterial({ map: headerTexture(), transparent: true })));
-        header.position.set(0, 3.5, 0);
+        // lifted clear of the top card row now the camera has the headroom
+        header.position.set(0, 4.15, 0);
         scene.add(header);
 
         var CARDS = [
@@ -1017,34 +994,16 @@
         ];
 
         function cardTexture(cd, expanded) {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = expanded ? 1100 : 620, _H = expanded ? 720 : 460;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#f4efe2"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = cd.accent; g.lineWidth = expanded ? 12 : 9;
-          g.strokeRect(6, 6, _W - 12, _H - 12);
-          var pad = expanded ? 54 : 36;
-          g.fillStyle = "#6b6250";
-          g.font = "bold " + (expanded ? 26 : 21) + "px system-ui, sans-serif";
-          g.fillText(cd.t, pad, expanded ? 76 : 62);
-          g.fillStyle = "#15161a";
-          g.font = "bold " + (expanded ? 84 : 74) + "px system-ui, sans-serif";
-          g.fillText(cd.v, pad, expanded ? 182 : 168);
-          g.fillStyle = "#3a4048";
-          g.font = "italic " + (expanded ? 25 : 21) + "px Georgia, serif";
-          var y = wrapText(g, cd.s, pad, expanded ? 234 : 218, _W - pad * 2,
-                           expanded ? 32 : 27, 2);
-          if (expanded) {
-            g.strokeStyle = "rgba(0,0,0,.15)"; g.lineWidth = 2;
-            g.beginPath(); g.moveTo(pad, y + 16); g.lineTo(_W - pad, y + 16); g.stroke();
-            g.fillStyle = "#111318"; g.font = "27px Georgia, serif";
-            wrapText(g, cd.d, pad, y + 62, _W - pad * 2, 35);
-          } else {
-            g.fillStyle = "#7b828c"; g.font = "italic 17px system-ui, sans-serif";
-            g.fillText("click to read", pad, _H - 34);
-          }
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          // the stat card: a figure rather than a title carries the top of it
+          var k = expanded ? 1.9 : 1;
+          return keep(ctx.docCard(A.card.w * k, A.card.h * k, {
+            accent: cd.accent,
+            eyebrow: cd.t,
+            value: cd.v,
+            meta: cd.s,
+            body: expanded ? cd.d : null,
+            footer: expanded ? null : "click to read"
+          }));
         }
 
         var cards = [];
@@ -1097,23 +1056,17 @@
         makeGauge(5.6, "INNOVATION", rec.innov || 0, A.gauge.innov);
 
         function plaqueTexture() {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = 900, _H = 180;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#1d2431"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = "#fffb00"; g.lineWidth = 7; g.strokeRect(5, 5, _W - 10, _H - 10);
-          g.textAlign = "center"; g.fillStyle = "#fffb00";
-          g.font = "bold 44px system-ui, sans-serif";
-          g.fillText("PROCEED TO MODULE 9", _W / 2, 78);
-          g.fillStyle = "#9aa6b4"; g.font = "24px system-ui, sans-serif";
-          g.fillText("the patent race, and why both firms overspend", _W / 2, 128);
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
+          /* The room's primary action. Uses the shared plaque, so it matches
+             the lock-in action in the hall of systems and every readout in the
+             game rather than being a fifth kind of panel. */
+          return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 9",
+            sub: "the patent race, and why both firms overspend", accent: "#fffb00", box: true, topSize: 34 }));
         }
         var plaque = new THREE.Mesh(
-          keep(new THREE.PlaneGeometry(4.6, 0.9)),
+          keep(new THREE.PlaneGeometry(4.00, 2.00)),
           keep(new THREE.MeshBasicMaterial({ map: plaqueTexture(), transparent: true })));
-        plaque.position.set(0, -3.35, 0);
+        // dropped clear of the bottom card row: the action plaque is 2.0 tall now
+        plaque.position.set(0, -4.15, 0);
         scene.add(plaque); ctx.pickables.push(plaque);
 
         var expandedCard = null, pulse = 0;

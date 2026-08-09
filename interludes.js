@@ -1212,6 +1212,12 @@ function play(id, params) {
     }
   }
 
+  /* Held here rather than created inline on ctx, because the label solver reads
+     it and runs from the frame loop — reaching it through `ctx` would mean a
+     live reference to a const declared further down. That exact pattern already
+     cost this file once, when resize() read `composer` before its declaration
+     and play() aborted with the scene still reporting a clean build. */
+  const pickables = [];
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const keys = Object.create(null);
@@ -1404,30 +1410,300 @@ function play(id, params) {
   };
 
   // the readout card every gameplay scene uses
+  /* ---- the plaque painter ------------------------------------------------
+     One painter for every readout in the game. Before this there were nineteen
+     of them and the differences between modules were accidents rather than
+     decisions.
+
+     Two rules do most of the work.
+
+     Aspect. The canvas is 2:1 and every plane it is mapped onto is 2:1, so a
+     glyph is never scaled unevenly. Four planes used to break that — the worst
+     was 5.63 x 0.97, a 5.8:1 plane carrying a 2:1 image, which squashed the
+     text to about a third of its natural width. Those are normalised at the
+     call sites rather than by teaching the painter to letterbox, because a
+     plaque that is the wrong shape is a layout mistake, not a paint mistake.
+
+     Size. The canvas is a fixed 512 wide, so physical text size is set by the
+     plane width. That makes the width ladder in PLAQUE meaningful: a label is
+     `md` because it is a normal readout, not because someone typed 2.15.
+
+     Type pairing, as agreed: Georgia where the thing is meant to read as a
+     document, system-ui where it is an instrument. Instruments are the default
+     here; `doc: true` switches. */
+  const PLAQUE = { xs: [2.10, 1.05], sm: [2.60, 1.30], md: [3.20, 1.60],
+                   lg: [4.00, 2.00], xl: [5.00, 2.50] };
+  /* `xs` exists for captions packed into a row. The hall of systems puts seven
+     names across a deck 14 units wide: at `md` that is 22 units of plaque in 14
+     units of space, they cannot all fit, and the layout solver responds by
+     stacking them up over the bars they are labelling. Cohesion is a matter of
+     role, not of one width everywhere — a caption in a dense row is a different
+     job from a standalone readout, and sizing it as one is what keeps the row
+     readable. */
+
+  const UI_INSTRUMENT = "system-ui, sans-serif";
+  const UI_DOCUMENT = "Georgia, 'Times New Roman', serif";
+
+  function roundRectPath(g, x, y, w, h, r) {
+    if (g.roundRect) { g.beginPath(); g.roundRect(x, y, w, h, r); return; }
+    g.beginPath();                                   // older canvas, same shape
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+
   function labelTexture(l) {
     const W = 512, H = 256;
+    const accent = l.accent || "#9aa6b4";
+    const fam = l.doc ? UI_DOCUMENT : UI_INSTRUMENT;
+    // framing is the default now; a few places genuinely read better without it
+    const framed = l.box !== false;
     return canvasTexture(W, H, (g) => {
       g.clearRect(0, 0, W, H);
       g.textAlign = "center";
-      if (l.box) {
-        g.fillStyle = "rgba(8,10,15,.92)";
-        g.fillRect(0, 0, W, H);
-        g.strokeStyle = l.accent || "#9aa6b4";
-        g.lineWidth = 6;
-        g.strokeRect(3, 3, W - 6, H - 6);
+
+      if (framed) {
+        const M = 7, R = 16;
+        /* A flat fill reads as a sticker. A shallow vertical gradient reads as
+           a plate catching light from above, which is what everything else in
+           these scenes is doing. */
+        const grad = g.createLinearGradient(0, M, 0, H - M);
+        grad.addColorStop(0, "rgba(26,31,42,.95)");
+        grad.addColorStop(1, "rgba(10,13,19,.95)");
+        g.fillStyle = grad;
+        roundRectPath(g, M, M, W - M * 2, H - M * 2, R);
+        g.fill();
+
+        // accent bar along the top: the module's colour, stated once
+        g.save();
+        roundRectPath(g, M, M, W - M * 2, H - M * 2, R);
+        g.clip();
+        g.fillStyle = accent;
+        g.fillRect(M, M, W - M * 2, 7);
+        g.restore();
+
+        // hairline inside the edge, then the accent border outside it
+        g.strokeStyle = "rgba(255,255,255,.10)";
+        g.lineWidth = 2;
+        roundRectPath(g, M + 3, M + 3, W - M * 2 - 6, H - M * 2 - 6, R - 3);
+        g.stroke();
+        g.strokeStyle = accent;
+        g.globalAlpha = 0.55;
+        g.lineWidth = 3;
+        roundRectPath(g, M, M, W - M * 2, H - M * 2, R);
+        g.stroke();
+        g.globalAlpha = 1;
       }
-      g.fillStyle = l.accent || "#9aa6b4";
-      g.font = "bold " + (l.topSize || 31) + "px system-ui, sans-serif";
-      if (l.top) g.fillText(l.top, W / 2, l.big ? 56 : 92, W - 26);
+
+      const PAD = 34;
+      const maxW = W - PAD * 2;
+
+      // title / eyebrow
+      g.fillStyle = accent;
+      g.font = "bold " + (l.topSize || 30) + "px " + fam;
+      if (g.letterSpacing !== undefined) g.letterSpacing = "1.5px";
+      if (l.top) g.fillText(l.top, W / 2, l.big ? 68 : (l.sub ? 108 : 140), maxW);
+      if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+
+      // the reading itself
       if (l.big) {
         g.fillStyle = l.bigColor || "#fff";
-        g.font = "bold " + (l.bigSize || 82) + "px system-ui, sans-serif";
-        g.fillText(l.big, W / 2, 156, W - 26);
+        g.font = "bold " + (l.bigSize || 84) + "px " + fam;
+        g.fillText(l.big, W / 2, 166, maxW);
       }
+
+      // qualifier
       if (l.sub) {
         g.fillStyle = "#94a0b0";
-        g.font = "23px system-ui, sans-serif";
-        g.fillText(l.sub, W / 2, l.big ? 212 : 138, W - 26);
+        g.font = (l.doc ? "italic " : "") + "23px " + fam;
+        g.fillText(l.sub, W / 2, l.big ? 214 : 152, maxW);
+      }
+    });
+  }
+
+  /* ---- document surfaces -------------------------------------------------
+     The record rooms carried twelve painters between them — a header, a card
+     and a plaque written out separately for each of the four rooms — which is
+     why they drifted into looking like four different documents and none of
+     them like a designed one. These two replace all of it.
+
+     Canvas size is derived from the plane, so the aspect always matches and
+     nothing is resampled unevenly, and the resolution scales with the surface
+     rather than being a number someone picked.
+
+     Georgia carries anything that is meant to read as a document; system-ui
+     carries the parts that are instrument readings — the status line, the
+     figure on a stat card. That is the pairing applied rather than the two
+     fonts being alternated by habit. */
+
+  function wrapLines(g, text, maxW, maxLines) {
+    const words = String(text || "").split(/\s+/);
+    const lines = [];
+    let line = "";
+    for (const w of words) {
+      const t = line ? line + " " + w : w;
+      if (g.measureText(t).width > maxW && line) {
+        lines.push(line);
+        line = w;
+        if (maxLines && lines.length >= maxLines) return lines;
+      } else line = t;
+    }
+    if (line) lines.push(line);
+    return maxLines ? lines.slice(0, maxLines) : lines;
+  }
+
+  /* A sheet of paper with something printed on it. The status colour arrives as
+     a spine down the left edge rather than as a box drawn round everything: a
+     full coloured stroke is what made these read as web widgets instead of
+     documents, and it fought the type for attention. */
+  function docCard(w, h, o) {
+    const PX = 210;                                   // px per world unit
+    const W = Math.round(w * PX), H = Math.round(h * PX);
+    const accent = o.accent || "#1d6b3a";
+    return canvasTexture(W, H, (g) => {
+      const grad = g.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#f8f4e9");
+      grad.addColorStop(1, "#ebe4d3");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, W, H);
+
+      const spine = Math.max(6, Math.round(W * 0.018));
+      g.fillStyle = accent;
+      g.fillRect(0, 0, spine, H);
+      g.strokeStyle = "rgba(30,26,18,.22)";
+      g.lineWidth = 2;
+      g.strokeRect(1, 1, W - 2, H - 2);
+
+      const pad = Math.round(W * 0.072) + spine;
+      const right = W - Math.round(W * 0.06);
+      const maxW = right - pad;
+      const S = W / 600;                              // one scale for all type
+      let y = Math.round(H * 0.145);
+
+      // eyebrow, then a hairline: the masthead of a small document
+      g.textAlign = "left";
+      g.fillStyle = accent;
+      g.font = "bold " + Math.round(27 * S) + "px system-ui, sans-serif";
+      if (g.letterSpacing !== undefined) g.letterSpacing = Math.round(1.6 * S) + "px";
+      if (o.eyebrow) g.fillText(o.eyebrow, pad, y);
+      if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+      y += Math.round(14 * S);
+      g.strokeStyle = "rgba(30,26,18,.20)";
+      g.lineWidth = Math.max(1, Math.round(1.5 * S));
+      g.beginPath(); g.moveTo(pad, y); g.lineTo(right, y); g.stroke();
+      y += Math.round(34 * S);
+
+      // the dominant element: a document has a title, a stat card has a figure
+      if (o.value) {
+        g.fillStyle = "#15161a";
+        g.font = "bold " + Math.round(80 * S) + "px system-ui, sans-serif";
+        g.fillText(o.value, pad, y + Math.round(52 * S));
+        y += Math.round(78 * S);
+      } else if (o.title) {
+        g.fillStyle = "#15161a";
+        g.font = "bold " + Math.round(32 * S) + "px Georgia, serif";
+        for (const ln of wrapLines(g, o.title, maxW, 3)) {
+          g.fillText(ln, pad, y); y += Math.round(38 * S);
+        }
+        y += Math.round(4 * S);
+      }
+
+      if (o.meta) {
+        g.fillStyle = "#40464e";
+        g.font = "italic " + Math.round(22 * S) + "px Georgia, serif";
+        for (const ln of wrapLines(g, o.meta, maxW, 2)) {
+          g.fillText(ln, pad, y); y += Math.round(29 * S);
+        }
+      }
+
+      // the ruling: a chip, so it reads as a stamp on the document
+      if (o.status) {
+        y += Math.round(20 * S);
+        g.font = "bold " + Math.round(24 * S) + "px system-ui, sans-serif";
+        const tw = g.measureText(o.status).width;
+        const chipH = Math.round(30 * S);
+        g.fillStyle = accent;
+        g.globalAlpha = 0.13;
+        roundRectPath(g, pad - Math.round(9 * S), y - Math.round(21 * S),
+                      tw + Math.round(18 * S), chipH, Math.round(6 * S));
+        g.fill();
+        g.globalAlpha = 1;
+        g.fillStyle = accent;
+        g.fillText(o.status, pad, y);
+        y += Math.round(30 * S);
+      }
+
+      if (o.body) {
+        y += Math.round(14 * S);
+        g.strokeStyle = "rgba(30,26,18,.18)";
+        g.beginPath(); g.moveTo(pad, y); g.lineTo(right, y); g.stroke();
+        y += Math.round(30 * S);
+        if (o.bodyLabel) {
+          g.fillStyle = "#7a6320";
+          g.font = "bold " + Math.round(17 * S) + "px system-ui, sans-serif";
+          g.fillText(o.bodyLabel, pad, y);
+          y += Math.round(28 * S);
+        }
+        g.fillStyle = "#171a1f";
+        g.font = Math.round(20 * S) + "px Georgia, serif";
+        for (const ln of wrapLines(g, o.body, maxW)) {
+          if (y > H - Math.round(24 * S)) break;
+          g.fillText(ln, pad, y); y += Math.round(27 * S);
+        }
+      }
+
+      if (o.footer) {
+        g.fillStyle = "#6f6a5d";
+        g.font = "italic " + Math.round(19 * S) + "px system-ui, sans-serif";
+        g.fillText(o.footer, pad, H - Math.round(20 * S));
+      }
+    });
+  }
+
+  /* The dark panel a record room opens with. Masthead, rule, standfirst — the
+     shape of a front page, so the room reads as a report rather than as a box
+     of text floating over a scene. */
+  function docPanel(w, h, o) {
+    const PX = 150;
+    const W = Math.round(w * PX), H = Math.round(h * PX);
+    const accent = o.accent || "#fffb00";
+    return canvasTexture(W, H, (g) => {
+      const grad = g.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "rgba(24,29,40,.96)");
+      grad.addColorStop(1, "rgba(11,14,20,.96)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, W, H);
+      g.fillStyle = accent;
+      g.fillRect(0, 0, W, Math.max(4, Math.round(H * 0.022)));
+
+      const S = W / 1400;
+      const pad = Math.round(46 * S);
+      const maxW = W - pad * 2;
+      let y = Math.round(66 * S);
+
+      g.textAlign = "left";
+      g.fillStyle = accent;
+      g.font = "bold " + Math.round(30 * S) + "px system-ui, sans-serif";
+      if (g.letterSpacing !== undefined) g.letterSpacing = Math.round(2.2 * S) + "px";
+      g.fillText(o.masthead || "", pad, y);
+      if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
+      y += Math.round(20 * S);
+      g.strokeStyle = "rgba(255,255,255,.16)";
+      g.lineWidth = Math.max(1, Math.round(1.5 * S));
+      g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+      y += Math.round(46 * S);
+
+      for (const blk of (o.blocks || [])) {
+        g.fillStyle = blk.dim ? "#9aa6b4" : "#e8ebf0";
+        g.font = (blk.dim ? "italic " : "") + Math.round(25 * S) + "px Georgia, serif";
+        for (const ln of wrapLines(g, blk.text, maxW)) {
+          if (y > H - Math.round(18 * S)) break;
+          g.fillText(ln, pad, y); y += Math.round(35 * S);
+        }
+        y += Math.round(12 * S);
       }
     });
   }
@@ -1466,6 +1742,30 @@ function play(id, params) {
     return mesh;
   }
 
+  /* Adopt a plane that a scene built itself. Several scenes draw their own
+     plaques rather than calling makeLabel, which meant those plaques never took
+     part in the screen-space layout and could sit on top of anything. */
+  function registerLabel(mesh, w, h, opts) {
+    if (!mesh || mesh.userData.label) return mesh;
+    const o = opts || {};
+    const rec = {
+      mesh,
+      home: mesh.position.clone(),
+      offset: new THREE.Vector3(),
+      want: new THREE.Vector3(),
+      w: w || 3.2, h: h || 1.6,
+      billboard: o.billboard === true,      // scene-placed plaques usually face already
+      priority: o.priority || 0,
+      setText(nl) {
+        mesh.material.map = labelTexture(nl);
+        mesh.material.needsUpdate = true;
+      }
+    };
+    labels.push(rec);
+    mesh.userData.label = rec;
+    return mesh;
+  }
+
   // Screen-space separation. Relaxation in aspect-corrected NDC: overlapping
   // pairs push each other apart along whichever axis needs least travel, run
   // to convergence, then the result is eased in along the camera's own axes so
@@ -1476,6 +1776,57 @@ function play(id, params) {
   function camDist(L) { return camera.position.distanceTo(L.home) || 1; }
   function worldPerNdcY(L) {
     return camDist(L) * Math.tan((camera.fov * Math.PI / 180) / 2);
+  }
+
+  /* Screen rect of an object, in the same aspect-corrected NDC the solver
+     works in. Uses the object's world bounding box so a group measures as the
+     whole assembly rather than as its first mesh. */
+  const _koBox = new THREE.Box3();
+  const _koPt = new THREE.Vector3();
+  function screenRectOf(obj) {
+    _koBox.setFromObject(obj);
+    if (_koBox.isEmpty()) return null;
+    const aspect = camera.aspect || 1;
+    let minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9, anyFront = false;
+    for (let i = 0; i < 8; i++) {
+      _koPt.set(i & 1 ? _koBox.max.x : _koBox.min.x,
+                i & 2 ? _koBox.max.y : _koBox.min.y,
+                i & 4 ? _koBox.max.z : _koBox.min.z).project(camera);
+      if (_koPt.z <= 1) anyFront = true;
+      const x = _koPt.x * aspect;
+      if (x < minx) minx = x;
+      if (x > maxx) maxx = x;
+      if (_koPt.y < miny) miny = _koPt.y;
+      if (_koPt.y > maxy) maxy = _koPt.y;
+    }
+    if (!anyFront) return null;
+    return { x: (minx + maxx) / 2, y: (miny + maxy) / 2,
+             hx: (maxx - minx) / 2, hy: (maxy - miny) / 2 };
+  }
+
+  /* Things a label must not sit on top of. Everything the player can click or
+     drag qualifies automatically — a readout covering the object it describes
+     is the one case where "legibility beats atmosphere" turns against itself,
+     because you can no longer see what you are aiming at. Scenes can add
+     anything else with userData.keepClear.
+
+     Note these labels were never blocking input: they are not in ctx.pickables
+     and the raycast passes straight through them. The problem was purely that
+     the player could not see the beam or the slot underneath. */
+  function keepOutRects() {
+    const out = [];
+    const seen = new Set();
+    const consider = (o) => {
+      if (!o || seen.has(o)) return;
+      seen.add(o);
+      // an invisible hit proxy stands in for something real; measure that
+      const t = (o.userData && o.userData.rimTarget) || o;
+      const r = screenRectOf(t);
+      if (r) out.push(r);
+    };
+    for (const p of pickables) consider(p);
+    scene.traverse((o) => { if (o.userData && o.userData.keepClear) consider(o); });
+    return out;
   }
 
   function resolveLabelOverlap() {
@@ -1490,8 +1841,27 @@ function play(id, params) {
       items.push({ L, wy, x: p.x * aspect, y: p.y,
                    hx: (L.w / 2) / wy, hy: (L.h / 2) / wy, dx: 0, dy: 0 });
     }
+    const keepOut = keepOutRects();
     for (let pass = 0; pass < 10; pass++) {
       let moved = false;
+      /* Labels step off interactive objects first, then off each other. Doing
+         it in this order means the second stage can still separate two labels
+         that were both pushed to the same place. */
+      for (let i = 0; i < items.length; i++) {
+        const A = items[i];
+        for (let k = 0; k < keepOut.length; k++) {
+          const K = keepOut[k];
+          const dx = K.x - (A.x + A.dx);
+          const dy = K.y - (A.y + A.dy);
+          const ox = A.hx + K.hx - Math.abs(dx);
+          const oy = A.hy + K.hy - Math.abs(dy);
+          if (ox <= 0 || oy <= 0) continue;
+          moved = true;
+          // the label yields, never the object: only A moves
+          if (oy <= ox) A.dy -= (oy + 0.008) * (dy >= 0 ? 1 : -1);
+          else          A.dx -= (ox + 0.008) * (dx >= 0 ? 1 : -1);
+        }
+      }
       for (let i = 0; i < items.length; i++) {
         for (let j = i + 1; j < items.length; j++) {
           const A = items[i], B = items[j];
@@ -1534,8 +1904,12 @@ function play(id, params) {
     THREE, scene, camera, renderer, container: stage,
     assets: def.assets || {},
     params: params || {},
-    pickables: [],
-    canvasTexture, labelTexture, makeLabel, tune, texScale,
+    pickables,
+    canvasTexture, labelTexture, makeLabel, registerLabel, tune, texScale,
+    // shared document surfaces for the record rooms
+    docCard, docPanel,
+    // named plaque sizes: ctx.plaqueSize.md -> [w, h], all 2:1
+    plaqueSize: PLAQUE,
     // procedural surface maps: ctx.surfaces.wood(), then grayTexture/normalTexture
     surfaces, grayTexture, normalTexture,
     roundedBox, smoothGeometry, turnedCylinder, plinth, fitTrim,

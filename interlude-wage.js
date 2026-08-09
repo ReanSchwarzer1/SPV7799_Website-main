@@ -151,7 +151,7 @@
         scene.add(worker);
         var wageLabel = makeLabel(-6.9, 3.3, 0,
           { top: "RURAL LABOURER", big: "$3.20", sub: "MGNREGA day wage",
-            accent: "#9aa6b4", box: true, bigSize: 74 }, 2.50, 1.25);
+            accent: "#9aa6b4", box: true, bigSize: 74 }, 3.20, 1.60);
 
         // ---------- one month of medicine ----------
         var bottle = new THREE.Mesh(
@@ -240,7 +240,7 @@
         scene.add(cap);
         var drugLabel = makeLabel(6.9, 3.3, 0,
           { top: "PATENTED", big: "$5,000", sub: "Bayer's Nexavar, one month",
-            accent: "#d4573f", box: true, bigSize: 70 }, 2.65, 1.33);
+            accent: "#d4573f", box: true, bigSize: 70 }, 3.20, 1.60);
 
         // ---------- the tower of working days ----------
         var blocks = [];
@@ -260,7 +260,7 @@
         }
         var daysLabel = makeLabel(0, 4.35, 0,
           { top: "DAYS OF LABOUR FOR ONE MONTH", big: "1,562",
-            sub: "each block is 10 days", accent: "#d4573f", box: true, bigSize: 78 }, 3.28, 1.64);
+            sub: "each block is 10 days", accent: "#d4573f", box: true, bigSize: 78 }, 3.20, 1.60);
 
         // WHO affordability line: one day's wage
         var whoLine = new THREE.Mesh(
@@ -270,7 +270,7 @@
         whoLine.position.set(0, 0.12 + (A.block.h + 0.035), 0.32);
         scene.add(whoLine);
         makeLabel(-5.6, -1.15, 2.6,
-          { top: "WHO AFFORDABLE", sub: "one day's wage", accent: "#fffb00", box: true }, 2.03, 1.01);
+          { top: "WHO AFFORDABLE", sub: "one day's wage", accent: "#fffb00", box: true }, 3.20, 1.60);
 
         // ---------- the two switches ----------
         function makeSwitch(x, title) {
@@ -299,7 +299,7 @@
           scene.add(hit);
           ctx.pickables.push(hit);
           var lab = makeLabel(x, -0.5, 4.3,
-            { top: title, sub: "click to flip", accent: "#d9a441", box: true }, 2.26, 1.13);
+            { top: title, sub: "click to flip", accent: "#d9a441", box: true }, 3.20, 1.60);
           return { lever: lever, hit: hit, label: lab, title: title };
         }
         var swWage = makeSwitch(-2.6, "WHO IS BUYING");
@@ -318,7 +318,7 @@
         scene.add(lernerFill);
         var lernerLabel = makeLabel(0, -2.25, 1.2,
           { top: "LERNER INDEX OF MONOPOLY POWER", sub: "0.996 — price is almost all margin",
-            accent: "#d4573f", box: true }, 3.28, 1.17);
+            accent: "#d4573f", box: true }, 3.20, 1.60);
 
         // ---------- state ----------
         var wageKey = "unskilled", drugKey = "patented";

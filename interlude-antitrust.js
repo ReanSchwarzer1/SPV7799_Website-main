@@ -185,7 +185,7 @@
         flagPole.position.set(curveX(5), curveY(5) + 0.62, 0);
         scene.add(flagPole);
         makeLabel(curveX(5), curveY(5) + 1.75, 0,
-          { top: "THE SUMMIT", sub: "3 to 8 firms", accent: "#3fae6b", box: true }, 2.5, 1.25);
+          { top: "THE SUMMIT", sub: "3 to 8 firms", accent: "#3fae6b", box: true }, 3.20, 1.60);
 
         // ---------- the ball ----------
         var ball = new THREE.Mesh(
@@ -251,7 +251,7 @@
         }
         var hhiLabel = makeLabel(0, A.hhi.y - 1.05, 0,
           { top: "HERFINDAHL-HIRSCHMAN INDEX", big: "10,000",
-            sub: "highly concentrated", accent: "#d4573f", box: true, bigSize: 70 }, 4.4, 2.2);
+            sub: "highly concentrated", accent: "#d4573f", box: true, bigSize: 70 }, 4.00, 2.00);
 
         // ---------- add / remove buttons ----------
         function makeButton(x, sign, title, color) {
@@ -344,7 +344,7 @@
           scene.add(hit);
           ctx.pickables.push(hit);
           makeLabel(x, -3.55, 4.4,
-            { top: title, accent: "#" + color.toString(16).padStart(6, "0"), box: true }, 2.4, 1.2);
+            { top: title, accent: "#" + color.toString(16).padStart(6, "0"), box: true }, 3.20, 1.60);
           return { mesh: b, hit: hit, sign: sign };
         }
         var btnAdd = makeButton(2.4, 1, "ADD FIRM", 0x3fae6b);
@@ -352,10 +352,10 @@
 
         var firmsLabel = makeLabel(-6.4, 1.9, 0,
           { top: "FIRMS IN THE MARKET", big: "1", sub: "a pure monopoly",
-            accent: "#d9a441", box: true, bigSize: 84 }, 3.4, 1.7);
+            accent: "#d9a441", box: true, bigSize: 84 }, 3.20, 1.60);
         var innovLabel = makeLabel(6.4, 1.9, 0,
           { top: "INNOVATION INTENSITY", big: "45%", sub: "Arrow's replacement effect",
-            accent: "#4f86c6", box: true, bigSize: 78 }, 3.4, 1.7);
+            accent: "#4f86c6", box: true, bigSize: 78 }, 3.20, 1.60);
 
         // ---------- state ----------
         var firms = 1;

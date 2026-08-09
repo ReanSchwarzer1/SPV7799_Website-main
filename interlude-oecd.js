@@ -232,42 +232,34 @@
           ctx.pickables.push(hit);
 
           var nameLab = makeLabel(x, -2.75, 2.2,
-            { top: s.name, accent: "#9aa6b4", box: true, topSize: 26 }, 2.15, 1.05);
+            // seven across a 14-unit deck: this row needs the xs step
+            { top: s.name, accent: "#9aa6b4", box: true, topSize: 26 }, 2.10, 1.05);
 
           pods.push({ sys: s, x: x, volume: tv, value: tm, hit: hit,
                       name: nameLab, base: base, idx: i });
         });
 
         makeLabel(-6.4, 5.3, 0,
-          { top: "SHARE OF PRESCRIPTIONS", accent: "#fffb00", box: true, topSize: 27 }, 3.5, 1.1);
+          { top: "SHARE OF PRESCRIPTIONS", accent: "#fffb00", box: true, topSize: 27 }, 3.20, 1.60);
         makeLabel(-2.6, 5.3, 0,
-          { top: "SHARE OF SPENDING", accent: "#8892a4", box: true, topSize: 27 }, 3.2, 1.1);
+          { top: "SHARE OF SPENDING", accent: "#8892a4", box: true, topSize: 27 }, 3.20, 1.60);
 
         var readout = makeLabel(6.2, 5.0, 0,
           { top: "SELECT A SYSTEM", sub: "click a pedestal to inspect it",
-            accent: "#9aa6b4", box: true }, 4.4, 2.0);
+            accent: "#9aa6b4", box: true }, 4.00, 2.00);
 
-        // ---------- lock-in plaque ----------
-        function plaqueTex(text, sub, accent) {
-          var c = document.createElement("canvas");
-          var _S = ctx.texScale, _W = 900, _H = 180;
-          c.width = _W * _S; c.height = _H * _S;
-          var g = c.getContext("2d"); g.scale(_S, _S);
-          g.fillStyle = "#1d2431"; g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = accent; g.lineWidth = 7; g.strokeRect(5, 5, _W - 10, _H - 10);
-          g.textAlign = "center"; g.fillStyle = accent;
-          g.font = "bold 42px system-ui, sans-serif";
-          g.fillText(text, _W / 2, 78);
-          g.fillStyle = "#9aa6b4"; g.font = "24px system-ui, sans-serif";
-          g.fillText(sub, _W / 2, 128);
-          return keep(ctx.tune(new THREE.CanvasTexture(c)));
-        }
-        var plaque = new THREE.Mesh(
-          keep(new THREE.PlaneGeometry(4.6, 0.92)),
-          keep(new THREE.MeshBasicMaterial(
-            { map: plaqueTex("LOCK IN", "select a system first", "#5b6270"), transparent: true })));
-        plaque.position.set(0, -3.35, 1.2);
-        scene.add(plaque);
+        /* ---------- lock-in plaque ----------
+           This used to be a raw mesh painted by a local function with its own
+           fill, stroke and type. It is the module's primary action, so it now
+           uses the shared plaque like every other readout in the game, which
+           also puts it in the layout pass automatically — being outside that
+           pass is why it ended up behind the UNITED STATES caption.
+
+           Sat lower and further forward than the pedestal names so it reads as
+           the action under the row rather than as another name in it. */
+        var plaque = makeLabel(0, -4.35, 3.6,
+          { top: "LOCK IN", sub: "select a system first", accent: "#5b6270",
+            box: true, topSize: 38 }, 4.00, 2.00);
         ctx.pickables.push(plaque);
 
         // ---------- state ----------
@@ -290,14 +282,15 @@
             // still useful for comparison, but the plaque must not offer a fresh
             // "lock in" it will refuse, and it must keep naming the real answer
             // rather than the pedestal the player happens to be standing at.
-            plaque.material.map = plaqueTex("CORRECT: " + pods[answerIdx].sys.name,
-                                            "the widest gap in the hall", "#3fae6b");
+            plaque.material.map = labelTex({ top: "CORRECT: " + pods[answerIdx].sys.name,
+              sub: "the widest gap in the hall", accent: "#3fae6b", box: true, topSize: 34 });
             plaque.material.needsUpdate = true;
             ctx.setHint("Comparing " + s.name + ". " + pods[answerIdx].sys.name +
                         " still holds the widest gap. Close your term when you are ready.");
             return;
           }
-          plaque.material.map = plaqueTex("LOCK IN " + s.name, "is this the widest gap?", "#fffb00");
+          plaque.material.map = labelTex({ top: "LOCK IN " + s.name,
+            sub: "is this the widest gap?", accent: "#fffb00", box: true, topSize: 34 });
           plaque.material.needsUpdate = true;
           ctx.setHint("Compare the towers. Lock in when you think you have the widest gap.");
         }
@@ -309,7 +302,8 @@
           if (selected === answerIdx) {
             solved = true;
             pods[selected].volume.material.emissiveIntensity = 0.8;
-            plaque.material.map = plaqueTex("CORRECT: " + s.name, "the widest gap in the hall", "#3fae6b");
+            plaque.material.map = labelTex({ top: "CORRECT: " + s.name,
+              sub: "the widest gap in the hall", accent: "#3fae6b", box: true, topSize: 34 });
             plaque.material.needsUpdate = true;
             ctx.setStatus("Widest gap identified: " + s.name, true);
             ctx.setHint("Generics are most of the prescribing and a fraction of the bill. That is the paradox.");
@@ -327,7 +321,8 @@
             ctx.setAction("Close your term", null);
             ctx.complete();
           } else {
-            plaque.material.map = plaqueTex("NOT " + s.name, "a wider gap stands elsewhere", "#d4573f");
+            plaque.material.map = labelTex({ top: "NOT " + s.name,
+              sub: "a wider gap stands elsewhere", accent: "#d4573f", box: true, topSize: 34 });
             plaque.material.needsUpdate = true;
             ctx.setStatus("Not the widest — look again", false);
             ctx.setHint("Look for the tallest yellow tower sitting over the shortest grey one.");

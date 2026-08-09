@@ -172,7 +172,7 @@
           mat({ color: 0xe8ecf2, roughness: 0.4 }));
         scene.add(columnCap);
         var priceLabel = makeLabel(A.column.x, 5.6, 0,
-          { top: "PRICE INDEX", big: "100", accent: "#d4573f" }, 2.24, 1.12);
+          { top: "PRICE INDEX", big: "100", accent: "#d4573f" }, 3.20, 1.60);
 
         // ---------- surplus tanks ----------
         function makeTank(cfg, title) {
@@ -282,7 +282,7 @@
                   emissive: cfg.fill, emissiveIntensity: 0.22 }));
           scene.add(fill);
           var lab = makeLabel(cfg.x, -1.7 + A.tank.maxH + 0.95, 0,
-            { top: title, accent: "#" + cfg.fill.toString(16).padStart(6, "0") }, 2.15, 1.07);
+            { top: title, accent: "#" + cfg.fill.toString(16).padStart(6, "0") }, 3.20, 1.60);
           return { fill: fill, sight: sight, x: cfg.x, label: lab, title: title,
                    color: "#" + cfg.fill.toString(16).padStart(6, "0") };
         }
@@ -477,7 +477,7 @@
         postBase.position.set(WX, WY - 1.78, WZ - 0.72);
         scene.add(postBase);
         var wheelLabel = makeLabel(-3.4, A.lever.y - 1.35, A.lever.z + 1.2,
-          { top: "PROCUREMENT", sub: "LOW · click to raise", accent: "#4f86c6" }, 2.41, 1.20);
+          { top: "PROCUREMENT", sub: "LOW · click to raise", accent: "#4f86c6" }, 3.20, 1.60);
 
         // ---------- firms ----------
         var firmGroup = new THREE.Group();
