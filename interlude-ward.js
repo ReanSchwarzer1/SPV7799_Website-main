@@ -16,9 +16,9 @@
 
    Model is the page's own (see updateQALYChart in script.js):
      patients = floor(budget / costPerPatient)
-     life-years = patients x 5 QALYs
-   The 5-QALY figure comes from the artifact's imatinib survival
-   source. The scene drives the page's cost control, so the chart
+     life-years = patients x 7.34 QALYs
+   The 7.34-QALY figure is the imatinib-first strategy over ten
+   years in Yamamoto et al. (2019), Blood Advances 3(21). The scene drives the page's cost control, so the chart
    and the score stay on one model.
    ============================================================ */
 
@@ -44,7 +44,7 @@
       assets: {
         budget: 10000000,
         costMin: 2000, costMax: 30000, costStep: 1000,
-        qalyPerPatient: 5,
+        qalyPerPatient: 7.34,
         targetPatients: 2000,
         maxPatients: 5000,          // budget / costMin, the ceiling of the ward
         wheel:  { r: 1.55, tube: 0.3, color: 0xd9a441, x: 0, y: -0.4, z: 3.2 },
@@ -382,7 +382,7 @@
                 emissive: A.tower.color, emissiveIntensity: 0.3 }));
         scene.add(tower);
         var towerLabel = makeLabel(A.tower.x, 4.15, 0,
-          { top: "LIFE-YEARS GAINED", big: "1,665", sub: "5 QALYs per patient treated",
+          { top: "QALYS OVER 10 YEARS", big: "2,444", sub: "7.34 QALYs per patient, 10 years",
             accent: "#3fae6b", box: true, bigSize: 70 }, 3.20, 1.60);
 
         // ---------- state ----------
@@ -435,7 +435,7 @@
 
         function model() {
           var patients = Math.floor(A.budget / cost);
-          return { patients: patients, qalys: patients * A.qalyPerPatient };
+          return { patients: patients, qalys: Math.round(patients * A.qalyPerPatient) };
         }
 
         function pushToPage() {
@@ -465,8 +465,8 @@
           tower.scale.y = h;
           tower.position.set(A.tower.x, -2.35 + h / 2, 0);
           towerLabel.material.map = labelTex(
-            { top: "LIFE-YEARS GAINED", big: fmt(m.qalys),
-              sub: "5 QALYs per patient treated", accent: "#3fae6b", box: true, bigSize: 70 });
+            { top: "QALYS OVER 10 YEARS", big: fmt(m.qalys),
+              sub: "7.34 QALYs per patient, 10 years", accent: "#3fae6b", box: true, bigSize: 70 });
           towerLabel.material.needsUpdate = true;
 
           if (!won) {

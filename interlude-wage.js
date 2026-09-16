@@ -13,11 +13,12 @@
 
    Objective: bring the cost down to 90 days of labour or fewer.
 
-   Figures are the artifact's own: Bayer's Nexavar at $5,000 a
-   month against Natco's post-compulsory-licence sorafenib at $105,
-   and a day's wage of $3.20 under MGNREGA against $15 for an urban
-   salaried worker. The Lerner index, L = (P - MC) / P, uses the
-   artifact's $20 marginal cost.
+   Figures: Bayer's Nexavar at $5,500 a month against Natco's
+   post-compulsory-licence sorafenib at $171 (Knowledge@Wharton,
+   2012), and a day's wage of $3.20 under MGNREGA against $15 for
+   an urban salaried worker. The Lerner index, L = (P - MC) / P,
+   uses $80 a month, the cost of production excluding the 50%
+   margin in Hill et al. (2016).
    ============================================================ */
 
 (function () {
@@ -41,14 +42,14 @@
 
       assets: {
         drugs: {
-          patented: { price: 5000, name: "PATENTED", sub: "Bayer's Nexavar", color: 0xd4573f },
-          generic:  { price: 105,  name: "POST-LICENCE", sub: "Natco's sorafenib", color: 0x3fae6b }
+          patented: { price: 5500, name: "PATENTED", sub: "Bayer's Nexavar", color: 0xd4573f },
+          generic:  { price: 171,  name: "POST-LICENCE", sub: "Natco's sorafenib", color: 0x3fae6b }
         },
         wages: {
           unskilled: { daily: 3.20, name: "RURAL LABOURER", sub: "MGNREGA day wage" },
           salaried:  { daily: 15.00, name: "URBAN SALARIED", sub: "average day wage" }
         },
-        marginalCost: 20,
+        marginalCost: 80,
         target: 90,                       // days of labour to clear the module
         block: { w: 0.34, h: 0.16, d: 0.34, perBlock: 10, cap: 170,
                  color: 0xd4573f, ok: 0x3fae6b },
@@ -317,7 +318,7 @@
                 emissive: 0xd4573f, emissiveIntensity: 0.35 }));
         scene.add(lernerFill);
         var lernerLabel = makeLabel(0, -2.25, 1.2,
-          { top: "LERNER INDEX OF MONOPOLY POWER", sub: "0.996 — price is almost all margin",
+          { top: "LERNER INDEX OF MONOPOLY POWER", sub: "0.985 — price is almost all margin",
             accent: "#d4573f", box: true }, 3.20, 1.60);
 
         // ---------- state ----------

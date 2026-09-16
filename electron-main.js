@@ -12,8 +12,9 @@
    opening a TCP port on the machine.
    ============================================================ */
 
-const { app, BrowserWindow, protocol, net, globalShortcut } = require("electron");
+const { app, BrowserWindow, protocol, net, globalShortcut, ipcMain } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 
 /* Chromium throttles, and eventually freezes, the render loop of a window it
@@ -125,6 +126,45 @@ app.whenReady().then(function () {
       return new Response("forbidden", { status: 403 });
     }
     return net.fetch(pathToFileURL(filePath).toString());
+  });
+
+  /* Session logs.
+
+     The renderer hands over a filename and a JSON string and the main
+     process decides where it may be written: a logs folder beside the
+     executable, so whoever runs the session can find it without going
+     through AppData, falling back to the user data directory when that
+     folder is read-only (an installed build under Program Files).
+
+     The renderer is treated as untrusted: the name has to be a plain
+     JSON filename with no path in it, and the payload is capped. */
+  ipcMain.handle("log:save", function (event, name, text) {
+    if (typeof name !== "string" || typeof text !== "string") {
+      return { ok: false, error: "bad arguments" };
+    }
+    if (!/^[A-Za-z0-9._-]{1,120}\.json$/.test(name)) {
+      return { ok: false, error: "bad filename" };
+    }
+    if (text.length > 8 * 1024 * 1024) {
+      return { ok: false, error: "log too large" };
+    }
+    /* A portable build unpacks itself into a temp folder, so the executable
+       path is not where the tester keeps the app. electron-builder sets
+       PORTABLE_EXECUTABLE_DIR to the real folder; use it when it is there. */
+    const beside = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(app.getPath("exe"));
+    const dirs = [path.join(beside, "logs"), path.join(app.getPath("userData"), "logs")];
+    let lastErr = null;
+    for (const dir of dirs) {
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        const target = path.join(dir, name);
+        fs.writeFileSync(target, text, "utf8");
+        return { ok: true, path: target };
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    return { ok: false, error: String((lastErr && lastErr.message) || lastErr) };
   });
 
   createWindow();

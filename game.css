@@ -174,3 +174,10 @@ body.gamified {
 }
 #term-dispatch { animation: dispatchIn .55s ease both; }
 #term-dispatch ul > li:last-child { border-bottom: 0; }
+
+/* participant id on the opening briefing */
+.game-modal .pid { display:block; margin:18px 0 6px; font-size:12px; letter-spacing:.08em;
+                   text-transform:uppercase; color:#9aa6b4; }
+.game-modal .pid-input { width:100%; padding:10px 12px; border:1px solid #33405a; border-radius:6px;
+                         background:#0f141d; color:#e6e9ee; font:14px/1.4 system-ui, sans-serif; }
+.game-modal .pid-input:focus { outline:2px solid #d9a441; outline-offset:1px; }

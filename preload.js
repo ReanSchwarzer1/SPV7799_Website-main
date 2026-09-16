@@ -3,9 +3,13 @@
    small marker the page can use to tell it is running as the
    desktop app rather than in a browser tab. */
 
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("gameShell", {
   isDesktopApp: true,
-  platform: process.platform
+  platform: process.platform,
+  // the session log leaves the renderer as text on one named channel
+  saveLog: function (name, text) {
+    return ipcRenderer.invoke("log:save", String(name), String(text));
+  }
 });

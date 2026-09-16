@@ -64,7 +64,7 @@ function setSynthesis(route) {
     } else {
         btnAlt.classList.remove('border-transparent');
         btnAlt.classList.add('border-brandDark', 'bg-white');
-        cost.innerText = "~$1.50"; 
+        cost.innerText = "~$2.20"; 
         cost.className = "text-5xl font-bold text-green-500 font-mono transition-colors duration-300";
         state.patentActive = false; 
         
@@ -293,10 +293,10 @@ function updateQALYChart() {
     if(!state.chartsInitialized) return;
     const costPerPatient = parseInt(document.getElementById('slider-qaly-cost').value);
     const fixedBudget = 10000000; 
-    const qalyMultiplier = 5; 
+    const qalyMultiplier = 7.34; 
 
     const patientsTreated = Math.floor(fixedBudget / costPerPatient);
-    const totalQALYs = patientsTreated * qalyMultiplier;
+    const totalQALYs = Math.round(patientsTreated * qalyMultiplier);
 
     document.getElementById('qaly-patients').innerText = patientsTreated.toLocaleString();
     document.getElementById('qaly-total').innerText = totalQALYs.toLocaleString();
@@ -310,11 +310,11 @@ function updateQALYChart() {
 
 // --- 6. DYNAMIC MAP INTERACTIVITY WITH REAL DATA ---
 const historicalExportData = {
-    2000: 1.5, 2001: 1.9, 2002: 2.3, 2003: 2.8, 2004: 3.5,
+    2003: 3.0, 2004: 3.5,
     2005: 4.2, 2006: 5.0, 2007: 6.1, 2008: 7.2, 2009: 8.5,
     2010: 9.8, 2011: 11.2, 2012: 13.0, 2013: 14.6, 2014: 15.2,
     2015: 16.4, 2016: 16.8, 2017: 17.3, 2018: 19.1, 2019: 20.6,
-    2020: 24.4, 2021: 24.6, 2022: 25.3, 2023: 27.9, 2024: 30.5
+    2020: 24.4, 2021: 24.6, 2022: 25.3, 2023: 27.0, 2024: 30.47
 };
 
 const regionalData = {
@@ -408,8 +408,8 @@ function updateMap() {
 // --- 7. HUMAN METRIC: AFFORDABILITY & LERNER INDEX ---
 const affordabilityData = {
     drugs: {
-        patented: { price: 5000, mc: 20, name: "Bayer's Nexavar (Sorafenib)" },
-        generic: { price: 105, mc: 20, name: "Natco's Sorafenib (Compulsory License)" }
+        patented: { price: 5500, mc: 80, name: "Bayer's Nexavar (Sorafenib)" },
+        generic: { price: 171, mc: 80, name: "Natco's Sorafenib (Compulsory License)" }
     },
     wages: {
         unskilled: { daily: 3.20, name: "Unskilled Laborer (MGNREGA)" },
@@ -642,7 +642,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // 1. Initialize S-Curve Chart (Section 6)
     const sCurveCtx = document.getElementById('sCurveChart').getContext('2d');
     const sData = [];
-    for(let y=2000; y<=2024; y++) {
+    for(let y=2003; y<=2024; y++) {
         let penetration = 100 / (1 + Math.exp(-0.4 * (y - 2010)));
         sData.push({x: y, y: penetration});
     }
@@ -662,7 +662,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
                 {
                     label: 'Current Year',
-                    data: [{x: 2000, y: 100 / (1 + Math.exp(-0.4 * (2000 - 2010)))}],
+                    data: [{x: 2003, y: 100 / (1 + Math.exp(-0.4 * (2003 - 2010)))}],
                     backgroundColor: '#d92525',
                     borderColor: '#fffb00',
                     borderWidth: 2,
@@ -696,7 +696,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 x: { 
                     type: 'linear', 
                     title: { display: false }, 
-                    min: 2000, 
+                    min: 2003, 
                     max: 2024,
                     grid: { display: false },
                     ticks: { callback: function(value) { return value; } }
@@ -798,8 +798,8 @@ document.addEventListener("DOMContentLoaded", function() {
     // 3. Initialize OECD Comparison Chart (Section 10)
     // Verification: Data sourced from w74906.xlsx (OECD Health Statistics 2023)
 const oecdLabels = ['Chile', 'Germany', 'UK', 'USA', 'Japan', 'OECD Avg', 'Switzerland'];
-const volumeData = [82.3, 80.3, 78.4, 91.0, 47.7, 52.3, 22.1];
-const valueData = [67.2, 15.5, 34.3, 18.0, 15.4, 24.5, 14.1];
+const volumeData = [82.3, 83.4, 78.4, 91.0, 47.7, 54.1, 22.1];
+const valueData = [67.2, 29.2, 34.3, 18.0, 15.4, 24.7, 14.1];
 
 const compCtx = document.getElementById('comparisonChart').getContext('2d');
 new Chart(compCtx, {
@@ -914,7 +914,7 @@ new Chart(compCtx, {
     qalyChart = new Chart(qalyCtx, { 
         type: 'bar', 
         data: { 
-            labels: ['Patients Treated', 'Total QALYs Gained'], 
+            labels: ['Patients Treated', 'Total QALYs (10 years)'], 
             datasets: [{ label: 'Volume', backgroundColor: ['#fffb00', '#4ade80'], data: [0, 0] }] 
         }, 
         options: { 
@@ -944,7 +944,7 @@ new Chart(compCtx, {
                                 lines.push(`Math: $10M ÷ $${costPerPatient.toLocaleString()}`);
                                 lines.push(`Result: ${patients.toLocaleString()} lives treated.`);
                             } else {
-                                const qalys = patients * 5;
+                                const qalys = Math.round(patients * 7.34);
                                 lines.push(`Math: ${patients.toLocaleString()} patients × 5 added years`);
                                 lines.push(`Result: ${qalys.toLocaleString()} total years of life saved.`);
                                 lines.push(``); 

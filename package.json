@@ -1,14 +1,14 @@
 {
   "name": "one-molecule-two-markets",
   "productName": "One Molecule, Two Markets",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Condition B: gamified 3D interactive artifact on the economics of generic drugs.",
   "main": "electron-main.js",
   "private": true,
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --x64",
-    "dist:dir": "electron-builder --win --x64 --dir"
+    "dist": "electron-builder --win --x64 --config.win.signAndEditExecutable=false",
+    "dist:dir": "electron-builder --win --x64 --dir --config.win.signAndEditExecutable=false"
   },
   "devDependencies": {
     "electron": "^40.6.1",
@@ -26,6 +26,7 @@
       "preload.js",
       "index-gamified.html",
       "il-audio.js",
+      "il-log.js",
       "script.js",
       "game.js",
       "interludes.js",
@@ -44,7 +45,9 @@
       "style.css",
       "game.css",
       "interludes.css",
-      "vendor/**"
+      "vendor/**",
+      "LICENSE.txt",
+      "THIRD-PARTY-LICENSES.md"
     ],
     "win": {
       "target": [
@@ -60,11 +63,16 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "legalTrademarks": ""
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
-  }
+      "allowToChangeInstallationDirectory": true,
+      "license": "LICENSE.txt"
+    },
+    "copyright": "Copyright (c) 2026 Adhiraj, Vanshija, Emeafu and Jitender"
+  },
+  "license": "MIT",
+  "author": "Adhiraj, Vanshija, Emeafu and Jitender"
 }

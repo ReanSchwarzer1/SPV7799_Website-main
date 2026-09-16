@@ -214,6 +214,10 @@
     var fb = $("goal-fb-" + idx);
     if (fb && feedback) fb.innerHTML = feedback;
     updateHUD();
+    if (window.GameLog) {
+      window.GameLog.event("objective", { module: idx + 1, access: Math.round(g.access),
+                                          innovation: Math.round(g.innov) });
+    }
     directorAdvance(idx);
     // the reckoning scene closes the term; the old report card is retired
   }
@@ -435,6 +439,7 @@
       if (typeof launch === "function") {
         // brief the player, then open the scene when they are ready
         showBriefing(opts.briefing, function () {
+          if (window.GameLog) window.GameLog.scene(opts.briefing, "enter");
           if (!document.querySelector(".il-overlay")) launch();
         });
         return;
@@ -615,7 +620,7 @@
       modules: [
         { n: 1, name: "The comparison bench",
           did: g.done[0] ? "Proved the two samples were one compound" : "Left the samples sealed",
-          out: g.done[0] ? "$179.93 a pill against about $1.50, for the same molecule" : "—",
+          out: g.done[0] ? "$179.93 a pill against about $2.20, for the same molecule" : "—",
           ok: !!g.done[0] },
         { n: 2, name: "The bench",
           did: rulings.length ? "Ruled on " + rulings.length + " cases" : "Ruled on nothing",
@@ -705,6 +710,7 @@
     // when a 3D scene closes, decide where the player goes next
     document.addEventListener("interlude:end", function (ev) {
       if (!ev.detail) return;
+      if (window.GameLog) window.GameLog.scene(ev.detail.id, "end");
 
       if (ev.detail.id === "molecule") {
         if (g.done[0]) {
@@ -836,6 +842,10 @@
       }
 
       if (ev.detail.id === "reckoning") {
+        if (window.GameLog) {
+          window.GameLog.event("term-end", window.GameFullRecord ? window.GameFullRecord() : null);
+          window.GameLog.flush("term-end");
+        }
         toast("Term closed. Thank you, minister.", 7000);
       }
     });
@@ -893,6 +903,10 @@
           else { g.access = clamp(g.access + 7); g.innov = clamp(g.innov - 1); }
           g.rulings[num].dA = g.access - beforeA;
           g.rulings[num].dI = g.innov - beforeI;
+          if (window.GameLog) {
+            window.GameLog.event("ruling", { number: num, granted: isGrant,
+                                            drug: g.rulings[num].drug, title: g.rulings[num].title });
+          }
           updateHUD();
         }
         var ruled = Object.keys(g.ruledCases).length;
@@ -1031,10 +1045,15 @@
       '<h2>You are the Health Minister of India</h2>' +
       '<p>The same medicines cost a fortune abroad and pennies at home. Over ten decisions you will set the law and the market that decide who gets treated.</p>' +
       '<div class="obj"><b>Your mandate:</b> push <b>Access</b> as high as you can without letting <b>Innovation</b> collapse. Every ruling carries forward.</div>' +
+      '<label class="pid" for="game-pid">Participant ID</label>' +
+      '<input class="pid-input" id="game-pid" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. P07">' +
       '<button class="start" id="game-start">Begin your term</button>' +
       '</div>';
     document.body.appendChild(m);
+    var pidField = $("game-pid");
+    if (pidField && window.GameLog) pidField.value = window.GameLog.id;
     $("game-start").addEventListener("click", function () {
+      if (window.GameLog && pidField) window.GameLog.setId(pidField.value);
       m.setAttribute("hidden", "");
       m.remove();
       g.started = true;

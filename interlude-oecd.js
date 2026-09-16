@@ -40,11 +40,11 @@
         // volume = share of prescriptions, value = share of spending
         systems: [
           { name: "CHILE",       volume: 82.3, value: 67.2 },
-          { name: "GERMANY",     volume: 80.3, value: 15.5 },
+          { name: "GERMANY",     volume: 83.4, value: 29.2 },
           { name: "UNITED KINGDOM", volume: 78.4, value: 34.3 },
           { name: "UNITED STATES",  volume: 91.0, value: 18.0 },
           { name: "JAPAN",       volume: 47.7, value: 15.4 },
-          { name: "OECD AVERAGE", volume: 52.3, value: 24.5 },
+          { name: "OECD AVERAGE", volume: 54.1, value: 24.7 },
           { name: "SWITZERLAND", volume: 22.1, value: 14.1 }
         ],
         tower: { w: 0.62, maxH: 5.0, d: 0.62, volume: 0xfffb00, value: 0x8892a4 },

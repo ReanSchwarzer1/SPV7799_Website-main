@@ -3,7 +3,7 @@
    Condition B embodied layer.
 
    A globe you can spin with your hand, and a timeline you drag
-   from 2000 to 2024. As the years run, shipping arcs climb out of
+   from 2003 to 2024. As the years run, shipping arcs climb out of
    India and reach Africa, then Europe, then North America, each
    thickening with the real export volume of that year, each with
    consignments running along it.
@@ -12,8 +12,9 @@
 
    Region positions are real latitude and longitude, not drawn
    coastlines, so nothing here is invented geography. Export
-   volumes, market shares and therapy areas are the artifact's own
-   Pharmexcil-sourced figures, read from the page. Penetration
+   volumes are read from the page: $3bn in 2003 and $27bn in 2023
+   (Bain & Company for the IPA, 2025) and $30.47bn in 2024-25 (PIB,
+   2025), with the years between them interpolated. Penetration
    follows the page's logistic curve, 100 / (1 + e^(-0.4(year-2010))).
    ============================================================ */
 
@@ -33,7 +34,7 @@
     window.Interludes.register("globe", {
       kicker: "The trade globe",
       title: "Where the medicine went",
-      step: "Technological diffusion, 2000 to 2024",
+      step: "Technological diffusion, 2003 to 2024",
       instructions: "Drag the timeline forward. Click a destination to inspect its market.",
 
       assets: {
@@ -46,7 +47,7 @@
         ],
         china:  { lat: 35.0, lng: 103.0, color: 0x8b2f2f },
         rail:   { x: [-6.4, 6.4], y: -4.55, z: 2.2, knob: 0.4, color: 0xfffb00 },
-        yearMin: 2000, yearMax: 2024, targetYear: 2012,
+        yearMin: 2003, yearMax: 2024, targetYear: 2012,
         camera: { elevationDeg: 10, margin: 1.14, lookAt: [0, 0.1, 0] }
       },
 
@@ -279,10 +280,10 @@
         })();
 
         var yearLabel = makeLabel(0, A.rail.y + 1.45, A.rail.z,
-          { top: "YEAR", big: "2000", sub: "drag the handle forward",
+          { top: "YEAR", big: "2003", sub: "drag the handle forward",
             accent: "#fffb00", box: true, bigSize: 78 }, 3.20, 1.60);
         var exportLabel = makeLabel(-6.9, 2.9, 0,
-          { top: "INDIAN PHARMA EXPORTS", big: "$1.5B", sub: "Pharmexcil, annual",
+          { top: "INDIAN PHARMA EXPORTS", big: "$3.0B", sub: "Bain/IPA and PIB",
             accent: "#3fae6b", box: true, bigSize: 70 }, 3.20, 1.60);
         var penLabel = makeLabel(6.9, 2.9, 0,
           { top: "GLOBAL PENETRATION", big: "2%", sub: "logistic diffusion",
@@ -334,7 +335,7 @@
 
           exportLabel.material.map = labelTex(
             { top: "INDIAN PHARMA EXPORTS", big: exportsFor() || "--",
-              sub: "Pharmexcil, annual", accent: "#3fae6b", box: true, bigSize: 70 });
+              sub: "Bain/IPA and PIB", accent: "#3fae6b", box: true, bigSize: 70 });
           exportLabel.material.needsUpdate = true;
 
           var pen = penetration(year);

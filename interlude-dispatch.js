@@ -107,9 +107,9 @@
           g.font = "26px Georgia, serif";
           var line1 = rec && rec.viaMoleculeScene
             ? "You put the two samples together with your own hands: one molecule, imatinib, in both vials. "
-              + "The same money bought one pill in the United States and about a hundred and twenty in India."
+              + "The same money bought one pill in the United States and about eighty in India."
             : "Two prices for one molecule: imatinib sells for $179.93 a pill in the United States and around "
-              + "$1.50 in India. The compound is identical in both markets.";
+              + "$2.20 in India. The compound is identical in both markets.";
           var y = wrapText(g, line1, 44, 118, _W - 88, 36);
           var line2;
           if (rulings.length === 0) line2 = "No case has been decided yet.";
@@ -704,14 +704,15 @@
             d: "The budget never grew. Only the price per patient fell, and the number of people "
                + "it could reach moved with it. Cost-effectiveness is not an abstraction here: it "
                + "is the difference between a few hundred people and a few thousand." },
-          { t: "LIFE-YEARS GAINED", v: qalys, s: "5 QALYs per patient treated", accent: "#3fae6b",
+          { t: "QALYS OVER 10 YEARS", v: qalys, s: "7.34 QALYs per patient, 10 years", accent: "#3fae6b",
             d: "A quality-adjusted life year is one year of life in full health. The artifact uses "
-               + "roughly five per patient treated, taken from long-term imatinib survival data. "
+               + "7.34 per patient over ten years, the imatinib-first figure in a published "
+               + "cost-effectiveness model of CML treatment (Yamamoto et al., 2019). "
                + "Same drug, same effect per person; only the reach changes." },
           { t: "YEAR REACHED", v: isNaN(year) ? "--" : String(year), s: "exports at " + exports,
             accent: "#d9a441",
-            d: "Indian pharmaceutical exports grew from $1.5 billion in 2000 to $30.5 billion by "
-               + "2024, on Pharmexcil figures. The steep middle of that climb follows the period "
+            d: "Indian pharmaceutical exports grew from about $3 billion in 2003 to $30.47 billion "
+               + "in 2024-25, on Bain and government figures. The steep middle of that climb follows the period "
                + "when patent challenges and compulsory licensing opened the major markets." },
           { t: "GLOBAL REACH", v: Math.round(pen) + "%", s: "of the addressable world",
             accent: "#4f86c6",

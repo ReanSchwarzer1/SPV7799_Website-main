@@ -19,7 +19,9 @@
    Geometry is the real imatinib structure, heavy atoms and bonds
    from PubChem CID 5291 (C29H31N7O, 37 heavy atoms, 41 bonds),
    embedded so the app runs offline. Hydrogens omitted.
-   Prices are the artifact's own figures: $179.93 and ~$1.50.
+   Prices: $179.93 a pill in the US in 2014 (Kodjak 2016) against
+   the lowest available Indian generic price, $803 a patient-year
+   for imatinib 400 mg, i.e. $2.20 a day (Hill et al. 2016, fig 3A).
    ============================================================ */
 
 (function () {
@@ -80,7 +82,7 @@
         elementColor: { C: 0xc9ced6, N: 0x5b7fd4, O: 0xd4573f },
         bond:   { radius: 0.030, color: 0xb6bec9 },
         us:      { tint: 0xd4573f, name: "UNITED STATES", price: 179.93, pills: 1 },
-        india:   { tint: 0x3fae6b, name: "INDIA", price: 1.50, pills: 120 },
+        india:   { tint: 0x3fae6b, name: "INDIA", price: 2.20, pills: 82 },
         plinth: { r: 1.5, h: 0.18, color: 0x171b23 },
         tube:   { r: 0.62, h: 3.1, color: 0x8fb6d8 },
         /* A pill at r 0.11 and length 0.26 is 0.48 end to end against a tube
@@ -88,7 +90,7 @@
            and twenty of them read as boulders. At r 0.055 / len 0.13 a pill is
            0.24 end to end, so about five fit across and each one reads as a
            capsule. The layer count is tuned with it: ten per level at 0.16
-           apart puts 120 pills two thirds of the way up the tube, which keeps
+           apart puts 82 pills about half way up the tube, which keeps
            the contrast against the single US pill without the boulders. */
         pill:   { r: 0.055, len: 0.13, perLevel: 10, levelGap: 0.16 },
         note:   { w: 1.5, h: 0.72 },

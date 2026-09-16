@@ -1,0 +1,150 @@
+{
+  "when": "2026-09-16T03:36:37.783Z",
+  "quality": {
+    "tier": "high",
+    "locked": false,
+    "shadows": true,
+    "post": true,
+    "shadowMapSize": 2048
+  },
+  "post": false,
+  "settleMs": 1200,
+  "measureMs": 900,
+  "scenes": [
+    {
+      "scene": "molecule",
+      "built": true,
+      "fps": 144.1,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "courtroom",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "market-floor",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "equilibrium",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "ward",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "globe",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "wage",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "antitrust",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "race",
+      "built": true,
+      "fps": 144.1,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "oecd",
+      "built": true,
+      "fps": 144.1,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "dispatch",
+      "built": true,
+      "fps": 144,
+      "medianMs": 7,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "dispatch-market",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "dispatch-reach",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "dispatch-power",
+      "built": true,
+      "fps": 143.9,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    },
+    {
+      "scene": "reckoning",
+      "built": true,
+      "fps": 144,
+      "medianMs": 6.9,
+      "p95Ms": 7.1,
+      "tier": "high",
+      "errors": []
+    }
+  ]
+}
