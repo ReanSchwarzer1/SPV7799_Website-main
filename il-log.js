@@ -186,6 +186,20 @@
   document.addEventListener("input", onControl, true);
   document.addEventListener("change", onControl, true);
   document.addEventListener("click", onClick, true);
+  /* Ctrl+Shift+L saves the log on demand: in the desktop build it writes the
+     file immediately, and in a browser it downloads it, which is how a session
+     runner gets the log off the Condition A page without the console. */
+  document.addEventListener("keydown", function (ev) {
+    if (!ev.ctrlKey || !ev.shiftKey || (ev.key || "").toLowerCase() !== "l") return;
+    ev.preventDefault();
+    Object.keys(open).forEach(leave);
+    if (window.gameShell && typeof window.gameShell.saveLog === "function") {
+      flush("hotkey").then(function (where) { console.log("[log] saved to", where); });
+    } else {
+      download();
+    }
+  }, true);
+
   document.addEventListener("DOMContentLoaded", watchSections);
   if (document.readyState !== "loading") watchSections();
 
