@@ -1,5 +1,5 @@
 /* ============================================================
-   interlude-market.js — the market floor (module 3)
+   interlude-market.js — the market floor (module 4)
    Condition B embodied layer.
 
    The player stands over the market their own rulings created and
@@ -32,9 +32,10 @@
     }, 30);
   }
 
+  // open only if the court refused the imatinib patent (case 2); read from the
+  // shared model rather than pattern-matching the page's status label
   function marketIsOpen() {
-    var l = document.getElementById("val-monopoly-status");
-    return !!(l && /REJECT|CL|OPEN/i.test(l.textContent));
+    return !!(window.ModelData && window.ModelData.marketOpen());
   }
 
   whenReady(function () {
@@ -587,7 +588,7 @@
               won = true;
               ctx.setStatus("Social access has overtaken private profit", true);
               ctx.setHint("With " + N + " firms in the market, most of the value now reaches patients.");
-              ctx.setAction("On to the equilibrium", null);
+              ctx.setAction("Leave the market floor", null);
               ctx.complete();
             } else {
               ctx.setStatus("Profit " + Math.round(m.producer) +
@@ -600,11 +601,11 @@
           ctx.setHint("Drag the gate lever to admit generic manufacturers.");
         } else {
           // the market they closed at the bench
-          ctx.setHint("You upheld the patent, so the gate is bolted. One firm sets the price.");
+          ctx.setHint("The imatinib patent stands, so the gate is bolted. One firm sets the price.");
           ctx.setStatus("Monopoly market: no entry possible", false);
           ctx.setAction("I have seen enough", function () {
             if (typeof window.GameComplete === "function") {
-              window.GameComplete(2, 0, 4,
+              window.GameComplete(3, 0, 4,
                 "You saw the closed market: with entry barred, the surplus stays with the producer.");
             }
             ctx.finish();

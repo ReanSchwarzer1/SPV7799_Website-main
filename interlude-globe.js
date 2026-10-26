@@ -286,7 +286,7 @@
           { top: "INDIAN PHARMA EXPORTS", big: "$3.0B", sub: "Bain/IPA and PIB",
             accent: "#3fae6b", box: true, bigSize: 70 }, 3.20, 1.60);
         var penLabel = makeLabel(6.9, 2.9, 0,
-          { top: "GLOBAL PENETRATION", big: "2%", sub: "logistic diffusion",
+          { top: "GLOBAL PENETRATION", big: "2%", sub: "S-curve, illustrative",
             accent: "#4f86c6", box: true, bigSize: 78 }, 3.20, 1.60);
         var regionLabel = makeLabel(6.9, -1.1, 0,
           { top: "DESTINATION", sub: "click a marker on the globe",
@@ -372,7 +372,7 @@
           regionLabel.material.map = labelTex(
             { top: d ? d.label : key,
               big: share ? share.textContent.trim() : "",
-              sub: therapy ? therapy.textContent.replace(/^Primary Focus:\s*/i, "").slice(0, 42) : "",
+              sub: therapy && therapy.dataset.short ? therapy.dataset.short : "",
               accent: d ? "#" + d.color.toString(16).padStart(6, "0") : "#9aa6b4",
               box: true, bigSize: 66 });
           regionLabel.material.needsUpdate = true;

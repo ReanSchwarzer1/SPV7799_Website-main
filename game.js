@@ -31,13 +31,13 @@
   // level config, indexed to the 10 <section> elements in order
   var LEVELS = [
     { t: "Prove the two samples are one drug",
-      g: "At the synthesis bench, rotate the US sample until it superimposes on the Indian generic. Identical molecule, and then look at the two prices." },
+      g: "At the comparison bench, put the US sample onto the Indian generic. Identical molecule, and then compare what one day of treatment costs in each market." },
+    { t: "Fund the pipeline",
+      g: "Put at least <b>30</b> candidate cancer drugs into trials, enough to expect one approval at a 3.4% success rate, and set how long the winner keeps the market." },
     { t: "Rule as the Patent Authority",
-      g: "Decide all <b>6</b> cases. Protecting access raises Access; granting monopolies raises Innovation but costs Access." },
+      g: "Decide all <b>6</b> cases. Each ruling shows what happened and both sides' case. Your imatinib ruling decides whether the next market is open." },
     { t: "Shift value to patients",
-      g: "Set competitors and procurement so <b>Social Access &gt; Private Profit</b> in the value chart. (Needs an open market from your rulings.)" },
-    { t: "Break the monopoly price",
-      g: "Raise competitive <b>supply</b> (and keep procurement low) until the equilibrium price falls to <b>$70 or lower</b>." },
+      g: "Set competitors and procurement so <b>Social Access &gt; Private Profit</b> in the value chart. (Needs an open market from your imatinib ruling.)" },
     { t: "Stretch the health budget",
       g: "Lower the drug cost until the $10M budget treats <b>at least 2,000 patients</b>." },
     { t: "Trace the diffusion",
@@ -46,10 +46,10 @@
       g: "Choose a market and patient so the drug costs <b>90 days of labor or fewer</b>." },
     { t: "Find the innovation sweet spot",
       g: "Set the market to <b>3&ndash;8 firms</b>, where the Aghion curve says innovation peaks." },
-    { t: "Run the patent race",
-      g: "Make your call as CEO and see why both firms are forced to overspend." },
+    { t: "Run the patent race at two prize sizes",
+      g: "Make your call as CEO, then shorten the time before generics enter and play again." },
     { t: "See the global payoff",
-      g: "Review the OECD generic paradox to close your term." }
+      g: "Review the OECD generic paradox and the comparable economies to close your term." }
   ];
 
   function clamp(v) { return Math.max(0, Math.min(100, v)); }
@@ -259,26 +259,43 @@
       title: "Two sealed samples",
       body: "One vial was bought in the United States, the other in India. Both are " +
             "labelled imatinib, the leukaemia drug. Before you can govern a price, " +
-            "you need to know whether you are looking at the same medicine twice.",
-      objective: "Put the two samples together, then find out what one banknote buys in each market.",
+            "you need to know whether you are looking at the same medicine twice.<br><br>" +
+            "Prices compare one day of the standard 400 mg dose, from published prices in Hill et al. " +
+            "(2016). Newer US data show the same split inside one market: in 2024, Medicare Part D spent an average $233.96 per " +
+            "Gleevec tablet and $33.39 per generic imatinib tablet, before rebates (CMS).",
+      objective: "Put the two samples together, then find out what one US day of treatment buys in India.",
       controls: "<b>Drag</b> the red sample across onto the green one. Then <b>drag</b> the banknote into the slot.",
       cta: "Step up to the bench"
     },
+    pipeline: {
+      kicker: "Module 2 · The pipeline",
+      title: "Why patents exist",
+      body: "Before anyone can copy a medicine, someone has to invent it. Only 3.4% of cancer " +
+            "drug programmes that enter clinical trials reach approval, and each approved one " +
+            "has cost a median $2,772 million once the failures are paid for. A patent is how " +
+            "that money comes back.",
+      objective: "Load at least 30 candidates into the trial rack, enough to expect one approval, then set how many years the winner keeps the market before generics enter.",
+      controls: "<b>Click ADD 5</b> to load candidates and <b>RUN TRIALS</b> to see what survives. " +
+                "<b>Click the exclusivity dial</b> to change the years; the tower shows the yearly " +
+                "revenue the drug must earn.",
+      cta: "Enter the lab"
+    },
     courtroom: {
-      kicker: "Module 2 · The bench",
+      kicker: "Module 3 · The bench",
       title: "Six companies, six rulings",
-      body: "You sit as the patent authority. Each company will put its claim to you, " +
-            "and Indian law gives you a specific tool to answer with. What you decide " +
-            "sets the market every later module inherits.",
-      objective: "Rule on all six cases. Protecting access raises Access; granting monopolies raises Innovation and costs Access.",
+      body: "You sit as the patent authority. Indian law grants patents on genuinely new " +
+            "medicines; these six real cases test its limits. Each company puts its claim to you, " +
+            "and after each ruling the file shows what really happened, the patent holder's case " +
+            "and the access case. Your ruling on imatinib decides whether the next market is open.",
+      objective: "Rule on all six cases. Upholding a claim raises Innovation and costs Access; intervening does the reverse.",
       controls: "<b>Click the case file</b> on the bench to read the claim and the law. " +
                 "<b>Click a ruling paper</b> to bring the gavel down on it.",
       cta: "Take the bench"
     },
     "market-floor": {
-      kicker: "Module 3 · The market floor",
+      kicker: "Module 4 · The market floor",
       title: "Who is allowed in",
-      body: "This is the market your rulings created. A price column stands in the middle " +
+      body: "This is the imatinib market your ruling created. A price column stands in the middle " +
             "of it, and the value the market produces collects in two tanks: what the " +
             "producer keeps, and what reaches patients.",
       objective: "Admit generic manufacturers until SOCIAL ACCESS stands taller than PRIVATE PROFIT.",
@@ -291,9 +308,12 @@
       title: "What a budget buys",
       body: "A public budget of ten million dollars sits in this room and will not grow. " +
             "Facing it is a ward of empty beds. Between them stands a wheel that sets what " +
-            "a year of treatment costs per patient, from the patented price down to the generic one.",
+            "a year of treatment costs per patient. Health is counted in quality-adjusted life " +
+            "years (QALYs): a year in full health counts as 1. On the wall is the rule a health " +
+            "system uses to decide what to fund: pay for a treatment while its cost per QALY " +
+            "gained stays at or below what that money would buy elsewhere.",
       objective: "Treat at least 2,000 patients on the fixed budget.",
-      controls: "<b>Grab the gold wheel and turn it LEFT</b> (the white arrows show the way). The beds fill and the life-years tower climbs as the price falls.",
+      controls: "<b>Grab the gold wheel and turn it LEFT</b> (the white arrows show the way). The beds fill and the QALY tower climbs as the price falls.",
       cta: "Enter the ward"
     },
     wage: {
@@ -323,21 +343,29 @@
     race: {
       kicker: "Module 9 · The war room",
       title: "One patent, two firms",
-      body: "You are the CEO now, not the minister. A new disease has appeared and there is one " +
-            "patent to win, worth a thousand million. Your rival is deciding at the same moment, " +
-            "in a sealed envelope, and neither of you can see the other's hand.",
-      objective: "Commit your R&D budget and run the race. Then try the other stack.",
-      controls: "<b>Click a chip stack</b> to shove it into the commit slot: the tall red stack " +
-                "is $400M of High R&D, the short blue one is $100M of Low.",
+      body: "You are the CEO now, not the minister. There is one patent to win. Its value depends " +
+            "on how long the winner keeps the market before generics enter: twenty years makes it " +
+            "worth a thousand million, fewer years make it worth less. Your rival decides at the " +
+            "same moment, in a sealed envelope.",
+      objective: "Commit your R&D at one prize size, then turn the exclusivity dial and play again.",
+      controls: "<b>Click a chip stack</b> to commit: the tall red stack is $400M of High R&D, " +
+                "the short blue one $100M of Low, the empty tray is staying out. " +
+                "<b>Click the exclusivity dial</b> to shrink or grow the prize.",
       cta: "Enter the war room"
     },
     oecd: {
       kicker: "Module 10 · The hall of systems",
       title: "The generic paradox",
-      body: "Seven health systems, each on its own pedestal, each with two towers. The yellow " +
-            "tower is how much of the prescribing is generic. The grey one is how much of the " +
-            "money generics take. In most systems the two do not match, and the mismatch is the " +
-            "whole case for the industry you have spent your term governing.",
+      body: "Five health systems, each on its own pedestal, each with two towers. The yellow " +
+            "tower is the generic share of medicines sold, by volume. The grey one is the generic " +
+            "share of sales value. In most systems the two do not match. (OECD Health at a Glance " +
+            "2023, Figure 9.7, 2021 data; market coverage differs by country.)<br><br>" +
+            "<b>Beyond the OECD</b> (policy events, not comparable shares): " +
+            "<b>China</b>'s 4+7 procurement pilot in 11 cities cut winning bids for 25 drugs by an average 52% " +
+            "against the 2017 minimum price. <b>Brazil</b> licensed efavirenz on 4 May 2007 after rejecting " +
+            "Merck's US$1.56 a day; an Indian generic cost US$0.45. <b>Thailand</b> issued compulsory licences " +
+            "on efavirenz (2006) and on lopinavir/ritonavir and clopidogrel (2007). In <b>South Africa</b>, in " +
+            "April 2001, 38 firms withdrew their court challenge to the 1997 Medicines Act.",
       objective: "Find the system where the gap between the two towers is widest, and lock it in.",
       controls: "<b>Click a pedestal</b> to inspect that system. <b>Click the plaque</b> to lock " +
                 "in your answer. A wrong answer costs nothing but another look.",
@@ -348,7 +376,7 @@
       title: "Where the medicine went",
       body: "Infrastructure often dictates medical access. The functional value of any drug is " +
             "strictly zero if it cannot physically reach the patient who needs it. This globe " +
-            "runs from 2000 to 2024, and the routes out of India open one by one as the years " +
+            "runs from 2003 to 2024, and the routes out of India open one by one as the years " +
             "pass: Africa first, then Europe, then North America.",
       objective: "Run the timeline to 2012 or later, and inspect one destination market.",
       controls: "<b>Drag the yellow handle</b> along the timeline. <b>Click a glowing marker</b> " +
@@ -356,17 +384,6 @@
                 "click the switch on the left to reveal where India's raw ingredients come from.",
       cta: "Spin up the globe"
     },
-    equilibrium: {
-      kicker: "Module 4 · The clearing house",
-      title: "Where the price settles",
-      body: "Supply and demand are two beams laid across a graph. Where they cross is the " +
-            "price the market actually settles at, and the number of patients it reaches. " +
-            "One of those beams brings the price down. The other does not.",
-      objective: "Push the beams until the clearing price falls to $70 or lower.",
-      controls: "<b>Grab the glowing blue handle</b> on the SUPPLY beam and drag it right. " +
-                "The green DEMAND handle moves the same way, but watch what it does to the price.",
-      cta: "Open the floor"
-    }
   };
 
   // What the player is walking in carrying, stated before they walk in.
@@ -374,26 +391,29 @@
   var INHERITS = {
     "market-floor": function (h) {
       return h.marketOpen
-        ? "Your rulings left this market <b>open</b>, so the gate will lift."
-        : "Your rulings left this market <b>closed</b>. The gate is bolted and no firm can enter.";
-    },
-    equilibrium: function (h) {
-      if (!h.marketOpen || h.firmsAdmitted <= 1) return null;
-      return "The <b>" + h.firmsAdmitted + " firms</b> you admitted on the floor arrive here as " +
-             "supply already in the market. The beam starts part of the way across.";
+        ? "You refused the imatinib patent under Section 3(d), so this market is <b>open</b> and the gate will lift."
+        : (h.imatinibRuled
+            ? "You granted the imatinib patent, so this market is <b>closed</b>. The gate is bolted and no firm can enter."
+            : "You did not rule on the imatinib case, so the patent claim stands and the gate is <b>bolted</b>.");
     },
     ward: function (h) {
-      if (h.clearingPrice == null) return null;
-      return "The market you left clears at <b>$" + Math.round(h.clearingPrice) + "</b>. That is " +
-             "what this budget has to pay, so the wheel starts where you left the price.";
+      if (h.priceIndex == null || h.priceIndex >= 100) return null;
+      return "The market you left has a price index of <b>" + Math.round(h.priceIndex) + "</b> (100 = the monopoly price). " +
+             "This budget pays that share of the $30,000 patented price, so the wheel starts at <b>$" +
+             h.wardStartCost.toLocaleString("en-US") + "</b>.";
     },
     wage: function (h) {
       if (!h.licenceRuled) return null;
       return h.genericExists
         ? "You granted the compulsory licence in the Bayer case, so <b>Natco's generic exists</b> " +
           "and can be switched to here."
-        : "You upheld Bayer's patent, so <b>there is no Natco generic</b>. The switch to the " +
+        : "You refused the compulsory licence in the Bayer case, so <b>there is no Natco generic</b>. The switch to the " +
           "cheaper market is welded shut for the rest of your term.";
+    },
+    race: function (h) {
+      if (!h.exclusivityYears) return null;
+      return "In the pipeline you gave the winner <b>" + h.exclusivityYears + " years</b> before generics enter. " +
+             "The race starts at the prize size closest to that.";
     }
   };
 
@@ -460,13 +480,18 @@
                  doneCheck: function () { return !!g.done[0]; } });
   }
 
-  function enterCourtroom() {
-    enterScene({ launcher: "launchCourtroom", briefing: "courtroom", fallbackSection: 1,
+  function enterPipeline() {
+    enterScene({ launcher: "launchPipeline", briefing: "pipeline", fallbackSection: 1,
                  doneCheck: function () { return !!g.done[1]; } });
   }
 
+  function enterCourtroom() {
+    enterScene({ launcher: "launchCourtroom", briefing: "courtroom", fallbackSection: 2,
+                 doneCheck: function () { return !!g.done[2]; } });
+  }
+
   function enterDispatch() {
-    enterScene({ launcher: "launchDispatch", fallbackSection: 2,
+    enterScene({ launcher: "launchDispatch", fallbackSection: 3,
                  doneCheck: function () { return false; } });
   }
 
@@ -521,12 +546,7 @@
   }
 
   function enterMarketFloor() {
-    enterScene({ launcher: "launchMarketFloor", briefing: "market-floor", fallbackSection: 2,
-                 doneCheck: function () { return !!g.done[2]; } });
-  }
-
-  function enterEquilibrium() {
-    enterScene({ launcher: "launchEquilibrium", briefing: "equilibrium", fallbackSection: 3,
+    enterScene({ launcher: "launchMarketFloor", briefing: "market-floor", fallbackSection: 3,
                  doneCheck: function () { return !!g.done[3]; } });
   }
 
@@ -566,11 +586,11 @@
     delete g.ruledCases[num];
     // the sixth ruling closes the term; undoing it must reopen the term so the
     // corrected ruling can close it again
-    if (g.done[1]) {
-      g.done[1] = false;
-      var card = $("goal-card-1");
+    if (g.done[2]) {
+      g.done[2] = false;
+      var card = $("goal-card-2");
       if (card) card.classList.remove("done");
-      var fb = $("goal-fb-1");
+      var fb = $("goal-fb-2");
       if (fb) fb.innerHTML = "";
     }
     updateHUD();
@@ -578,39 +598,51 @@
   };
 
   window.GameInherit = function () {
-    var cl = g.rulings[3];                     // case 3 is Bayer v Natco, the licence
-    var lbl = $("val-monopoly-status");
+    var M = window.ModelData || {};
+    var cl = g.rulings[M.licenceCase || 3];          // Bayer v Natco, the licence
+    var im = g.rulings[M.imatinibCase || 2];         // Novartis, imatinib
     var sc = $("slider-comp");
-    var eq = $("eq-price");
-    var eqP = eq ? parseFloat(eq.textContent.replace(/[^0-9.]/g, "")) : NaN;
+    var yrs = $("slider-rd-years");
+    var pIdx = M.priceIndex ? M.priceIndex() : null;
+    // the ward's wheel starts at the market's price index applied to the
+    // $30,000 patented price, rounded to the wheel's $1,000 steps
+    var wardStart = pIdx == null ? 30000
+      : Math.max(2000, Math.min(30000, Math.round(30000 * pIdx / 100 / 1000) * 1000));
     return {
-      // a denied compulsory licence means there is no Natco generic to switch to
+      // a refused compulsory licence means there is no Natco generic to switch to
       genericExists: !(cl && cl.granted),
       licenceRuled: !!cl,
       licenceGranted: !!(cl && !cl.granted),
-      marketOpen: !!(lbl && /REJECT|CL|OPEN/i.test(lbl.textContent)),
+      imatinibRuled: !!im,
+      marketOpen: M.marketOpen ? M.marketOpen() : false,
       firmsAdmitted: sc ? (parseInt(sc.value, 10) || 1) : 1,
-      clearingPrice: isNaN(eqP) ? null : eqP
+      priceIndex: pIdx,
+      wardStartCost: wardStart,
+      exclusivityYears: (g.done[1] && yrs) ? parseInt(yrs.value, 10) : null
     };
   };
 
   // Everything the player decided, module by module, assembled from the notes
   // the scenes filed and the live state of the page model.
   window.GameFullRecord = function () {
+    var M = window.ModelData || {};
     function txt(id) { var e = $(id); return e ? e.textContent.trim() : ""; }
     function val(id) { var e = $(id); return e ? e.value : ""; }
     var rulings = [];
     for (var i = 1; i <= 6; i++) if (g.rulings[i]) rulings.push(g.rulings[i]);
     var opened = rulings.filter(function (r) { return !r.granted; }).length;
-    var lbl = $("val-monopoly-status");
-    var marketOpen = !!(lbl && /REJECT|CL|OPEN/i.test(lbl.textContent));
+    var marketOpen = M.marketOpen ? M.marketOpen() : false;
     var firms = parseInt(val("slider-comp"), 10) || 1;
-    var price = marketOpen ? 100 * Math.pow(firms, -0.75) : 100;
+    var price = M.priceIndex ? M.priceIndex() : 100;
     var hhiFirms = parseInt(val("slider-hhi-firms"), 10) || 1;
-    var PRICES = { patented: 5000, generic: 105 }, WAGES = { unskilled: 3.20, salaried: 15.0 };
+    var aff = M.affordability || { drugs: { patented: { priceInr: 280000 }, generic: { priceInr: 8800 } },
+                                   wages: { unskilled: { daily: 120 }, salaried: { daily: 258 } } };
     var mk = val("select-market-state") || "patented", wg = val("select-wage-profile") || "unskilled";
-    var days = Math.round(PRICES[mk] / WAGES[wg]);
+    var days = Math.round(aff.drugs[mk].priceInr / aff.wages[wg].daily);
     var year = parseInt(txt("map-year-display"), 10);
+    var cand = parseInt(val("slider-rd-candidates"), 10) || 0;
+    var yrs = parseInt(val("slider-rd-years"), 10) || 20;
+    var innov = M.innovation ? M.innovation(hhiFirms) : 100 * (hhiFirms / 5) * Math.exp(1 - hhiFirms / 5);
 
     return {
       access: Math.round(g.access), innov: Math.round(g.innov),
@@ -620,29 +652,29 @@
       modules: [
         { n: 1, name: "The comparison bench",
           did: g.done[0] ? "Proved the two samples were one compound" : "Left the samples sealed",
-          out: g.done[0] ? "$179.93 a pill against about $2.20, for the same molecule" : "—",
+          out: g.done[0] ? "$295.34 a day in the US against $2.20 in India, imatinib 400 mg" : "\u2014",
           ok: !!g.done[0] },
-        { n: 2, name: "The bench",
+        { n: 2, name: "The pipeline",
+          did: "Put " + cand + " candidates into trials; " + yrs + " years of exclusivity",
+          out: (cand * 0.034).toFixed(2) + " expected approvals; " + (txt("rd-revenue") || "\u2014") + " a year needed",
+          ok: !!g.done[1] },
+        { n: 3, name: "The bench",
           did: rulings.length ? "Ruled on " + rulings.length + " cases" : "Ruled on nothing",
           out: rulings.length
-                ? "Opened the market in " + opened + ", upheld monopoly in " + (rulings.length - opened)
-                : "—",
-          ok: !!g.done[1] },
-        { n: 3, name: "The market floor",
+                ? "Intervened in " + opened + ", upheld the claim in " + (rulings.length - opened)
+                : "\u2014",
+          ok: !!g.done[2] },
+        { n: 4, name: "The market floor",
           did: marketOpen ? "Admitted " + firms + (firms === 1 ? " firm" : " firms") : "Kept the gate bolted",
           out: "Price index fell to " + Math.round(price),
-          ok: !!g.done[2] },
-        { n: 4, name: "The clearing house",
-          did: "Pushed supply and demand",
-          out: "Market cleared at " + (txt("eq-price") || "—") + " on " + (txt("eq-quantity") || "—"),
           ok: !!g.done[3] },
         { n: 5, name: "The ward",
           did: "Set treatment at $" + (parseInt(val("slider-qaly-cost"), 10) || 0).toLocaleString("en-US") + " a patient",
-          out: (txt("qaly-patients") || "—") + " treated, " + (txt("qaly-total") || "—") + " life-years",
+          out: (txt("qaly-patients") || "\u2014") + " treated, " + (txt("qaly-total") || "\u2014") + " QALYs lived",
           ok: !!g.done[4] },
         { n: 6, name: "The trade globe",
           did: isNaN(year) ? "Left the routes untraced" : "Ran the clock to " + year,
-          out: "Exports at " + (txt("export-volume") || "—"),
+          out: "Exports at " + (txt("export-volume") || "\u2014"),
           ok: !!g.done[5] },
         { n: 7, name: "The wage floor",
           did: (mk === "generic" ? "Post-licence generic" : "Patented price") + " for " +
@@ -651,16 +683,15 @@
           ok: !!g.done[6] },
         { n: 8, name: "The concentration room",
           did: "Left " + hhiFirms + (hhiFirms === 1 ? " firm" : " firms") + " in the market",
-          out: "HHI " + (txt("hhi-score-val") || "—") +
-               ", innovation " + Math.round(100 * (hhiFirms / 5) * Math.exp(1 - hhiFirms / 5)) + "%",
+          out: "HHI " + (txt("hhi-score-val") || "\u2014") + ", innovation " + Math.round(innov) + "%",
           ok: !!g.done[7] },
         { n: 9, name: "The patent race",
           did: g.notes.raceChoice || "Made no call",
-          out: g.notes.raceOutcome || "—",
+          out: g.notes.raceOutcome || "\u2014",
           ok: !!g.done[8] },
         { n: 10, name: "The generic paradox",
           did: g.notes.oecdChoice || "Named no country",
-          out: g.notes.oecdOutcome || "—",
+          out: g.notes.oecdOutcome || "\u2014",
           ok: !!g.done[9] }
       ]
     };
@@ -670,13 +701,12 @@
   window.GameRecord = function () {
     var list = [];
     for (var i = 1; i <= 6; i++) if (g.rulings[i]) list.push(g.rulings[i]);
-    var lbl = $("val-monopoly-status");
     return {
       rulings: list,
       access: g.access,
       innov: g.innov,
       viaMoleculeScene: g.viaMoleculeScene,
-      marketOpen: !!(lbl && /REJECT|CL|OPEN/i.test(lbl.textContent))
+      marketOpen: window.ModelData ? window.ModelData.marketOpen() : false
     };
   };
 
@@ -690,10 +720,15 @@
       // handoff happens when that scene closes (interlude:end); otherwise
       // (2D fallback path) walk them to the bench from here.
       if (!document.querySelector(".il-overlay")) {
-        toast("Objective met. The bench awaits…");
-        setTimeout(enterCourtroom, 900);
+        toast("Objective met. Now: where medicines come from.");
+        setTimeout(enterPipeline, 900);
       }
     } else if (idx === 1) {
+      if (!document.querySelector(".il-overlay")) {
+        toast("The pipeline is funded. The bench awaits.");
+        setTimeout(enterCourtroom, 900);
+      }
+    } else if (idx === 2) {
       // all six cases ruled. Inside the courtroom the handoff waits for the
       // scene to close; on the 2D fallback path, go straight to the dispatch.
       if (!document.querySelector(".il-overlay")) {
@@ -715,9 +750,10 @@
       if (ev.detail.id === "molecule") {
         if (g.done[0]) {
           g.viaMoleculeScene = true;   // the dispatch narrates it in first person
-          // identity proven -> the law is what set that price, so: the bench
-          toast("Chemistry settled. Now the law that set the price.");
-          setTimeout(enterCourtroom, 800);
+          // identity proven -> before the law that set the price, where the
+          // medicine came from and why the patent exists at all
+          toast("Chemistry settled. Now: who paid to invent it.");
+          setTimeout(enterPipeline, 800);
         } else {
           toast("The samples are still sealed.");
           setTimeout(enterMolecule, 4500);   // the game keeps leading back
@@ -725,8 +761,19 @@
         return;
       }
 
-      if (ev.detail.id === "courtroom") {
+      if (ev.detail.id === "pipeline") {
         if (g.done[1]) {
+          toast("Now the law that decides who may copy it.");
+          setTimeout(enterCourtroom, 800);
+        } else {
+          toast("The pipeline still needs funding.");
+          setTimeout(enterPipeline, 4500);
+        }
+        return;
+      }
+
+      if (ev.detail.id === "courtroom") {
+        if (g.done[2]) {
           // both embodied modules are behind them: read the term back, in 3D
           toast("Your rulings are on the record.");
           setTimeout(enterDispatch, 600);
@@ -744,21 +791,11 @@
       }
 
       if (ev.detail.id === "market-floor") {
-        if (g.done[2]) {
-          toast("Now find where the market actually clears.");
-          setTimeout(enterEquilibrium, 700);
-        } else {
-          setTimeout(enterMarketFloor, 4500);
-        }
-        return;
-      }
-
-      if (ev.detail.id === "equilibrium") {
         if (g.done[3]) {
           toast("The market record is ready.");
           setTimeout(enterDispatchMarket, 600);
         } else {
-          setTimeout(enterEquilibrium, 4500);
+          setTimeout(enterMarketFloor, 4500);
         }
         return;
       }
@@ -855,10 +892,6 @@
   }
 
   // -------- consequence helpers (read from the DOM, not internals) --------
-  function marketOpen() {
-    var lbl = $("val-monopoly-status");
-    return !!(lbl && /REJECT|CL|OPEN/i.test(lbl.textContent));
-  }
   function numVal(id) {
     var el = $(id); if (!el) return NaN;
     return parseFloat(String(el.textContent).replace(/[^0-9.\-]/g, ""));
@@ -893,7 +926,7 @@
             title: txt("case-title"),
             drug: txt("case-drug").replace(/^Drug:\s*/i, ""),
             granted: isGrant,
-            action: isGrant ? "Granted the monopoly" : txt("btn-reject"),
+            action: isGrant ? (txt("btn-grant") || "Upheld the claim") : txt("btn-reject"),
             outcome: txt("ruling-outcome")
           };
           // remember what was actually applied (clamping can swallow part of a
@@ -910,12 +943,12 @@
           updateHUD();
         }
         var ruled = Object.keys(g.ruledCases).length;
-        if (ruled >= 6 && !g.done[1]) {
+        if (ruled >= 6 && !g.done[2]) {
           var opened = 0, mono = 0, k;
           for (k in g.ruledCases) (g.ruledCases[k] === "open") ? opened++ : mono++;
-          completeLevel(1, 0, 0,
-            "Term verdict: you opened the market in " + opened + " of 6 cases and upheld monopoly in " +
-            mono + ". Those rulings set the market the next levels inherit.");
+          completeLevel(2, 0, 0,
+            "Term verdict: you intervened in " + opened + " of 6 cases and upheld the claim in " +
+            mono + ". Your imatinib ruling sets the next market; your Bayer ruling decides the wage floor.");
         }
       };
     }
@@ -935,37 +968,41 @@
       var _race = window.playPatentRace;
       window.playPatentRace = function (choice) {
         _race.apply(this, arguments);
-        completeLevel(8, 0, 0,
-          "High R&D is the dominant strategy, so both firms overspend and duplicate research. " +
-          "Individually rational, collectively wasteful.");
+        var rs = window.ModelData && window.ModelData.raceState ? window.ModelData.raceState() : { tried: 2 };
+        if (rs.tried >= 2) {
+          completeLevel(8, 0, 4,
+            "With a large prize both firms overspend; shrink it and the race stops, then the drug " +
+            "stops being worth developing. The patent's length sets which of those you get.");
+        }
       };
     }
   }
 
   // -------- supplementary listeners for slider-driven levels --------
+  function checkPipeline() {
+    if (g.done[1]) return;
+    var n = parseInt(($("slider-rd-candidates") || {}).value, 10) || 0;
+    if (n * 0.034 >= 1) {
+      completeLevel(1, 0, 6, "With " + n + " candidates in trials you can expect " + (n * 0.034).toFixed(2) +
+        " approvals. Each approved cancer drug carries a median $2,772M of R&D, failures included.");
+    }
+  }
+
   function checkMacro() {
-    if (g.done[2]) return;
+    if (g.done[3]) return;
     var comp = numVal("val-comp"); var proc = numVal("val-procure"); // proc text is Low/Med/High
     var procSlider = $("slider-procure");
     var procurement = procSlider ? parseInt(procSlider.value, 10) : 1;
     var competitors = isNaN(comp) ? 1 : comp;
     var basePrice = 100;
-    var price = marketOpen() ? basePrice * Math.pow(competitors, -0.75) : basePrice;
+    var price = (window.ModelData && window.ModelData.marketOpen()) ? basePrice * Math.pow(competitors, -0.75) : basePrice;
     var maxWilling = 120, mc = 5;
     var demandMult = 1 + (procurement * 0.5);
     var qty = (maxWilling - price) * demandMult;
     var producer = Math.max(0, (price - mc) * qty);
     var consumer = Math.max(0, 0.5 * (maxWilling - price) * qty);
     if (consumer > producer) {
-      completeLevel(2, 6, 0, "Value tipped toward patients: consumer surplus now exceeds producer profit.");
-    }
-  }
-
-  function checkSD() {
-    if (g.done[3]) return;
-    var p = numVal("eq-price");
-    if (!isNaN(p) && p <= 70) {
-      completeLevel(3, 6, 0, "Competition drove the equilibrium price down to $" + p.toFixed(0) + ", well below the monopoly level. Notice procurement (demand) pushes price the other way.");
+      completeLevel(3, 6, 0, "Value tipped toward patients: consumer surplus now exceeds producer profit.");
     }
   }
 
@@ -989,8 +1026,9 @@
     if (g.done[6]) return;
     var ms = $("select-market-state"), wp = $("select-wage-profile");
     if (!ms || !wp) return;
-    var price = ms.value === "generic" ? 105 : 5000;
-    var wage = wp.value === "salaried" ? 15.0 : 3.20;
+    var aff = window.ModelData && window.ModelData.affordability;
+    var price = aff ? aff.drugs[ms.value].priceInr : (ms.value === "generic" ? 8800 : 280000);
+    var wage = aff ? aff.wages[wp.value].daily : (wp.value === "salaried" ? 258 : 120);
     var days = Math.round(price / wage);
     if (days <= 90) {
       completeLevel(6, 6, 0, "Affordable: " + days + " days of labor for a 30-day course, within reach of the WHO threshold.");
@@ -1011,8 +1049,7 @@
     var bind = function (id, ev, fn) { var el = $(id); if (el) el.addEventListener(ev, fn); };
     bind("slider-comp", "input", checkMacro);
     bind("slider-procure", "input", checkMacro);
-    bind("slider-supply-shift", "input", checkSD);
-    bind("slider-demand-shift", "input", checkSD);
+    bind("slider-rd-candidates", "input", checkPipeline);
     bind("slider-qaly-cost", "input", checkQALY);
     bind("slider-map-year", "input", checkDiffusion);
     bind("select-market-state", "change", checkAfford);

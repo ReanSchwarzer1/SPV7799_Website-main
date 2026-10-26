@@ -2,9 +2,9 @@
    interlude-oecd.js — the generic paradox (module 10)
    Condition B embodied layer.
 
-   Seven pedestals, one per health system. On each stand two
-   towers: how much of the prescribing is generic, and how much of
-   the money generics actually take. In most systems the first
+   Five pedestals, one per health system. On each stand two
+   towers: the generic share of medicines sold by volume, and by
+   value (sales turnover). In most systems the first
    tower dwarfs the second, which is the paradox: generics are
    most of the medicine and a small slice of the bill.
 
@@ -13,8 +13,18 @@
    is the point: the player has to read the towers rather than
    guess.
 
-   Figures are the artifact's own OECD Health at a Glance 2023
-   series, the same numbers the page charts.
+   Figures are OECD Health at a Glance 2023, Figure 9.7 (2021),
+   as printed (fallback values below match script.js), read from the shared model (window.ModelData.oecd) so the
+   hall and the page chart are the same five systems. The United
+   States and Japan were removed: they had no source in the artifact,
+   and the US was the old answer. Along the back, four plaques give
+   comparable economies outside the OECD series (policy events, not
+   volume/value shares). They are given in this module's briefing card
+   (game.js, BRIEFINGS.oecd) rather than as plaques, which crowded the
+   tower labels. Each comes from a source opened and checked:
+   China, Tang et al. (2019) Drug Discov Ther 13(6):365-369;
+   Brazil, Alcorn, aidsmap, 7 May 2007; Thailand, MSF Access (2006);
+   South Africa, Government statement, 19 April 2001.
    ============================================================ */
 
 (function () {
@@ -37,15 +47,13 @@
       instructions: "Click a system to inspect it. Find the widest gap, then lock it in.",
 
       assets: {
-        // volume = share of prescriptions, value = share of spending
+        // volume = share of sales volume, value = share of sales value (OECD Fig 9.7)
         systems: [
-          { name: "CHILE",       volume: 82.3, value: 67.2 },
-          { name: "GERMANY",     volume: 83.4, value: 29.2 },
-          { name: "UNITED KINGDOM", volume: 78.4, value: 34.3 },
-          { name: "UNITED STATES",  volume: 91.0, value: 18.0 },
-          { name: "JAPAN",       volume: 47.7, value: 15.4 },
-          { name: "OECD AVERAGE", volume: 54.1, value: 24.7 },
-          { name: "SWITZERLAND", volume: 22.1, value: 14.1 }
+          { name: "CHILE",       volume: 90, value: 65 },
+          { name: "GERMANY",     volume: 83, value: 29 },
+          { name: "UNITED KINGDOM", volume: 80, value: 54 },
+          { name: "OECD AVERAGE", volume: 54, value: 25 },
+          { name: "SWITZERLAND", volume: 23, value: 19 }
         ],
         tower: { w: 0.62, maxH: 5.0, d: 0.62, volume: 0xfffb00, value: 0x8892a4 },
         gap: 2.35,
@@ -60,6 +68,13 @@
 
         var labelTex = ctx.labelTexture;
         var makeLabel = ctx.makeLabel;
+
+        var NAMES = { "UK": "UNITED KINGDOM", "OECD Avg": "OECD AVERAGE" };
+        if (window.ModelData && window.ModelData.oecd) {
+          A.systems = window.ModelData.oecd.map(function (o) {
+            return { name: (NAMES[o.label] || o.label).toUpperCase(), volume: o.volume, value: o.value };
+          });
+        }
 
         // the answer is whichever system has the widest gap
         var answerIdx = 0, widest = -1;
@@ -240,9 +255,9 @@
         });
 
         makeLabel(-6.4, 5.3, 0,
-          { top: "SHARE OF PRESCRIPTIONS", accent: "#fffb00", box: true, topSize: 27 }, 3.20, 1.60);
+          { top: "GENERIC SHARE, VOLUME", accent: "#fffb00", box: true, topSize: 27 }, 3.20, 1.60);
         makeLabel(-2.6, 5.3, 0,
-          { top: "SHARE OF SPENDING", accent: "#8892a4", box: true, topSize: 27 }, 3.20, 1.60);
+          { top: "GENERIC SHARE, VALUE", accent: "#8892a4", box: true, topSize: 27 }, 3.20, 1.60);
 
         var readout = makeLabel(6.2, 5.0, 0,
           { top: "SELECT A SYSTEM", sub: "click a pedestal to inspect it",
@@ -273,8 +288,8 @@
           var s = pods[i].sys;
           var gp = s.volume - s.value;
           readout.material.map = labelTex(
-            { top: s.name, big: gp.toFixed(1) + " pts",
-              sub: s.volume.toFixed(1) + "% of scripts, " + s.value.toFixed(1) + "% of spend",
+            { top: s.name, big: gp.toFixed(0) + " pts",
+              sub: s.volume.toFixed(0) + "% of volume, " + s.value.toFixed(0) + "% of value",
               accent: "#fffb00", box: true, bigSize: 72 });
           readout.material.needsUpdate = true;
           if (solved) {
@@ -306,13 +321,13 @@
               sub: "the widest gap in the hall", accent: "#3fae6b", box: true, topSize: 34 });
             plaque.material.needsUpdate = true;
             ctx.setStatus("Widest gap identified: " + s.name, true);
-            ctx.setHint("Generics are most of the prescribing and a fraction of the bill. That is the paradox.");
+            ctx.setHint("Generics are most of the volume and a fraction of the value. That is the paradox.");
             if (typeof window.GameNote === "function") {
               window.GameNote("oecdChoice", "Named " + s.name + " as the widest gap" +
                               (attempts > 1 ? " after " + attempts + " tries" : " first time"));
-              window.GameNote("oecdOutcome", s.volume.toFixed(1) + "% of prescriptions but only " +
-                              s.value.toFixed(1) + "% of spending, a gap of " +
-                              (s.volume - s.value).toFixed(1) + " points");
+              window.GameNote("oecdOutcome", s.volume.toFixed(0) + "% of volume but only " +
+                              s.value.toFixed(0) + "% of value, a gap of " +
+                              (s.volume - s.value).toFixed(0) + " points");
             }
             if (typeof window.GameComplete === "function") {
               window.GameComplete(9, 2, 0,

@@ -1,5 +1,5 @@
 /* ============================================================
-   interlude-dispatch.js — the record room (between modules 2 and 3)
+   interlude-dispatch.js — the record room (between modules 3 and 4)
    Condition B embodied layer.
 
    The player's own decisions read back to them as objects: six
@@ -48,7 +48,7 @@
       lighting: PRESENTATION_LIGHT,
       kicker: "The record room",
       title: "What you have done so far",
-      step: "End of the first two modules",
+      step: "End of the first three modules",
       instructions: "Click a case file to read what followed. Then take the plaque to move on.",
 
       assets: {
@@ -105,18 +105,21 @@
           g.beginPath(); g.moveTo(44, 82); g.lineTo(_W - 44, 82); g.stroke();
           g.fillStyle = "#e6e9ee";
           g.font = "26px Georgia, serif";
-          var line1 = rec && rec.viaMoleculeScene
+          var cand = parseInt((document.getElementById("slider-rd-candidates") || {}).value, 10) || 0;
+          var line1 = (rec && rec.viaMoleculeScene
             ? "You put the two samples together with your own hands: one molecule, imatinib, in both vials. "
-              + "The same money bought one pill in the United States and about eighty in India."
-            : "Two prices for one molecule: imatinib sells for $179.93 a pill in the United States and around "
-              + "$2.20 in India. The compound is identical in both markets.";
+              + "One US day of treatment costs as much as about 134 days in India."
+            : "Two prices for one molecule: a day of imatinib 400 mg costs $295.34 in the United States and "
+              + "$2.20 in India. The compound is identical in both markets.")
+            + (cand ? " In the lab you put " + cand + " candidates into trials, enough to expect "
+              + (cand * 0.034).toFixed(2) + " approvals." : "");
           var y = wrapText(g, line1, 44, 118, _W - 88, 36);
           var line2;
           if (rulings.length === 0) line2 = "No case has been decided yet.";
           else if (granted === 0) line2 = "Then six companies came before you, and you intervened every time.";
-          else if (opened === 0) line2 = "Then six companies came before you, and you upheld the patent holder every time.";
-          else line2 = "Then six companies came before you. You opened the market in " + opened +
-                       " of " + rulings.length + " cases and let the monopoly stand in " + granted + ".";
+          else if (opened === 0) line2 = "Then six companies came before you, and you upheld their claim every time.";
+          else line2 = "Then six companies came before you. You intervened in " + opened +
+                       " of " + rulings.length + " cases and upheld the claim in " + granted + ".";
           g.fillStyle = "#9aa6b4";
           g.font = "italic 25px Georgia, serif";
           wrapText(g, line2, 44, y + 16, _W - 88, 34);
@@ -229,7 +232,7 @@
           /* The room's primary action. Uses the shared plaque, so it matches
              the lock-in action in the hall of systems and every readout in the
              game rather than being a fifth kind of panel. */
-          return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 3",
+          return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 4",
             sub: "the market your rulings created", accent: "#fffb00", box: true, topSize: 34 }));
         }
         var plaque = new THREE.Mesh(
@@ -247,7 +250,7 @@
         ctx.setBrief(null);
         ctx.setStatus(rulings.length + " rulings on the record", true);
         ctx.complete();                       // reading is the objective
-        ctx.setAction("Proceed to module 3", null);
+        ctx.setAction("Proceed to module 4", null);
 
         function expand(card) {
           if (expandedCard === card) { collapse(); return; }
@@ -331,15 +334,15 @@
     window.launchDispatch = function () { window.Interludes.play("dispatch"); };
 
     /* ----------------------------------------------------------
-       Second record room: what the market modules produced.
-       Shown after modules 3 and 4, before module 5. Reads the live
+       Second record room: what the market module produced.
+       Shown after module 4 (the market floor), before module 5. Reads the live
        page state so every figure is the model's own, not a retelling.
        ---------------------------------------------------------- */
     window.Interludes.register("dispatch-market", {
       lighting: PRESENTATION_LIGHT,
       kicker: "The record room",
       title: "What the market did",
-      step: "After the floor and the clearing house",
+      step: "After the market floor",
       instructions: "Click a card to read it in full. Then take the plaque to move on.",
 
       assets: {
@@ -370,8 +373,6 @@
         var qty = (120 - price) * (1 + proc * 0.5);
         var producer = Math.max(0, (price - 5) * qty);
         var consumer = Math.max(0, 0.5 * (120 - price) * qty);
-        var eqP = num("eq-price");
-        var eqQ = num("eq-quantity");
         var procName = proc >= 3 ? "High" : proc === 2 ? "Medium" : "Low";
 
         var wall = new THREE.Mesh(
@@ -411,7 +412,6 @@
           var l2 = consumer > producer
             ? "Most of the value the market produced now reaches patients rather than the producer."
             : "Most of the value the market produced still sits with the producer.";
-          if (!isNaN(eqP)) l2 += " The market clears at $" + Math.round(eqP) + ".";
           g.fillStyle = "#9aa6b4"; g.font = "italic 25px Georgia, serif";
           wrapText(g, l2, 44, y + 16, _W - 88, 34);
           return keep(ctx.tune(new THREE.CanvasTexture(c)));
@@ -429,10 +429,10 @@
             accent: "#d9a441",
             d: open
               ? "Every firm you admitted drove the price down along the decay relation the "
-                + "artifact uses, P = P0 x N^-0.75. One extra entrant barely moves the price: "
-                + "six bring it down by about three quarters, and it keeps falling from there. "
+                + "artifact uses, P = P0 x N^-0.75. One extra entrant cuts the price by about 40%: "
+                + "six sellers bring it down by about three quarters, and it keeps falling from there. "
                 + "This is a stylised curve, not the FDA's own table."
-              : "You upheld the patent at the bench, so no competitor could enter. One firm "
+              : "The imatinib patent stood after the bench, so no competitor could enter. One firm "
                 + "set the price and kept the surplus." },
           { t: "PRICE INDEX", v: String(Math.round(price)), s: "down from 100 at monopoly",
             accent: "#d4573f",
@@ -445,12 +445,15 @@
             d: "Producer surplus is (price - marginal cost) x quantity. Consumer surplus is the "
                + "gap between what patients would have paid and what they actually paid. Opening "
                + "the market transfers value from the first to the second." },
-          { t: "CLEARING PRICE", v: isNaN(eqP) ? "--" : "$" + Math.round(eqP),
-            s: isNaN(eqQ) ? "" : Math.round(eqQ) + " units reaching patients",
+          { t: "WHO PAYS", v: "39.4%",
+            s: "of India's health spending is out of pocket",
             accent: "#fffb00",
-            d: "Where supply meets demand is where the market actually settles. Pushing supply "
-               + "brings that price down; pushing procurement raises quantity but pushes the "
-               + "price back up. Only one of those helps a patient who has to pay." }
+            d: "In India, out-of-pocket spending was 39.4% of total health expenditure in 2021-22 "
+               + "and government spending 48% (National Health Accounts, 2024), so many patients pay "
+               + "the pharmacy price themselves. In the United States, list prices are cut by "
+               + "confidential rebates; those reductions on brand-name drugs were estimated at $335 "
+               + "billion in 2023 (Drug Channels Institute). A US list price overstates what insurers "
+               + "pay; an Indian pharmacy price is close to what a patient pays." }
         ];
 
         function cardTexture(cd, expanded) {
@@ -523,7 +526,7 @@
              the lock-in action in the hall of systems and every readout in the
              game rather than being a fifth kind of panel. */
           return keep(ctx.labelTexture({ top: "PROCEED TO MODULE 5",
-            sub: "what a fixed budget buys in years of life", accent: "#fffb00", box: true, topSize: 34 }));
+            sub: "what a fixed budget buys in QALYs", accent: "#fffb00", box: true, topSize: 34 }));
         }
         var plaque = new THREE.Mesh(
           keep(new THREE.PlaneGeometry(4.00, 2.00)),
@@ -906,16 +909,24 @@
         function sel(id) { var e = document.getElementById(id); return e ? e.value : ""; }
         function txt(id) { var e = document.getElementById(id); return e ? e.textContent.trim() : ""; }
 
-        var PRICES = { patented: 5000, generic: 105 };
-        var WAGES = { unskilled: 3.20, salaried: 15.00 };
+        // read from the shared model so this room repeats what the wage floor showed
+        var MD = (window.ModelData && window.ModelData.affordability) || null;
+        // US$ prices feed the Lerner index; rupee prices and rupee wages give days of labour
+        var PRICES = MD ? { patented: MD.drugs.patented.price, generic: MD.drugs.generic.price }
+                        : { patented: 5500, generic: 171 };
+        var PRICES_INR = MD ? { patented: MD.drugs.patented.priceInr, generic: MD.drugs.generic.priceInr }
+                            : { patented: 280000, generic: 8800 };
+        var WAGES = MD ? { unskilled: MD.wages.unskilled.daily, salaried: MD.wages.salaried.daily }
+                       : { unskilled: 120, salaried: 258 };
+        var MC = MD ? MD.drugs.patented.mc : 74.18;
         var WNAME = { unskilled: "a rural labourer on the MGNREGA wage",
-                      salaried: "an urban salaried worker" };
+                      salaried: "an urban salaried worker in the informal sector" };
         var MNAME = { patented: "the patented Nexavar", generic: "the post-licence generic" };
         var mk = sel("select-market-state") || "patented";
         var wg = sel("select-wage-profile") || "unskilled";
         var price = PRICES[mk], wage = WAGES[wg];
-        var days = Math.round(price / wage);
-        var lerner = (price - 20) / price;
+        var days = Math.round(PRICES_INR[mk] / wage);
+        var lerner = (price - MC) / price;
         var firms = parseInt(sel("slider-hhi-firms"), 10) || 1;
         var hhi = txt("hhi-score-val") || "--";
         var innov = 100 * (firms / 5) * Math.exp(1 - firms / 5);
@@ -980,7 +991,7 @@
             s: "Lerner index, 0 to 1", accent: "#d9a441",
             d: "L = (price - marginal cost) / price. At 0 the price equals the cost of making one "
                + "more unit; at 1 the price is almost entirely margin. Even the generic keeps a "
-               + "margin here, because the Indian market is competitive but not perfectly so." },
+               + "margin over the estimated cost of production (Hill et al., 2016)." },
           { t: "MARKET STRUCTURE", v: String(firms) + (firms === 1 ? " firm" : " firms"),
             s: "HHI " + hhi, accent: inZone ? "#3fae6b" : "#d4573f",
             d: "The Herfindahl-Hirschman Index squares every firm's market share and adds them up, "

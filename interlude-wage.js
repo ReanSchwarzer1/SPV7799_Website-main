@@ -15,10 +15,15 @@
 
    Figures: Bayer's Nexavar at $5,500 a month against Natco's
    post-compulsory-licence sorafenib at $171 (Knowledge@Wharton,
-   2012), and a day's wage of $3.20 under MGNREGA against $15 for
-   an urban salaried worker. The Lerner index, L = (P - MC) / P,
-   uses $80 a month, the cost of production excluding the 50%
-   margin in Hill et al. (2016).
+   2012), or Rs 2.8 lakh against Rs 8,800, and day wages in force in
+   March 2012: Rs 120 under MGNREGA in Uttar Pradesh (S.O. 82(E),
+   effective 1 January 2011) against Rs 258 for a male regular
+   salaried worker in the urban informal sector (NSS 68th round,
+   2011-12). Days of labour are computed in rupees. The Lerner index, L = (P - MC) / P,
+   uses $74.18 a month, the full cost of production before the 50%
+   mark-up in Hill et al. (2016), Table 1. All of these are read from
+   the shared model (window.ModelData) so this room and the page
+   cannot disagree; the values below are only fallbacks.
    ============================================================ */
 
 (function () {
@@ -42,14 +47,14 @@
 
       assets: {
         drugs: {
-          patented: { price: 5500, name: "PATENTED", sub: "Bayer's Nexavar", color: 0xd4573f },
-          generic:  { price: 171,  name: "POST-LICENCE", sub: "Natco's sorafenib", color: 0x3fae6b }
+          patented: { price: 5500, priceInr: 280000, name: "PATENTED", sub: "Bayer's Nexavar", color: 0xd4573f },
+          generic:  { price: 171,  priceInr: 8800,   name: "POST-LICENCE", sub: "Natco's sorafenib", color: 0x3fae6b }
         },
         wages: {
-          unskilled: { daily: 3.20, name: "RURAL LABOURER", sub: "MGNREGA day wage" },
-          salaried:  { daily: 15.00, name: "URBAN SALARIED", sub: "average day wage" }
+          unskilled: { daily: 120, name: "RURAL LABOURER", sub: "MGNREGA day wage, UP, 2011" },
+          salaried:  { daily: 258, name: "URBAN SALARIED", sub: "informal sector, 2011-12" }
         },
-        marginalCost: 80,
+        marginalCost: 74.18,
         target: 90,                       // days of labour to clear the module
         block: { w: 0.34, h: 0.16, d: 0.34, perBlock: 10, cap: 170,
                  color: 0xd4573f, ok: 0x3fae6b },
@@ -60,6 +65,16 @@
 
       build: function (ctx) {
         var THREE = ctx.THREE, scene = ctx.scene, A = ctx.assets;
+        var MD = window.ModelData && window.ModelData.affordability;
+        if (MD) {
+          A.drugs.patented.price = MD.drugs.patented.price;
+          A.drugs.generic.price = MD.drugs.generic.price;
+          A.drugs.patented.priceInr = MD.drugs.patented.priceInr;
+          A.drugs.generic.priceInr = MD.drugs.generic.priceInr;
+          A.wages.unskilled.daily = MD.wages.unskilled.daily;
+          A.wages.salaried.daily = MD.wages.salaried.daily;
+          A.marginalCost = MD.drugs.patented.mc;
+        }
         var junk = [];
         function keep(o) { junk.push(o); return o; }
         function mat(o) { return keep(ctx.tunedStandard(o)); }
@@ -151,7 +166,7 @@
         worker.position.set(-6.4, 0, 0);
         scene.add(worker);
         var wageLabel = makeLabel(-6.9, 3.3, 0,
-          { top: "RURAL LABOURER", big: "$3.20", sub: "MGNREGA day wage",
+          { top: "RURAL LABOURER", big: "Rs 120", sub: "MGNREGA day wage, UP, 2011",
             accent: "#9aa6b4", box: true, bigSize: 74 }, 3.20, 1.60);
 
         // ---------- one month of medicine ----------
@@ -240,8 +255,8 @@
         cap.position.set(6.4, 1.08, 0);
         scene.add(cap);
         var drugLabel = makeLabel(6.9, 3.3, 0,
-          { top: "PATENTED", big: "$5,000", sub: "Bayer's Nexavar, one month",
-            accent: "#d4573f", box: true, bigSize: 70 }, 3.20, 1.60);
+          { top: "PATENTED", big: "Rs 2,80,000", sub: "Bayer's Nexavar, one month",
+            accent: "#d4573f", box: true, bigSize: 56 }, 3.20, 1.60);
 
         // ---------- the tower of working days ----------
         var blocks = [];
@@ -318,7 +333,7 @@
                 emissive: 0xd4573f, emissiveIntensity: 0.35 }));
         scene.add(lernerFill);
         var lernerLabel = makeLabel(0, -2.25, 1.2,
-          { top: "LERNER INDEX OF MONOPOLY POWER", sub: "0.985 — price is almost all margin",
+          { top: "LERNER INDEX OF MONOPOLY POWER", sub: "0.987 — price is almost all margin",
             accent: "#d4573f", box: true }, 3.20, 1.60);
 
         // ---------- state ----------
@@ -345,19 +360,19 @@
 
         function refresh() {
           var d = A.drugs[drugKey], w = A.wages[wageKey];
-          var days = Math.round(d.price / w.daily);
+          var days = Math.round(d.priceInr / w.daily);
           var lerner = (d.price - A.marginalCost) / d.price;
           var ok = days <= A.target;
 
           wageLabel.material.map = labelTex(
-            { top: w.name, big: "$" + w.daily.toFixed(2), sub: w.sub,
+            { top: w.name, big: "Rs " + w.daily, sub: w.sub,
               accent: "#9aa6b4", box: true, bigSize: 74 });
           wageLabel.material.needsUpdate = true;
 
           drugLabel.material.map = labelTex(
-            { top: d.name, big: "$" + d.price.toLocaleString("en-US"),
-              sub: d.sub + ", one month", accent: "#" + d.color.toString(16).padStart(6, "0"),
-              box: true, bigSize: 70 });
+            { top: d.name, big: "Rs " + d.priceInr.toLocaleString("en-IN"),
+              sub: d.sub + ", one month ($" + d.price.toLocaleString("en-US") + ")", accent: "#" + d.color.toString(16).padStart(6, "0"),
+              box: true, bigSize: 56 });
           drugLabel.material.needsUpdate = true;
           bottle.material.color.set(d.color);
           bottle.material.emissive.set(d.color);
@@ -430,7 +445,7 @@
             { top: "WHICH MARKET", sub: "WELDED SHUT · no generic exists",
               accent: "#d4573f", box: true });
           swDrug.label.material.needsUpdate = true;
-          ctx.setHint("You upheld Bayer's patent, so Natco's generic was never made. There is nothing to switch to.");
+          ctx.setHint("You refused the compulsory licence, so Natco's generic was never made. There is nothing to switch to.");
           ctx.setStatus("No generic exists — the tower cannot come down", false);
           ctx.setAction("I have seen enough", function () {
             if (typeof window.GameComplete === "function") {

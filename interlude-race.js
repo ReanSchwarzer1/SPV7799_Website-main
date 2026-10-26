@@ -14,10 +14,16 @@
    would have paid four hundred each. The scene invites the replay
    rather than explaining it.
 
-   Objective: make the call as CEO.
+   Objective: make the call at two prize sizes.
 
-   Payoffs are the artifact's own: a patent worth $1,000M, High
-   R&D at $400M, Low at $100M, ties split on a coin toss.
+   Sensitivity (the economist's request): an exclusivity dial sets how
+   long the winner keeps the market before generics enter, and the
+   prize shrinks with it, V(T) = 1000 (1 - 1.105^-T) / (1 - 1.105^-20),
+   the same 10.5% cost of capital as the pipeline module. A third
+   option, staying out, lets the scene show the stages where the race
+   stops and where the drug stops being developed. Every payoff and
+   equilibrium is computed by the page model (window.ModelData), never
+   typed in here: High $400M, Low $100M, ties split on a coin toss.
    ============================================================ */
 
 (function () {
@@ -139,8 +145,12 @@
           scene.add(pfeet);
         })();
 
-        makeLabel(0, 1.5, -2.9,
-          { top: "THE PATENT", big: "$1,000M", sub: "winner takes all",
+        var MD = window.ModelData;
+        var STAGES = MD ? MD.race.stages : [20, 10, 5, 1, 0.5];
+        function yearsText(t) { return t >= 1 ? t + (t === 1 ? " year" : " years") : "six months"; }
+        function money(v) { return (v < 0 ? "-$" : "$") + Math.abs(Math.round(v)).toLocaleString("en-US") + "M"; }
+        var prizeLabel = makeLabel(0, 3.6, -2.9,
+          { top: "THE PATENT", big: "$1,000M", sub: "20 years before generics enter",
             accent: "#d9a441", box: true, bigSize: 72 }, 3.20, 1.60);
 
         // ---------- chip stacks ----------
@@ -179,8 +189,37 @@
               accent: "#" + color.toString(16).padStart(6, "0"), box: true, bigSize: 68 }, 3.20, 1.60);
           return { grp: grp, hit: hit, label: lab, x: x };
         }
-        var stackHigh = makeStack(-3.6, A.chip.high, A.chip.highColor, "HIGH R&D", A.highCost);
-        var stackLow = makeStack(3.6, A.chip.low, A.chip.lowColor, "LOW R&D", A.lowCost);
+        var stackHigh = makeStack(-5.0, A.chip.high, A.chip.highColor, "HIGH R&D", A.highCost);
+        var stackLow = makeStack(-2.2, A.chip.low, A.chip.lowColor, "LOW R&D", A.lowCost);
+        // staying out is a stack of nothing: an empty tray you push in to commit $0
+        var stackOut = makeStack(1.4, 0, 0x8892a4, "STAY OUT", 0);
+        (function () {
+          var tray = new THREE.Mesh(keep(ctx.roundedBox(1.3, 0.08, 1.3, 0.03)),
+            mat({ color: 0x8892a4, roughness: 0.6, metalness: 0.3 }));
+          tray.position.y = 0.05;
+          stackOut.grp.add(tray);
+        })();
+
+        // the exclusivity dial: each click shortens the time before generics enter
+        var dial = ctx.toggleSwitch({
+          w: 0.55, h: 1.0, d: 0.34,
+          paddleMat: mat({ color: 0xd9a441, roughness: 0.35, metalness: 0.35,
+                           emissive: 0xd9a441, emissiveIntensity: 0.18 }),
+          housingMat: keep(ctx.material("paintedMetal", { color: 0x2a3140 })),
+          steelMat: keep(ctx.material("machinedSteel", { color: 0x8a939f })),
+          lampMat: mat({ color: 0xd9a441, roughness: 0.25, emissive: 0xd9a441, emissiveIntensity: 0.7 })
+        });
+        dial.group.position.set(4.6, 0.02, 2.3);
+        scene.add(dial.group);
+        var dialHit = new THREE.Mesh(keep(ctx.roundedBox(1.7, 1.6, 1.4)),
+          keep(new THREE.MeshBasicMaterial({ visible: false })));
+        dialHit.userData.rimTarget = dial.paddle;
+        dialHit.position.set(4.6, 0.6, 2.3);
+        scene.add(dialHit);
+        ctx.pickables.push(dialHit);
+        var dialLabel = makeLabel(4.6, -0.55, 4.15,
+          { top: "EXCLUSIVITY", big: "20 yrs", sub: "click to shorten",
+            accent: "#d9a441", box: true, bigSize: 68 }, 3.20, 1.60);
 
         // ---------- commit slot ----------
         /* the commit slot is a machine, so it gets a mouth, a frame and feet */
@@ -254,122 +293,170 @@
         var rivalLabel = makeLabel(0, 2.15, -1.15,
           { top: "FIRM B", sub: "sealed until you commit", accent: "#9aa6b4", box: true }, 3.20, 1.60);
 
-        // ---------- payoff matrix ----------
+        // ---------- payoff matrix: 3 x 3, every cell from the model ----------
+        var S3 = ["high", "low", "out"];
+        var NAME = { high: "HIGH", low: "LOW", out: "OUT" };
+        var CW = 2.05, CH = 1.25, CG = 0.16;
         var cells = [];
-        var CELLDEF = [
-          { r: 0, c: 0, you: "high", rival: "high", a: 100, b: 100, note: "both overspend" },
-          { r: 0, c: 1, you: "high", rival: "low", a: 600, b: -100, note: "you win outright" },
-          { r: 1, c: 0, you: "low", rival: "high", a: -100, b: 600, note: "they win outright" },
-          { r: 1, c: 1, you: "low", rival: "low", a: 400, b: 400, note: "both save" }
-        ];
-        function cellTex(d, lit) {
+        function cellTex(a, b, V, lit, eq) {
           var c = document.createElement("canvas");
           var _S = ctx.texScale, _W = 512, _H = 300;
           c.width = _W * _S; c.height = _H * _S;
           var g = c.getContext("2d"); g.scale(_S, _S);
           g.fillStyle = lit ? "#fff8c4" : "rgba(20,24,33,.92)";
           g.fillRect(0, 0, _W, _H);
-          g.strokeStyle = lit ? "#fffb00" : "#39404e"; g.lineWidth = lit ? 12 : 5;
-          g.strokeRect(4, 4, _W - 8, _H - 8);
+          g.strokeStyle = eq ? "#3fae6b" : (lit ? "#fffb00" : "#39404e");
+          g.lineWidth = eq ? 16 : (lit ? 12 : 5);
+          g.strokeRect(6, 6, _W - 12, _H - 12);
           g.textAlign = "center";
           g.fillStyle = lit ? "#5c5200" : "#7b828c";
-          g.font = "bold 24px system-ui, sans-serif";
-          g.fillText("YOU " + d.you.toUpperCase() + " · THEM " + d.rival.toUpperCase(), _W / 2, 52);
-          g.font = "bold 64px system-ui, sans-serif";
+          g.font = "bold 26px system-ui, sans-serif";
+          g.fillText("YOU " + NAME[a] + " \u00b7 THEM " + NAME[b], _W / 2, 52);
+          g.font = "bold 66px system-ui, sans-serif";
           g.fillStyle = lit ? "#15161a" : "#e6e9ee";
-          g.fillText((d.a >= 0 ? "$" + d.a : "-$" + Math.abs(d.a)) + "M", _W / 2, 140);
-          g.font = "26px system-ui, sans-serif";
+          g.fillText(money(MD.racePayoff(a, b, V)), _W / 2, 142);
+          g.font = "28px system-ui, sans-serif";
           g.fillStyle = lit ? "#5c5200" : "#94a0b0";
-          g.fillText("rival " + (d.b >= 0 ? "$" + d.b : "-$" + Math.abs(d.b)) + "M", _W / 2, 196);
-          g.font = "italic 24px Georgia, serif";
-          g.fillText(d.note, _W / 2, 246);
+          g.fillText("rival " + money(MD.racePayoff(b, a, V)), _W / 2, 198);
+          if (eq) {
+            g.font = "bold 26px system-ui, sans-serif";
+            g.fillStyle = "#3fae6b";
+            g.fillText("EQUILIBRIUM", _W / 2, 256);
+          }
           return keep(ctx.tune(new THREE.CanvasTexture(c)));
         }
-        CELLDEF.forEach(function (d) {
-          var m = new THREE.Mesh(
-            keep(new THREE.PlaneGeometry(A.cell.w, A.cell.h)),
-            keep(new THREE.MeshBasicMaterial({ map: cellTex(d, false), transparent: true })));
-          m.position.set(-6.2 + d.c * (A.cell.w + A.cell.gap),
-                         2.6 - d.r * (A.cell.h + A.cell.gap), -3.4);
-          scene.add(m);
-          cells.push({ mesh: m, def: d });
+        S3.forEach(function (a, r) {
+          S3.forEach(function (b, cIdx) {
+            var m = new THREE.Mesh(
+              keep(new THREE.PlaneGeometry(CW, CH)),
+              keep(new THREE.MeshBasicMaterial({ transparent: true })));
+            m.position.set(-6.9 + cIdx * (CW + CG), 4.3 - r * (CH + CG), -3.4);
+            scene.add(m);
+            cells.push({ mesh: m, a: a, b: b });
+          });
         });
-        makeLabel(-4.85, 4.55, -3.4,
-          { top: "THE PAYOFF MATRIX", sub: "your net profit, then theirs",
+        makeLabel(-4.7, 6.2, -3.4,
+          { top: "THE PAYOFF MATRIX", sub: "your net profit, then theirs \u00b7 green = equilibrium",
             accent: "#9aa6b4", box: true }, 3.20, 1.60);
 
-        var resultLabel = makeLabel(6.3, 3.3, -1.0,
+        var regimeLabel = makeLabel(6.0, 4.6, -2.0,
+          { top: "WHAT THE FIRMS DO", big: "", sub: "", accent: "#9aa6b4", box: true }, 4.2, 2.1);
+        var resultLabel = makeLabel(6.0, 2.3, -1.0,
           { top: "NO CALL MADE", sub: "commit a stack to run the race",
             accent: "#9aa6b4", box: true }, 3.20, 1.60);
 
         // ---------- state ----------
-        var committed = null;       // 'high' | 'low'
+        var stage = 0;
+        var committed = null;       // 'high' | 'low' | 'out'
         var animating = 0;
         var flying = null;
-        var played = {};
+        var stagesPlayed = {};
 
-        function lightCell(you) {
+        // the pipeline's exclusivity choice sets where the race starts
+        if (typeof window.GameInherit === "function") {
+          try {
+            var inh = window.GameInherit();
+            if (inh.exclusivityYears) {
+              var best = 0;
+              STAGES.forEach(function (t, k) {
+                if (Math.abs(t - inh.exclusivityYears) < Math.abs(STAGES[best] - inh.exclusivityYears)) best = k;
+              });
+              stage = best;
+            }
+          } catch (e) {}
+        }
+
+        function rivalReply(choice, V) {
+          // the rival plays its equilibrium strategy when there is a unique one;
+          // otherwise (no stable pair, or room for only one firm) it plays its
+          // best reply to the player's choice
+          var eq = MD.raceEquilibria(V);
+          if (eq.length === 1) return eq[0][1];
+          return S3.reduce(function (m, b) {
+            return MD.racePayoff(b, choice, V) > MD.racePayoff(m, choice, V) ? b : m;
+          }, "out");
+        }
+
+        function paint(choice, rival) {
+          var T = STAGES[stage], V = MD.raceValue(T);
+          var eq = MD.raceEquilibria(V);
           cells.forEach(function (c) {
-            var lit = c.def.you === you && c.def.rival === "high";
-            c.mesh.material.map = cellTex(c.def, lit);
+            var lit = choice && c.a === choice && c.b === rival;
+            var isEq = eq.some(function (e) { return e[0] === c.a && e[1] === c.b; });
+            c.mesh.material.map = cellTex(c.a, c.b, V, lit, isEq);
             c.mesh.material.needsUpdate = true;
             c.mesh.position.z = lit ? -3.25 : -3.4;
           });
+          prizeLabel.material.map = labelTex(
+            { top: "THE PATENT", big: money(V), sub: yearsText(T) + " before generics enter",
+              accent: "#d9a441", box: true, bigSize: 72 });
+          prizeLabel.material.needsUpdate = true;
+          dialLabel.material.map = labelTex(
+            { top: "EXCLUSIVITY", big: T >= 1 ? T + " yrs" : "6 mo",
+              sub: stage < STAGES.length - 1 ? "click to shorten" : "click to reset to 20 years",
+              accent: "#d9a441", box: true, bigSize: 68 });
+          dialLabel.material.needsUpdate = true;
+          var reg = MD.raceRegime(V);
+          regimeLabel.material.map = labelTex(
+            { top: "WHAT THE FIRMS DO AT " + money(V), big: reg.short, sub: "green cell = equilibrium",
+              accent: reg.id === "race" ? "#d4573f" : reg.id === "nobody" ? "#d4573f" : "#3fae6b",
+              box: true, bigSize: 34 });
+          ctx.setHint(reg.text);
+          regimeLabel.material.needsUpdate = true;
+          prize.scale.setScalar(0.45 + 0.55 * (V / 1000));
         }
 
         function commit(choice) {
           if (animating > 0) return;
+          var T = STAGES[stage], V = MD.raceValue(T);
           committed = choice;
-          played[choice] = true;
           animating = 1;
-          flying = choice === "high" ? stackHigh.grp : stackLow.grp;
+          flying = choice === "high" ? stackHigh.grp : choice === "low" ? stackLow.grp : stackOut.grp;
+          stagesPlayed[stage] = true;
 
-          // the page's own handler runs the race and scores the level
+          // the page's own handler runs the race and records the stage
+          if (typeof window.setRaceStage === "function") window.setRaceStage(stage);
           if (typeof window.playPatentRace === "function") {
             try { window.playPatentRace(choice); } catch (e) { console.error(e); }
           }
 
-          var mine = choice === "high" ? 100 : -100;
-          lightCell(choice);
+          var rival = rivalReply(choice, V);
+          var mine = MD.racePayoff(choice, rival, V);
+          paint(choice, rival);
           rivalLabel.material.map = labelTex(
-            { top: "FIRM B PLAYED HIGH", sub: "its dominant strategy, every time",
+            { top: "FIRM B PLAYED " + NAME[rival],
+              sub: MD.raceEquilibria(V).length === 1 ? "its equilibrium choice" : "its best reply to yours",
               accent: "#d4573f", box: true });
           rivalLabel.material.needsUpdate = true;
-
           resultLabel.material.map = labelTex(
-            { top: choice === "high" ? "YOU BOTH OVERSPENT" : "THEY TOOK THE PATENT",
-              big: (mine >= 0 ? "$" + mine : "-$" + Math.abs(mine)) + "M",
-              sub: choice === "high"
-                    ? "both playing Low would have paid $400M each"
-                    : "outspent, so you lost the $100M and got nothing",
-              accent: choice === "high" ? "#d9a441" : "#d4573f", box: true, bigSize: 74 });
+            { top: "YOU " + NAME[choice] + ", THEM " + NAME[rival], big: money(mine),
+              sub: "prize " + money(V) + " at " + yearsText(T),
+              accent: mine >= 0 ? "#d9a441" : "#d4573f", box: true, bigSize: 74 });
           resultLabel.material.needsUpdate = true;
 
           if (typeof window.GameNote === "function") {
-            window.GameNote("raceChoice",
-              choice === "high" ? "Committed $400M to High R&D" : "Held back at $100M Low R&D");
-            window.GameNote("raceOutcome",
-              choice === "high"
-                ? "Both firms overspent; $100M each, against $400M each if both had held back"
-                : "The rival outspent you and took the patent; you lost $100M");
+            window.GameNote("raceChoice", "Played " + NAME[choice].toLowerCase() + " at " + yearsText(T) +
+              " of exclusivity (" + Object.keys(stagesPlayed).length + " prize sizes tried)");
+            window.GameNote("raceOutcome", MD.raceRegime(V).text);
           }
 
-          if (played.high && played.low) {
-            ctx.setStatus("You have played both sides of it", true);
-            ctx.setHint("High wins whichever way they go, so both firms take it, and both end up poorer.");
+          var played = Object.keys(stagesPlayed).length;
+          if (played >= 2) {
+            ctx.setStatus("You have seen the race at " + played + " prize sizes", true);
+            ctx.setHint("A long patent makes both firms overspend; a short one stops the race, and then stops the drug.");
             ctx.setAction("Leave the war room", null);
+            ctx.complete();
           } else {
-            ctx.setStatus("Committed " + (choice === "high" ? "High" : "Low") +
-                          " — try the other stack", false);
-            ctx.setHint("Now try the other stack and see whether it would have gone better.");
-            ctx.setAction("Leave the war room", null);
+            ctx.setStatus("Committed at " + yearsText(T) + " \u2014 now shorten exclusivity and play again", false);
+            ctx.setHint("Click the exclusivity dial to shrink the prize, then commit again.");
           }
-          ctx.complete();
         }
 
         ctx.setBrief(null);
         ctx.setStatus("No call made", false);
         ctx.setHint("Push a stack of chips into the slot to commit your R&D.");
+        if (typeof window.setRaceStage === "function") window.setRaceStage(stage);
+        paint(null, null);
 
         function fitCamera() {
           var cam = ctx.camera;
@@ -415,6 +502,7 @@
                 // return the stacks so the other option can be tried
                 stackHigh.grp.position.set(stackHigh.x, 0, 2.3);
                 stackLow.grp.position.set(stackLow.x, 0, 2.3);
+                stackOut.grp.position.set(stackOut.x, 0, 2.3);
                 envelope.rotation.x = 0;
                 flying = null;
               }
@@ -428,6 +516,23 @@
             if (!h) return;
             if (h.object === stackHigh.hit) { ctx.sfx("slot"); ctx.shake(0.018, 0.10); commit("high"); }
             else if (h.object === stackLow.hit) { ctx.sfx("slot"); ctx.shake(0.018, 0.10); commit("low"); }
+            else if (h.object === stackOut.hit) { ctx.sfx("slot"); commit("out"); }
+            else if (h.object === dialHit) {
+              if (animating > 0) {
+                // finish the commit animation at once rather than ignore the dial
+                animating = 0; flying = null; envelope.rotation.x = 0;
+                stackHigh.grp.position.set(stackHigh.x, 0, 2.3);
+                stackLow.grp.position.set(stackLow.x, 0, 2.3);
+                stackOut.grp.position.set(stackOut.x, 0, 2.3);
+              }
+              stage = (stage + 1) % STAGES.length;
+              ctx.sfx("switch");
+              if (typeof window.setRaceStage === "function") window.setRaceStage(stage);
+              rivalLabel.material.map = labelTex(
+                { top: "FIRM B", sub: "sealed until you commit", accent: "#9aa6b4", box: true });
+              rivalLabel.material.needsUpdate = true;
+              paint(null, null);
+            }
           },
           onPointerMove: function (h) {
             ctx.renderer.domElement.style.cursor = h ? "pointer" : "default";

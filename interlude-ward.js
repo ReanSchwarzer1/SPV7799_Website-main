@@ -1,5 +1,5 @@
 /* ============================================================
-   interlude-ward.js — the value of a year (module 5)
+   interlude-ward.js — QALYs and the coverage rule (module 5)
    Condition B embodied layer.
 
    A fixed public budget of $10,000,000 sits in the room as a
@@ -8,7 +8,7 @@
    falls from the patented $30,000 toward the generic $2,000.
 
    Nothing about the medicine changes as the wheel turns. Only the
-   price does. The beds fill anyway, and the tower of life-years
+   price does. The beds fill anyway, and the tower of QALYs
    behind the ward climbs with them. That is the whole argument of
    this module, delivered by hand.
 
@@ -16,7 +16,7 @@
 
    Model is the page's own (see updateQALYChart in script.js):
      patients = floor(budget / costPerPatient)
-     life-years = patients x 7.34 QALYs
+     QALYs lived = patients x 7.34 (not QALYs gained)
    The 7.34-QALY figure is the imatinib-first strategy over ten
    years in Yamamoto et al. (2019), Blood Advances 3(21). The scene drives the page's cost control, so the chart
    and the score stay on one model.
@@ -38,7 +38,7 @@
     window.Interludes.register("ward", {
       kicker: "The ward",
       title: "What a budget buys",
-      step: "Cost-effectiveness and life-years",
+      step: "QALYs and the coverage rule",
       instructions: "Grab the gold wheel and turn it left. Watch the beds fill.",
 
       assets: {
@@ -382,22 +382,42 @@
                 emissive: A.tower.color, emissiveIntensity: 0.3 }));
         scene.add(tower);
         var towerLabel = makeLabel(A.tower.x, 4.15, 0,
-          { top: "QALYS OVER 10 YEARS", big: "2,444", sub: "7.34 QALYs per patient, 10 years",
+          { top: "QALYS LIVED, 10 YEARS", big: "2,444", sub: "7.34 per patient · not QALYs gained",
             accent: "#3fae6b", box: true, bigSize: 70 }, 3.20, 1.60);
 
         // ---------- state ----------
-        // The price the market settled at in the clearing house is the price
-        // this budget has to pay, so the wheel starts where the player left it.
+        // The market floor's price index is the share of the monopoly price the
+        // market charges, so the budget pays that share of the $30,000 patented
+        // price: the wheel starts where the player left the market.
         var cost = A.costMax;
         if (typeof window.GameInherit === "function") {
           try {
             var h = window.GameInherit();
-            if (h.clearingPrice != null) {
-              var t = Math.max(0, Math.min(1, (h.clearingPrice - 65) / 55));
-              cost = Math.round((12000 + t * 18000) / A.costStep) * A.costStep;
-            }
+            if (h.wardStartCost != null) cost = h.wardStartCost;
           } catch (e) {}
         }
+
+        // ---------- the coverage rule, on the back wall ----------
+        /* Sources: the rule and its opportunity-cost reading, Claxton et al.
+           (2015), HTA 19(14); US reference point, Reed et al. (2004), Cancer
+           101(11):2574-2583, imatinib vs interferon-alpha plus low-dose
+           cytarabine, 3.89 QALYs gained at $43,300 per QALY; India, Chugh et
+           al. (2026), Value in Health 29(3), mean WTP INR 2,12,307 (US$2,535)
+           per QALY. The ward's own bars count QALYs lived, not gained, so the
+           scene states the rule and the reference points without computing an
+           Indian ICER it has no comparator data for. */
+        makeLabel(0.6, 5.0, -2.8,
+          { top: "THE COVERAGE RULE", big: "\u0394COST / \u0394QALY \u2264 \u03bb",
+            sub: "fund while the last QALY bought costs no more than what it displaces",
+            accent: "#fffb00", box: true, bigSize: 56 }, 4.6, 2.3);
+        makeLabel(-4.9, 5.3, -2.8,
+          { top: "US, 2004 PRICES", big: "$43,300",
+            sub: "per QALY gained, imatinib vs IFN (Reed et al.)",
+            accent: "#9aa6b4", box: true, bigSize: 60 }, 3.2, 1.6);
+        makeLabel(-4.9, 3.5, -2.8,
+          { top: "INDIA: NO OFFICIAL THRESHOLD", big: "US$2,535",
+            sub: "willingness to pay per QALY, 2026 survey",
+            accent: "#9aa6b4", box: true, bigSize: 60 }, 3.2, 1.6);
         var angle = 0;              // accumulated wheel rotation
         var shownAngle = 0;   // what the wheel shows; `angle` is what the hand asked for
         var spin = 0, lastDetent = 0;   // momentum left over when the hand lets go
@@ -465,8 +485,8 @@
           tower.scale.y = h;
           tower.position.set(A.tower.x, -2.35 + h / 2, 0);
           towerLabel.material.map = labelTex(
-            { top: "QALYS OVER 10 YEARS", big: fmt(m.qalys),
-              sub: "7.34 QALYs per patient, 10 years", accent: "#3fae6b", box: true, bigSize: 70 });
+            { top: "QALYS LIVED, 10 YEARS", big: fmt(m.qalys),
+              sub: "7.34 per patient · not QALYs gained", accent: "#3fae6b", box: true, bigSize: 70 });
           towerLabel.material.needsUpdate = true;
 
           if (!won) {

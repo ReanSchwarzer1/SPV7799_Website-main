@@ -35,7 +35,7 @@
             One Molecule, <span class="highlight-yellow">Two Markets</span>
         </h1>
         <h2 class="text-xl sm:text-2xl md:text-3xl font-serif text-gray-700 font-light mb-4">
-            Innovation Without Invention: The Economics of Generic Drugs in India.
+            Who pays for invention, and who gets the medicine: the economics of generic drugs in India.
         </h2>
         <p class="text-xs sm:text-sm font-sans text-gray-500">Based on data from <a href="https://www.ncbi.nlm.nih.gov/books/NBK611829/" target="_blank" rel="noopener" class="underline hover:text-gray-700">NIH/NCBI</a>, <a href="https://pharmexcil.com/trade-statistics" target="_blank" rel="noopener" class="underline hover:text-gray-700">Pharmexcil</a>, and landmark Indian IP litigation.</p>
     </header>
@@ -43,46 +43,123 @@
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         
         <section class="mb-16 sm:mb-24" id="molecular-storyteller">
-            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-4">1. The Molecular Scrollyteller: The Gleevac</h3>
+            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-4">1. The Molecular Scrollyteller: Imatinib (Gleevec)</h3>
             <div class="bg-brandDark text-white p-4 sm:p-8 rounded-xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row gap-6 sm:gap-8 items-center mt-4">
                 <div class="relative z-10 w-full md:w-1/2">
                     <h4 class="text-xl sm:text-2xl font-bold font-sans mb-2 text-voxYellow">The Synthesis Puzzle</h4>
-                    <p class="font-serif text-base sm:text-lg mb-4 text-gray-300">The chemical formula for Imanitib (brand name Gleevac) is <span class="font-mono bg-gray-800 p-1 rounded border border-gray-600">C<sub>29</sub>H<sub>31</sub>N<sub>7</sub>O</span>. It is used for treatment of chronic myelogenous leukemia and gastrointestinal stromal tumours. It has a role as an antineoplastic agent, a tyrosine kinase inhibitor and an apoptosis inducer.</p>
-                    <p class="font-serif text-sm mb-6 text-gray-400">Following its launch in 2001, Novartis aggressively protected its patent and continually raised the drug's price in the US market. In a landmark 2013 ruling, the Indian Supreme Court denied Novartis a renewed patent for the drug, preventing the "evergreening" of its exclusivity. This historic decision allowed Indian pharmaceutical companies to continue synthesizing generic versions of the life-saving molecule for a fraction of the global price.</p>
+                    <p class="font-serif text-base sm:text-lg mb-4 text-gray-300">The chemical formula for imatinib (sold by Novartis as Gleevec in the US and Glivec elsewhere) is <span class="font-mono bg-gray-800 p-1 rounded border border-gray-600">C<sub>29</sub>H<sub>31</sub>N<sub>7</sub>O</span>. It is used for treatment of chronic myelogenous leukemia and gastrointestinal stromal tumours. It has a role as an antineoplastic agent, a tyrosine kinase inhibitor and an apoptosis inducer.</p>
+                    <p class="font-serif text-sm mb-6 text-gray-400">After its US launch in 2001, Novartis raised the US price several times. In 2013 the Supreme Court of India refused Novartis a patent on a new crystalline form of the drug under Section 3(d), so Indian manufacturers kept selling generic versions.</p>
                     
                     <div class="bg-white text-brandDark p-4 sm:p-6 rounded-lg mt-6">
                         <h5 class="font-bold uppercase tracking-wide text-xs sm:text-sm mb-4">Select Market Environment</h5>
                         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            <button onclick="setSynthesis('patented')" id="btn-patented" class="flex-1 py-3 px-4 bg-gray-200 border-2 border-brandDark font-bold rounded hover:bg-gray-300 transition text-sm">US Monopoly</button>
-                            <button onclick="setSynthesis('alternative')" id="btn-alternative" class="flex-1 py-3 px-4 bg-gray-200 border-2 border-transparent font-bold rounded hover:bg-gray-300 transition text-sm">Indian Generic</button>
+                            <button onclick="setSynthesis('patented')" id="btn-patented" class="flex-1 py-3 px-4 bg-gray-200 border-2 border-brandDark font-bold rounded hover:bg-gray-300 transition text-sm">US price</button>
+                            <button onclick="setSynthesis('alternative')" id="btn-alternative" class="flex-1 py-3 px-4 bg-gray-200 border-2 border-transparent font-bold rounded hover:bg-gray-300 transition text-sm">Indian generic price</button>
                         </div>
                         <div class="mt-6 flex flex-col sm:flex-row justify-between items-center sm:items-end border-t border-gray-300 pt-4 gap-2">
-                            <span class="font-serif font-bold text-base sm:text-lg">Cost Per Pill:</span>
-                            <span id="api-cost" class="text-4xl sm:text-5xl font-bold text-scrollRed font-mono">$179.93</span>
+                            <span class="font-serif font-bold text-base sm:text-lg">Cost per day of treatment (400 mg):</span>
+                            <span id="api-cost" class="text-4xl sm:text-5xl font-bold text-scrollRed font-mono">$295.34</span>
                         </div>
                     </div>
                     
                     <div class="mt-6 bg-gray-900 p-4 rounded-lg border border-gray-700 shadow-inner">
-                        <h5 class="font-bold text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 mb-3">Real Data & Citations</h5>
+                        <h5 class="font-bold text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 mb-3">Comparison basis &amp; citations</h5>
                         <ul class="text-[10px] sm:text-xs font-mono text-gray-400 space-y-2">
-                            <li>↳ <strong class="text-gray-200">Molecule:</strong> Imanitib (<a href="https://pubchem.ncbi.nlm.nih.gov/compound/Imatinib" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">PubChem CID: 5291</a>).</li>
-                            <li>↳ <strong class="text-gray-200">US Price Data:</strong> Novartis continually hiked the price in the US, with a single pill rising from $92.74 in 2010 to $179.93 by 2014. (<a href="https://www.biopharmadive.com/news/old-novartis-cancer-flagship-gleevec-heads-to-pharmacies-as-lower-cost-gene/413259/" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">Biopharmadive</a>)</li>
-                            <li>↳ <strong class="text-gray-200">Generic Price Data:</strong> During the 2013 Supreme Court case, Indian generic equivalents cost around ₹8,000–12,000 ($160–$240) for a monthly dose. Today the lowest available Indian generic price for imatinib 400 mg is $803 per patient-year, about $2.20 a day (<a href="https://doi.org/10.1136/bmjopen-2015-009586" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Hill et al., 2016, BMJ Open</a>). (<a href="https://www.asianscientist.com/2013/04/features/novartis-loses-historic-india-patent-case-cancer-drug-glivec-2013/" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">Asianscientist</a>)</li>
+                            <li>↳ <strong class="text-gray-200">Molecule:</strong> imatinib (<a href="https://pubchem.ncbi.nlm.nih.gov/compound/Imatinib" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">PubChem CID: 5291</a>).</li>
+                            <li>↳ <strong class="text-gray-200">What is compared:</strong> the same dose, imatinib 400 mg once a day (the standard dose in Hill et al., 2016), priced per day of treatment in US dollars. Price per day = price per person-year &divide; 365.</li>
+                            <li>↳ <strong class="text-gray-200">United States:</strong> $107,799 per person-year, or $295.34 a day (<a href="https://doi.org/10.1136/bmjopen-2015-009586" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">Hill et al., 2016, BMJ Open</a>, Discussion). Published prices collected from national databases and price comparison tools; confidential rebates are not included.</li>
+                            <li>↳ <strong class="text-gray-200">India:</strong> $803 per person-year, or $2.20 a day, the lowest available Indian generic price in the same study (<a href="https://doi.org/10.1136/bmjopen-2015-009586" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">Hill et al., 2016</a>, Figure 3A). Ratio: about 134 days of Indian treatment for the price of one US day.</li>
+                            <li>↳ <strong class="text-gray-200">Price history:</strong> the US price of one Gleevec pill rose from $92.74 in 2010 to $179.93 in 2014, from Centers for Medicare &amp; Medicaid Services data (<a href="https://www.npr.org/sections/health-shots/2016/02/01/465139901/generic-gleevec-imatinib-savings-will-be-modest" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">Kodjak, NPR, 2016</a>; strength not reported). A US generic launched in 2016 and was expected to cost about 30 percent less than the brand (same source).</li>
+                            <li>↳ <strong class="text-gray-200">Recent prices (not used in the ratio above):</strong> in Medicare Part D in 2024, average spending per dosage unit was $233.96 for Gleevec and $33.39 for generic imatinib across 13 manufacturers ($249.77 and $49.99 in 2023). A dosage unit is one tablet of any strength, and the figures are before manufacturer rebates (<a href="https://data.cms.gov/summary-statistics-on-use-and-payments/medicare-medicaid-spending-by-drug/medicare-part-d-spending-by-drug" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">CMS, Medicare Part D Spending by Drug</a>). In India on 25 October 2026, the pharmacy site 1mg listed Novartis's Glivec 400 mg at Rs 213.2 a tablet and other 400 mg imatinib tablets from Rs 25 to Rs 202.6, with Cipla's Imatib 400 at Rs 91.5 (<a href="https://www.1mg.com/drugs-substitutes/imat-400-tablet-192692" target="_blank" rel="noopener" class="text-blue-400 underline hover:text-blue-300">1mg substitutes listing</a>). Retail list prices, not what patients or insurers pay after discounts.</li>
                         </ul>
                     </div>
                 </div>
                 <div class="w-full md:w-1/2 molecule-bg h-full min-h-[300px] md:min-h-[450px] rounded-lg border border-gray-700 relative cursor-move shadow-inner">
                     <div id="molecule-container" class="absolute inset-0 w-full h-full z-10"></div>
                     <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 text-gray-300 font-sans text-[10px] sm:text-xs z-20 bg-black bg-opacity-60 px-2 sm:px-3 py-1 sm:py-2 rounded shadow">
-                        Drag to rotate Imanitib 3D Model
+                        Drag to rotate the imatinib 3D model
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="mb-16 sm:mb-24" id="rd-pipeline">
+            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">2. The Pipeline: Why Patents Exist</h3>
+            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Before a generic can copy a medicine, someone has to invent it. Most candidate cancer drugs fail in clinical trials, and the firm pays for those failures out of the few drugs that reach patients. A patent gives the inventor a period in which rivals cannot copy the drug, so that money can be recovered. Set how many candidates enter trials and how long the winner keeps the market before generics arrive.</p>
+
+            <div class="bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
+                    <div class="md:col-span-5 bg-brandGray p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200">
+                        <h4 class="font-bold text-base sm:text-lg mb-4 sm:mb-6 uppercase tracking-wide border-b pb-2">The Pipeline</h4>
+                        <div class="mb-6">
+                            <label class="flex justify-between font-sans text-sm sm:text-base font-semibold mb-2">
+                                <span>Candidate cancer drugs entering trials</span>
+                                <span id="val-rd-candidates">10</span>
+                            </label>
+                            <input type="range" id="slider-rd-candidates" min="1" max="60" value="10" class="w-full accent-brandDark">
+                        </div>
+                        <div class="mb-6">
+                            <label class="flex justify-between font-sans text-sm sm:text-base font-semibold mb-2">
+                                <span>Exclusivity before generics enter</span>
+                                <span id="val-rd-years">20 years</span>
+                            </label>
+                            <input type="range" id="slider-rd-years" min="1" max="20" value="20" class="w-full accent-scrollRed">
+                        </div>
+                        <div class="p-4 bg-brandDark text-white rounded-lg shadow-inner" aria-live="polite" aria-atomic="true">
+                            <div class="flex justify-between text-xs sm:text-sm font-mono mb-1"><span>Expected approvals (3.4% each)</span><span id="rd-expected" class="font-bold text-voxYellow">0.34</span></div>
+                            <div class="flex justify-between text-xs sm:text-sm font-mono mb-3"><span>Expected failures</span><span id="rd-failed" class="font-bold text-gray-300">9.66</span></div>
+                            <div class="flex justify-between text-xs sm:text-sm font-mono mb-1"><span>Cost per approved cancer drug</span><span class="font-bold">$2,772M</span></div>
+                            <div class="flex justify-between text-xs sm:text-sm font-mono"><span>Net revenue needed per year</span><span id="rd-revenue" class="font-bold text-voxYellow">$337M</span></div>
+                        </div>
+                    </div>
+                    <div class="md:col-span-7 p-4 sm:p-6 flex flex-col justify-center bg-white">
+                        <h5 class="text-center font-bold text-xs sm:text-sm uppercase tracking-wide mb-2 text-gray-500">Shorter exclusivity, higher yearly revenue needed</h5>
+                        <div class="w-full h-64 sm:h-72 relative">
+                            <canvas id="pipelineChart" role="img" aria-label="Net revenue needed per year of exclusivity"></canvas>
+                        </div>
+                        <p class="text-[10px] sm:text-xs text-gray-500 mt-2 font-serif">With 20 years of exclusivity the drug must earn <span id="rd-revenue-20">$337M</span> net a year to repay its development; the shorter the period before generics enter, the more it must earn each year, or the less worthwhile it is to develop.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-lg text-xs sm:text-sm text-gray-800 font-sans shadow-inner">
+                <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">Sources, Formula and the Counter-Case</h5>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. Attrition and cost</strong>
+                        <ul class="space-y-2 text-xs text-gray-600 list-disc pl-4">
+                            <li>3.4% of oncology development programmes in clinical trials reached approval, in data on trials from 2000 to 2015 (<a href="https://doi.org/10.1093/biostatistics/kxx069" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Wong, Siah &amp; Lo, 2019</a>).</li>
+                            <li>Median capitalized R&amp;D investment per approved drug: $1,141.7M across 63 drugs approved 2009&ndash;2018, and $2,771.6M for antineoplastic and immunomodulating agents (2018 US dollars; <a href="https://doi.org/10.1001/jama.2020.1166" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Wouters, McKee &amp; Luyten, 2020</a>, as corrected in 2022). These figures include failed programmes and a 10.5% yearly cost of capital.</li>
+                            <li>An industry-data estimate puts the capitalized pre-approval cost at $2,558M per approved compound (2013 dollars; <a href="https://doi.org/10.1016/j.jhealeco.2016.01.012" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">DiMasi, Grabowski &amp; Hansen, 2016</a>).</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">2. The recovery formula</strong>
+                        <div class="bg-white p-2 border border-gray-200 rounded mt-2 mb-2 text-center">
+                            <span class="font-mono font-bold text-sm">R = C &times; r / (1 &minus; (1 + r)<sup>&minus;T</sup>)</span>
+                        </div>
+                        <ul class="space-y-1 text-xs text-gray-600 list-disc pl-4">
+                            <li>R is the constant net revenue per year of exclusivity whose present value equals C, the $2,771.6M capitalized cost, at r = 10.5%. T is the years of exclusivity.</li>
+                            <li>Illustrative: it ignores the years sales take to build, sales after generic entry, and tax.</li>
+                            <li>The WTO's TRIPS agreement (Article 33) sets a patent term of at least 20 years from the filing date. Firms usually file before trials, so the years of protected sales are fewer than 20.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">3. The counter-case, and its limits</strong>
+                        <ul class="space-y-2 text-xs text-gray-600 list-disc pl-4">
+                            <li>If generics arrive before the cost is recovered, fewer drugs are worth developing. High-income markets can pay prices above marginal cost that fund the shared R&amp;D, while lower prices in poorer markets widen access (<a href="https://faculty.wharton.upenn.edu/wp-content/uploads/2014/10/differential-pricing_3.pdf" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Danzon &amp; Towse, 2003</a>).</li>
+                            <li>One global price would not fix this. When low prices spill over through reference pricing and parallel trade, firms delay or skip launches in low-price markets: only about 55% of potential launches of 85 new drugs happened across 25 markets (<a href="https://www.nber.org/papers/w9874" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Danzon, Wang &amp; Wang, 2005</a>).</li>
+                            <li>The limit: patent protection was associated with more R&amp;D in high-income countries, but introducing patents in developing countries was not followed by more investment in diseases that mainly affect the poorest countries (<a href="https://nber.org/papers/w15468" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Kyle &amp; McGahan, 2012</a>).</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </section>
 
         <section class="mb-16 sm:mb-24">
-            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">2. The Legal Labyrinth</h3>
-            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Law shapes markets. You are a Patent Authority in India. Review these historical cases and apply Indian IP law (like Section 3(d) or Compulsory Licensing).</p>
+            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">3. The Legal Labyrinth</h3>
+            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Law shapes markets. Indian law grants patents on genuinely new medicines; these six real cases test its limits. You are the Patent Authority. Each ruling shows what actually happened, the patent holder's case and the access case, so you can weigh both. Your ruling on case 2 (imatinib) decides whether the market in section 4 is open.</p>
             <div class="border-4 border-brandDark p-0 rounded-xl overflow-hidden flex flex-col md:flex-row shadow-lg bg-white mt-4">
                 <div class="bg-brandGray p-5 sm:p-8 w-full md:w-1/2 relative">
                     <div class="flex justify-between items-center mb-4">
@@ -93,7 +170,7 @@
                         </div>
                     </div>
                     
-                    <h4 class="text-xl sm:text-2xl font-bold mb-2" id="case-title">Novartis vs. Union of India</h4>
+                    <h4 class="text-xl sm:text-2xl font-bold mb-2" id="case-title">Gilead Sciences vs. Generic Manufacturers</h4>
                     <p class="text-xs sm:text-sm font-mono text-gray-500 mb-4" id="case-drug">Drug: Imatinib Mesylate (Leukemia)</p>
                     
                     <p class="font-serif text-sm sm:text-base text-gray-800 mb-4 bg-white p-3 sm:p-4 border-l-4 border-voxYellow italic shadow-sm" id="case-claim">
@@ -109,7 +186,7 @@
                 <div class="bg-brandDark text-white p-5 sm:p-8 w-full md:w-1/2 flex flex-col justify-center items-center text-center">
                     <h4 class="font-bold text-lg sm:text-xl mb-4 sm:mb-6">Make Your Ruling</h4>
                     <div class="w-full space-y-3 sm:space-y-4" id="ruling-buttons">
-                        <button onclick="makeRuling(true)" class="w-full py-3 sm:py-4 border-2 border-scrollRed text-scrollRed font-bold hover:bg-scrollRed hover:text-white transition uppercase tracking-wide text-sm sm:text-base">Grant Monopoly</button>
+                        <button onclick="makeRuling(true)" id="btn-grant" class="w-full py-3 sm:py-4 border-2 border-scrollRed text-scrollRed font-bold hover:bg-scrollRed hover:text-white transition uppercase tracking-wide text-sm sm:text-base">Uphold the Patent</button>
                         <button onclick="makeRuling(false)" id="btn-reject" class="w-full py-3 sm:py-4 border-2 border-voxYellow text-voxYellow font-bold hover:bg-voxYellow hover:text-brandDark transition uppercase tracking-wide text-sm sm:text-base">Apply Sec 3(d) (Reject)</button>
                     </div>
                     <div id="ruling-outcome" class="mt-6 sm:mt-8 hidden w-full p-3 sm:p-4 rounded bg-gray-800 text-xs sm:text-sm font-serif border-l-4 leading-relaxed" aria-live="polite">
@@ -119,8 +196,8 @@
         </section>
 
         <section class="mb-16 sm:mb-24" id="macro-economics">
-            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">3. The Macro-Economics & Social Returns</h3>
-            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Watch how the synthesis routes and legal rulings from above dictate market forces, and how they bridge the gap between private profit and social welfare.</p>
+            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">4. The Macro-Economics & Social Returns</h3>
+            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Your ruling on imatinib (case 2) decides whether generic firms may enter this market. Watch how entry and public purchasing shift value between private profit and patient access.</p>
             <div class="bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
                     <div class="md:col-span-4 bg-brandGray p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200">
@@ -130,7 +207,7 @@
                                 <span>Monopoly Status</span>
                                 <span id="val-monopoly-status" class="text-red-600 font-bold text-right">ACTIVE</span>
                             </label>
-                            <p class="text-[10px] sm:text-xs text-gray-500 mt-1 italic">Determined by the Legal Labyrinth.</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500 mt-1 italic">Set by your ruling in Novartis v. Union of India (case 2).</p>
                         </div>
                         <div class="mb-4 sm:mb-6">
                             <label class="flex justify-between font-sans text-sm sm:text-base font-semibold mb-2">
@@ -138,11 +215,11 @@
                                 <span id="val-comp">1</span>
                             </label>
                             <input type="range" id="slider-comp" min="1" max="50" value="1" class="w-full" disabled>
-                            <p class="text-[10px] sm:text-xs text-red-500 mt-1 font-bold" id="comp-note">Locked by Patent.</p>
+                            <p class="text-[10px] sm:text-xs text-red-500 mt-1 font-bold" id="comp-note">Locked by the imatinib patent.</p>
                         </div>
                         <div class="mb-2 sm:mb-6">
                             <label class="flex justify-between font-sans text-sm sm:text-base font-semibold mb-2">
-                                <span>Govt Procurement</span>
+                                <span>Public procurement</span>
                                 <span id="val-procure">Low</span>
                             </label>
                             <input type="range" id="slider-procure" min="1" max="3" value="1" class="w-full">
@@ -165,7 +242,7 @@
 
             <div class="bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-lg text-xs sm:text-sm text-gray-800 font-sans shadow-inner">
                 <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">Economic Methodology & Real Data</h5>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                         <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. The FDA Price Decay Curve</strong>
                         <div class="bg-white p-2 border border-gray-200 rounded mt-2 mb-2 text-center">
@@ -173,7 +250,7 @@
                         </div>
                         <ul class="space-y-1 text-xs text-gray-600 list-disc pl-4">
                             <li>This models price (P) based on generic competitors (N).</li>
-                            <li>Real data shows that while a single generic barely moves the needle, having 6+ generic manufacturers drives the drug price down by roughly 80-90%.</li>
+                            <li>The curve is stylised. It is close to the FDA's figures for one and two generic competitors (about 39% and 54% below the brand) but understates larger falls with many entrants, which can exceed 95% with six or more (Conrad &amp; Lutter, 2019).</li>
                         </ul>
                         <p class="text-[10px] mt-3 text-gray-500 font-mono">↳ Source: <a href="https://www.fda.gov/about-fda/center-drug-evaluation-and-research-cder/generic-competition-and-drug-prices" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">U.S. FDA. "Generic Competition and Drug Prices" (2019)</a>. (<a href="https://www.fda.gov/media/131130/download" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">PDF</a>)</p>
                     </div>
@@ -183,7 +260,7 @@
                             <li><strong>Private Returns (Producer Surplus):</strong> <span class="font-mono">(Price - MC) &times; Quantity</span></li>
                             <li><strong>Consumers' Surplus:</strong> <span class="font-mono">&frac12; &times; (Max Willing Price - P) &times; Q</span></li>
                         </ul>
-                        <p class="text-gray-600 text-xs mb-2">Visualizes how revoking a patent shifts economic value from corporate monopoly profit directly into public health access (Source: Ch 5.4).</p>
+                        <p class="text-gray-600 text-xs mb-2">Shows how opening the market moves value from producer profit to patients. It does not show what that profit would have paid for; section 2 does.</p>
                         <p class="text-[10px] mt-1 text-gray-500 font-mono">↳ Source: Varian, H. R., "Microeconomic Analysis".</p>
                     </div>
                     <div>
@@ -197,85 +274,21 @@
                         </ul>
                         <p class="text-[10px] mt-2 text-gray-500 font-mono">↳ Source: Course Notes, "Private and Social Returns to Innovation" (Ch 5.1).</p>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mb-16 sm:mb-24">
-            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">4. The Microeconomics: Supply & Demand</h3>
-            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Why do prices fall? It's not magic; it's market structure. Shift the determinants below to see how patent rejection increases supply, while public health programs increase demand.</p>
-            
-            <div class="bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
-                    <div class="md:col-span-5 bg-brandGray p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200">
-                        <h4 class="font-bold text-base sm:text-lg mb-4 sm:mb-6 uppercase tracking-wide border-b pb-2">Determinants</h4>
-                        
-                        <div class="mb-6 sm:mb-8">
-                            <label class="block font-sans text-sm sm:text-base font-semibold mb-2 text-blue-700">
-                                Determinant of Supply: Competition
-                            </label>
-                            <p class="text-[10px] sm:text-xs text-gray-600 mb-3 leading-tight">Revoking a patent lowers barriers to entry. More generic firms enter the market, shifting the Supply curve to the right.</p>
-                            <input type="range" id="slider-supply-shift" min="0" max="70" value="0" class="w-full accent-blue-600">
-                            <div class="flex justify-between text-[10px] sm:text-xs font-bold mt-1 text-gray-500">
-                                <span>Monopoly (1 firm)</span>
-                                <span>Perfect Comp (50+ firms)</span>
-                            </div>
-                        </div>
-
-                        <div class="mb-4 sm:mb-6">
-                            <label class="block font-sans text-sm sm:text-base font-semibold mb-2 text-green-700">
-                                Determinant of Demand: Govt Procurement
-                            </label>
-                            <p class="text-[10px] sm:text-xs text-gray-600 mb-3 leading-tight">Programs like India's PMBJP or global NGO bulk-buying increase accessibility, shifting the Demand curve to the right.</p>
-                            <input type="range" id="slider-demand-shift" min="0" max="40" value="0" class="w-full accent-green-600">
-                            <div class="flex justify-between text-[10px] sm:text-xs font-bold mt-1 text-gray-500">
-                                <span>Private Out-of-Pocket</span>
-                                <span>Mass Public Distribution</span>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-gray-100 rounded border border-gray-300" aria-live="polite" aria-atomic="true">
-                            <h5 class="font-bold text-xs sm:text-sm mb-2">Current Equilibrium</h5>
-                            <div class="flex justify-between text-xs sm:text-sm font-mono mb-1">
-                                <span>Price (P*):</span> <span id="eq-price" class="font-bold text-scrollRed">$100.00</span>
-                            </div>
-                            <div class="flex justify-between text-xs sm:text-sm font-mono">
-                                <span>Quantity (Q*):</span> <span id="eq-quantity" class="font-bold text-brandDark">40 Units</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="md:col-span-7 p-4 sm:p-6 flex flex-col items-center justify-center bg-white">
-                        <div class="w-full h-64 sm:h-80 relative">
-                            <canvas id="sdChart" role="img" aria-label="Microeconomic Supply and Demand Chart."></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-lg text-xs sm:text-sm text-gray-800 font-sans shadow-inner">
-                <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">Microeconomic Modeling</h5>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                     <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">The Linear Equations</strong>
-                        <p class="mb-2 text-gray-600 text-xs sm:text-sm">This interactive graph uses standard inverse linear functions to plot the S&D curves:</p>
-                        <ul class="space-y-2 mt-2 font-mono text-[10px] sm:text-xs bg-white p-2 sm:p-3 border border-gray-200 rounded">
-                            <li><span class="text-blue-700 font-bold">Supply (S):</span> P = (c - &Delta;S) + dQ</li>
-                            <li><span class="text-green-700 font-bold">Demand (D):</span> P = (a + &Delta;D) - bQ</li>
-                            <li class="pt-2 border-t text-gray-500">Equilibrium: Q* = (a - c + &Delta;S + &Delta;D) / (b + d)</li>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">4. Who pays, and how</strong>
+                        <ul class="space-y-2 text-xs text-gray-600 list-disc pl-4">
+                            <li><b>India:</b> out-of-pocket spending was 39.4% of total health expenditure in 2021&ndash;22, and government spending 48% (<a href="https://static.pib.gov.in/WriteReadData/specificdocs/documents/2024/oct/doc2024104408201.pdf" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">National Health Accounts, MoHFW, 2024</a>). Many patients pay the pharmacy price themselves, which is why section 7 counts price in days of wages.</li>
+                            <li><b>United States:</b> list prices are cut by confidential rebates and discounts negotiated with payers; these gross-to-net reductions on brand-name drugs were estimated at $335 billion in 2023 (<a href="https://www.drugchannels.net/2024/07/gross-to-net-bubble-update-2023-pricing.html" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Drug Channels Institute, 2024</a>). Medicare's first negotiated prices for 10 drugs, 38% to 79% below list, take effect on 1 January 2026 (<a href="https://www.cooley.com/news/insight/2024/2024-09-05-us-cms-announces-initial-prices-for-medicare-drug-price-negotiation-program" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Cooley, 2024</a>).</li>
+                            <li>So a US list price overstates what insurers pay, while an Indian pharmacy price is close to what a patient pays.</li>
                         </ul>
                     </div>
-                    <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">Empirical Proof</strong>
-                        <p class="text-gray-600 mb-2 text-xs sm:text-sm">When India rejected pharmaceutical patents in the early 2000s, it caused a massive rightward shift in supply. Empirical studies show this competition eliminated monopoly deadweight loss and vastly expanded consumer welfare.</p>
-                        <p class="text-[10px] mt-2 text-gray-500 font-mono">↳ Source: <a href="https://www.aeaweb.org/articles?id=10.1257/aer.96.5.1477" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Chaudhuri, S., Goldberg, P. K., & Jia, P. (2006). "Estimating the Effects of Global Patent Protection in Pharmaceuticals..." <i>American Economic Review</i>, 96(5), 1477–1514.</a></p>
-                    </div>
                 </div>
             </div>
         </section>
 
         <section class="mb-16 sm:mb-24">
-            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">5. Health Economics: The Value of a Year</h3>
-            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Lower prices aren't just an economic victory; they translate directly into "Quality-Adjusted Life Years" (QALYs). Let's look at the survival data for Imatinib (Leukemia) under a fixed public health budget of $10,000,000.</p>
+            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">5. Health Economics: QALYs and the Coverage Decision</h3>
+            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">A quality-adjusted life year (QALY) counts one year in full health as 1 and a year in poorer health as a fraction of 1, so treatments for different diseases can be compared on one scale (Drummond et al., 2015). Here a fixed public budget of $10,000,000 buys imatinib for chronic myeloid leukaemia at the price you set.</p>
             
             <div class="bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
@@ -295,7 +308,7 @@
                             <div class="text-3xl sm:text-4xl font-mono font-bold text-voxYellow mb-1 sm:mb-2" id="qaly-patients">333</div>
                             <div class="text-xs sm:text-sm font-serif mb-3 sm:mb-4">Patients Treated</div>
                             <div class="text-3xl sm:text-4xl font-mono font-bold text-green-400 mb-1 sm:mb-2" id="qaly-total">2,444</div>
-                            <div class="text-xs sm:text-sm font-serif">Total QALYs (10 years)</div>
+                            <div class="text-xs sm:text-sm font-serif">QALYs lived over 10 years (7.34 per patient)</div>
                         </div>
                     </div>
                     <div class="md:col-span-7 p-4 sm:p-6 flex flex-col items-center justify-center bg-white">
@@ -307,21 +320,31 @@
             </div>
 
             <div class="bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-lg text-xs sm:text-sm text-gray-800 font-sans shadow-inner">
-                <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">ICER Methodology & Survival Data</h5>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">Why QALYs Decide Coverage</h5>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                     <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">The ICER Formula</strong>
-                        <p class="mb-2 text-gray-600 text-xs sm:text-sm">The Incremental Cost-Effectiveness Ratio (ICER) evaluates the economic value of an intervention:</p>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. The coverage rule</strong>
                         <div class="bg-white p-2 sm:p-3 border border-gray-200 rounded mt-2 mb-3 text-center">
-                            <span class="font-mono font-bold text-xs sm:text-sm">ICER = (&Delta; Cost) / (&Delta; Effect)</span><br>
-                            <span class="font-mono text-[10px] sm:text-xs text-gray-500 mt-1 block">Effect is measured in QALYs</span>
+                            <span class="font-mono font-bold text-xs sm:text-sm">ICER = &Delta;Cost / &Delta;QALYs &le; &lambda;</span><br>
+                            <span class="font-mono text-[10px] sm:text-xs text-gray-500 mt-1 block">fund the treatment if its cost per QALY gained is at or below the threshold &lambda;</span>
                         </div>
-                        <p class="text-gray-600 text-xs sm:text-sm">By dropping the cost of the intervention while maintaining the exact same clinical effect (the molecule is identical), the generic alternative maximizes public health utility per dollar spent.</p>
+                        <ul class="space-y-2 text-xs text-gray-600 list-disc pl-4">
+                            <li>With a fixed budget, money spent on one treatment is not spent on another. The threshold &lambda; is the health that money would have bought elsewhere: the cost per QALY of what the budget gives up (<a href="https://doi.org/10.3310/hta19140" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Claxton et al., 2015</a>; <a href="https://mpra.ub.uni-muenchen.de/26466/" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">McCabe, Claxton &amp; Culyer, 2008</a>).</li>
+                            <li>The budget is spent best when the last QALY it buys costs &lambda;: the marginal benefit of spending equals its marginal cost. A treatment above &lambda; displaces more health than it adds.</li>
+                        </ul>
                     </div>
                     <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">Kaplan-Meier Survival Data</strong>
-                        <p class="text-gray-600 mb-2 text-xs sm:text-sm">In the IRIS trial, estimated overall survival on imatinib was 83.3% at 10 years. A published cost-effectiveness model of CML treatment reports <b>7.34 QALYs per patient over 10 years</b> for starting on imatinib (<a href="https://doi.org/10.1182/bloodadvances.2019000745" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Yamamoto et al., 2019</a>).</p>
-                        <p class="text-[10px] mt-2 text-gray-500 font-mono">↳ Source: <a href="https://www.nejm.org/doi/10.1056/NEJMoa1609324" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Hochhaus, A., et al. (2017). "Long-Term Outcomes of Imatinib Treatment for Chronic Myeloid Leukemia." <i>N. Engl. J. Med.</i> 376:917–927.</a></p>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">2. Reference points</strong>
+                        <ul class="space-y-2 text-xs text-gray-600 list-disc pl-4">
+                            <li>United States, 2004 prices: imatinib against interferon-alpha plus low-dose cytarabine gained 3.89 QALYs per patient at $43,300 per QALY (<a href="https://doi.org/10.1002/cncr.20694" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Reed et al., 2004</a>).</li>
+                            <li>India has no official threshold. A 2026 survey estimated willingness to pay per QALY at INR 2,12,307 (US$2,535), 1 to 1.52 times GDP per capita (<a href="https://doi.org/10.1016/j.jval.2025.10.007" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Chugh et al., 2026</a>).</li>
+                            <li>WHO authors advise against using multiples of GDP per capita as decision rules on their own (<a href="https://doi.org/10.2471/BLT.15.164418" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Bertram et al., 2016</a>). The US debate is over a $50,000 benchmark (<a href="https://doi.org/10.1056/NEJMp1405158" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Neumann et al., 2014</a>).</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">3. What this calculator does and does not do</strong>
+                        <p class="text-gray-600 mb-2 text-xs sm:text-sm">In the IRIS trial, estimated overall survival on imatinib was 83.3% at 10 years (<a href="https://www.nejm.org/doi/10.1056/NEJMoa1609324" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Hochhaus et al., 2017</a>). A published cost-effectiveness model reports <b>7.34 QALYs per patient over 10 years</b> for starting on imatinib (<a href="https://doi.org/10.1182/bloodadvances.2019000745" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Yamamoto et al., 2019</a>).</p>
+                        <p class="text-gray-600 text-xs sm:text-sm">The bars count QALYs lived by treated patients, not QALYs gained over a comparator, so they are not an ICER. An Indian ICER would need Indian costs and outcomes for imatinib and its comparator, which are not modelled here.</p>
                     </div>
                 </div>
             </div>
@@ -371,11 +394,11 @@
                             <button onclick="document.getElementById('region-info-panel').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 font-bold text-lg">&times;</button>
                             <h5 class="font-bold text-base sm:text-lg mb-1 text-brandDark uppercase tracking-wide border-b-2 pb-2" id="region-title">Region</h5>
                             <div class="mt-2 sm:mt-3 mb-2 sm:mb-3">
-                                <span class="text-[10px] sm:text-xs text-gray-500 uppercase font-bold tracking-wider">Market Share</span>
+                                <span class="text-[10px] sm:text-xs text-gray-500 uppercase font-bold tracking-wider" id="region-share-label">Share</span>
                                 <div class="text-2xl sm:text-3xl font-mono font-bold text-scrollRed" id="region-share">0%</div>
                             </div>
                             <p class="text-xs font-serif text-gray-700 leading-relaxed bg-gray-50 p-2 rounded border border-gray-100" id="region-detail">Details go here.</p>
-                            <p class="text-[9px] sm:text-[10px] font-mono text-gray-400 mt-2 sm:mt-3" id="region-therapy">Primary Focus: ---</p>
+                            <p class="text-[9px] sm:text-[10px] font-mono text-gray-400 mt-2 sm:mt-3" id="region-therapy">Source: ---</p>
                         </div>
                         
                         <div id="map-instruction" class="absolute top-2 sm:top-4 left-1/2 transform -translate-x-1/2 bg-brandDark text-white px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-lg z-20 animate-bounce cursor-pointer" onclick="this.style.display='none'">
@@ -406,20 +429,21 @@
                 <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">The Policy Math & Economic Theory</h5>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. The Epidemic Model of Diffusion</strong>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. The S-Shaped (Logistic) Diffusion Curve</strong>
                         <div class="bg-white p-2 border border-gray-200 rounded mt-2 mb-2 text-center">
                             <span class="font-mono font-bold text-sm sm:text-base">dn<sub>t</sub> = &beta; (n<sub>t</sub> / N) (N - n<sub>t</sub>) dt</span>
                         </div>
                         <ul class="space-y-1 text-xs text-gray-600 list-disc pl-4">
                             <li>Where <strong>n<sub>t</sub></strong> is the number of adopters and <strong>N</strong> is the total population.</li>
-                            <li>Because knowledge spreads like a contagion, the solution to this differential equation yields a logistic, S-shaped curve.</li>
+                            <li>Adoption starts slowly, speeds up as each adopter makes the next adoption easier, then slows as few non-adopters remain. The solution of this equation is a logistic, S-shaped curve.</li>
+                            <li>The curve drawn here is illustrative: its midpoint (2010) and slope (0.4) were chosen, not fitted to the export figures.</li>
                         </ul>
                     </div>
                     <div>
                         <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">2. Complementary Assets</strong>
                         <ul class="space-y-2 text-xs text-gray-600 list-disc pl-4">
                             <li>Diffusion requires "complementary assets": organizational change, infrastructure, and capabilities.</li>
-                            <li>For Indian generics, low drug prices were not enough. The S-curve only triggered rapid acceleration once global NGOs (like PEPFAR) built the cold-chain distribution networks necessary to deliver the drugs across Sub-Saharan Africa.</li>
+                            <li>For Indian generics, low prices were not enough on their own; buyers also needed a way to certify and pay for them. After the US FDA set up a tentative-approval route for generic antiretrovirals bought with PEPFAR funds, the generic share of antiretroviral packs PEPFAR procured rose from 14.8% in 2005 to 89.3% in 2008, saving an estimated $323M; 9 of the 12 manufacturers with tentative approval were based in India (<a href="https://doi.org/10.1001/jama.2010.993" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Holmes et al., 2010</a>).</li>
                         </ul>
                         <p class="text-[10px] mt-3 text-gray-500 font-mono">↳ Export data: about $3bn in 2003 and $27bn in 2023 (<a href="https://www.ipa-india.org/sites/default/files/2025-08/Roadmap_for_Making_India_a_Global_Pharma_Exports_Hub_0.pdf" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Bain &amp; Company for the Indian Pharmaceutical Alliance, 2025</a>); FY2024–25 figure of $30.47bn: <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2205547" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">PIB Press Release</a>. Years in between are interpolated.</p>
                     </div>
@@ -444,7 +468,7 @@
                                 <option value="patented">Patented Monopoly (Bayer's Nexavar)</option>
                                 <option value="generic">Post-CL Generic (Natco's Sorafenib)</option>
                             </select>
-                            <p class="text-[10px] sm:text-xs text-gray-500 mt-2 font-mono" id="market-price-display">Market Price: $5,000 / month</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500 mt-2 font-mono" id="market-price-display">Market Price: Rs 2,80,000 / month (about $5,500)</p>
                         </div>
 
                         <div class="mb-6 sm:mb-8">
@@ -452,16 +476,16 @@
                                 Select Patient Demographic
                             </label>
                             <select id="select-wage-profile" class="w-full p-2 border border-gray-300 rounded font-sans text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-scrollRed">
-                                <option value="unskilled">Unskilled Laborer (MGNREGA Wage)</option>
-                                <option value="salaried">Average Urban Salaried Worker</option>
+                                <option value="unskilled">Unskilled Laborer (MGNREGA wage, Uttar Pradesh)</option>
+                                <option value="salaried">Urban Salaried Worker (informal sector)</option>
                             </select>
-                            <p class="text-[10px] sm:text-xs text-gray-500 mt-2 font-mono" id="wage-display">Daily Wage: $3.20 / day</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500 mt-2 font-mono" id="wage-display">Daily Wage: Rs 120 / day</p>
                         </div>
 
                         <div class="bg-brandDark text-white p-3 sm:p-4 rounded-lg shadow-inner" aria-live="polite" aria-atomic="true">
                             <h5 class="text-[10px] sm:text-xs uppercase tracking-widest text-gray-400 mb-1">WHO Affordability Score</h5>
                             <div class="flex items-end gap-1 sm:gap-2 mb-2">
-                                <span class="text-4xl sm:text-5xl font-mono font-bold text-voxYellow" id="days-worked-val">1,562</span>
+                                <span class="text-4xl sm:text-5xl font-mono font-bold text-voxYellow" id="days-worked-val">2,333</span>
                                 <span class="text-xs sm:text-sm font-serif pb-1 text-gray-300">Days of Labor</span>
                             </div>
                             <p class="text-[10px] sm:text-xs leading-tight text-gray-400">Days of work required to afford a single 30-day treatment course. The WHO threshold for "affordable" is ≤ 1 day's wage.</p>
@@ -488,10 +512,10 @@
                         <div class="bg-white p-2 sm:p-3 border border-gray-200 rounded mt-2 mb-3 text-center">
                             <span class="font-mono font-bold text-base sm:text-lg">L = (P - MC) / P</span>
                         </div>
-                        <p class="text-gray-600 mb-2 text-xs sm:text-sm">The Lerner Index (L) measures a firm's pricing power. <strong>P</strong> is Market Price, <strong>MC</strong> is Marginal Cost. Prices here are Bayer's Nexavar at $5,500 a month against Natco's post-licence sorafenib at $171 (<a href="https://knowledge.wharton.upenn.edu/article/sparring-over-sorafenib-how-will-natcos-move-against-bayer-affect-pharma-licensing/" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Knowledge@Wharton, 2012</a>); MC is $80 a month, the estimated cost of production before the 50% margin in <a href="https://doi.org/10.1136/bmjopen-2015-009586" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Hill et al. (2016)</a>.</p>
+                        <p class="text-gray-600 mb-2 text-xs sm:text-sm">The Lerner Index (L) measures a firm's pricing power. <strong>P</strong> is Market Price, <strong>MC</strong> is Marginal Cost. Prices here are Bayer's Nexavar at $5,500 a month against Natco's post-licence sorafenib at $171 (<a href="https://knowledge.wharton.upenn.edu/article/sparring-over-sorafenib-how-will-natcos-move-against-bayer-affect-pharma-licensing/" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Knowledge@Wharton, 2012</a>); MC is $74.18 a month, the estimated full cost of production for sorafenib 400 mg twice daily before the 50% mark-up in <a href="https://doi.org/10.1136/bmjopen-2015-009586" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Hill et al. (2016), Table 1</a>.</p>
                         <ul class="space-y-1 text-[10px] sm:text-xs font-mono text-gray-600 bg-white p-2 rounded border border-gray-200">
-                            <li>Patented L: (<span id="calc-pat-p">5500</span> - 80) / <span id="calc-pat-p2">5500</span> = <strong class="text-scrollRed">0.985</strong> (Extreme Monopoly)</li>
-                            <li>Generic L: (<span id="calc-gen-p">171</span> - 80) / <span id="calc-gen-p2">171</span> = <strong class="text-green-600">0.532</strong> (Competitive Margin)</li>
+                            <li>Patented L: (<span id="calc-pat-p">5500</span> - <span id="calc-mc">74.18</span>) / <span id="calc-pat-p2">5500</span> = <strong class="text-scrollRed" id="calc-pat-l">0.987</strong> (price is almost all margin)</li>
+                            <li>Generic L: (<span id="calc-gen-p">171</span> - <span id="calc-mc2">74.18</span>) / <span id="calc-gen-p2">171</span> = <strong class="text-green-600" id="calc-gen-l">0.566</strong> (a margin remains)</li>
                         </ul>
                         <p class="text-[10px] mt-3 text-gray-500 font-mono">↳ Source: <a href="https://www.jstor.org/stable/2967480" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Lerner, A. P. (1934). "The Concept of Monopoly and the Measurement of Monopoly Power." <i>The Review of Economic Studies</i>, 1(3), 157–175.</a></p>
                     </div>
@@ -502,7 +526,7 @@
                         </div>
                         <p class="text-gray-600 mb-2 text-xs sm:text-sm">Where <strong>C</strong> is the cost of a standard treatment course, and <strong>W</strong> is the daily wage of the lowest-paid unskilled government worker.</p>
                         <p class="text-[10px] mt-3 text-gray-500 font-mono">↳ Source 1: <a href="https://www.who.int/our-work/access-to-medicines-and-health-products" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">WHO &amp; Health Action International (2008). Methodology for measuring medicine prices.</a><br><br>
-                        ↳ Source 2: <a href="https://nrega.nic.in/netnrega/home.aspx" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Ministry of Rural Development, Govt. of India. MGNREGA wage rates (~₹267 / $3.20 USD per day).</a></p>
+                        ↳ Wages, in rupees and in force in March 2012 when the licence was granted: MGNREGA notified wage for Uttar Pradesh, Rs 120 a day, effective 1 January 2011 under S.O. 82(E) (<a href="https://www.indiawaterportal.org/governance-and-policy/governance/mgnrega-wage-rate-revision-official-notification-mord" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Ministry of Rural Development notification</a>), revised next from 1 April 2012 (<a href="https://eparlib.nic.in/bitstream/123456789/618800/1/120186.pdf" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Lok Sabha Unstarred Q. 3591, 26 April 2012</a>); urban informal-sector male regular wage/salaried employee, Rs 258 a day in 2011&ndash;12 (NSS 68th round, reported by <a href="https://www.business-standard.com/article/current-affairs/men-got-56-higher-wages-than-women-in-rural-areas-in-2011-12-114090801212_1.html" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Business Standard, 8 September 2014</a>). Prices: Rs 2.8 lakh and Rs 8,800 a month (Knowledge at Wharton, 2012). Days of labour = monthly price &divide; daily wage, both in rupees.</p>
                     </div>
                 </div>
             </div>
@@ -592,105 +616,76 @@
         </section>
 
         <section class="mb-16 sm:mb-24" id="game-theory-patent-race">
-            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">9. Game Theory: The "Winner-Takes-All" Patent Race</h3>
-            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Why do pharmaceutical companies spend billions on duplicative research rather than sharing the burden? Patents operate as a "winner-take-all" contest. The first firm to secure the patent captures total market control, while the loser gets absolutely nothing and absorbs the entire cost of their failed investment. Test this dynamic below.</p>
-            
+            <h3 class="text-2xl sm:text-3xl font-bold font-sans mb-2">9. Game Theory: The Patent Race, and What Happens When the Prize Shrinks</h3>
+            <p class="text-base sm:text-lg font-serif text-gray-600 mb-6 sm:mb-8">Two firms race for one patent. The bigger spender wins it; equal spenders split it on a coin toss. With a large prize both firms overspend. But the prize depends on how long the winner keeps the market before generics enter. Shorten that period and watch the equilibrium move, from a wasteful race to the drug not being developed at all.</p>
+
             <div class="bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
                     <div class="md:col-span-5 bg-brandGray p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200">
                         <h4 class="font-bold text-base sm:text-lg mb-3 sm:mb-4 uppercase tracking-wide border-b pb-2">CEO Decision Matrix</h4>
-                        <p class="text-xs sm:text-sm font-sans mb-4 sm:mb-6 text-gray-700">You are the CEO of Firm A. A new disease has emerged. You must independently choose your R&D investment level. Your rival, Firm B, is making the same choice.</p>
-                        
-                        <div class="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                        <p class="text-xs sm:text-sm font-sans mb-3 text-gray-700">You are the CEO of Firm A. Your rival, Firm B, chooses at the same time. First pick the price-decay stage: how long until generics enter.</p>
+                        <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="Years of exclusivity before generic entry">
+                            <button onclick="setRaceStage(0)" data-race-stage="0" class="px-2 py-1 border-2 border-brandDark rounded text-xs font-bold">20 yrs</button>
+                            <button onclick="setRaceStage(1)" data-race-stage="1" class="px-2 py-1 border-2 border-brandDark rounded text-xs font-bold">10 yrs</button>
+                            <button onclick="setRaceStage(2)" data-race-stage="2" class="px-2 py-1 border-2 border-brandDark rounded text-xs font-bold">5 yrs</button>
+                            <button onclick="setRaceStage(3)" data-race-stage="3" class="px-2 py-1 border-2 border-brandDark rounded text-xs font-bold">1 yr</button>
+                            <button onclick="setRaceStage(4)" data-race-stage="4" class="px-2 py-1 border-2 border-brandDark rounded text-xs font-bold">6 months</button>
+                        </div>
+                        <p class="text-xs font-mono mb-4 text-gray-700" aria-live="polite">Generics enter after <b id="race-years">20 years</b>; the patent is worth <b id="race-value">$1,000M</b>.</p>
+                        <div class="space-y-3 mb-6">
                             <button onclick="playPatentRace('high')" id="btn-play-high" class="btn-strategy unselected w-full py-2 sm:py-3 px-3 sm:px-4 font-bold rounded shadow text-xs sm:text-sm flex justify-between items-center border-2">
-                                <span>Invest in High R&D</span>
+                                <span>Invest in High R&amp;D</span>
                                 <span class="badge-cost font-mono px-2 py-1 rounded text-[10px] sm:text-xs">Cost: $400M</span>
                             </button>
                             <button onclick="playPatentRace('low')" id="btn-play-low" class="btn-strategy unselected w-full py-2 sm:py-3 px-3 sm:px-4 font-bold rounded shadow text-xs sm:text-sm flex justify-between items-center border-2">
-                                <span>Invest in Low R&D</span>
+                                <span>Invest in Low R&amp;D</span>
                                 <span class="badge-cost font-mono px-2 py-1 rounded text-[10px] sm:text-xs">Cost: $100M</span>
                             </button>
+                            <button onclick="playPatentRace('out')" id="btn-play-out" class="btn-strategy unselected w-full py-2 sm:py-3 px-3 sm:px-4 font-bold rounded shadow text-xs sm:text-sm flex justify-between items-center border-2">
+                                <span>Stay out</span>
+                                <span class="badge-cost font-mono px-2 py-1 rounded text-[10px] sm:text-xs">Cost: $0</span>
+                            </button>
                         </div>
-
                         <div id="game-result-box" class="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-inner text-xs sm:text-sm font-serif hidden" aria-live="polite">
                         </div>
                     </div>
-                    
-                    <div class="md:col-span-7 p-2 sm:p-6 bg-white flex flex-col justify-center gap-4 sm:gap-6 overflow-x-auto">
-                        <div class="min-w-[280px]">
-                            <h5 class="font-bold text-[10px] sm:text-xs uppercase tracking-wide text-gray-500 mb-2 text-center">The R&D Payoff Matrix (Net Profit)</h5>
-                            <p class="text-[10px] sm:text-xs text-center text-gray-500 mb-4 font-mono">Patent Value (P) = $1000M</p>
-                            
-                            <div class="flex flex-col items-center w-full">
-                                <div class="flex w-full max-w-lg mb-1 sm:mb-2">
-                                    <div class="w-1/4"></div>
-                                    <div class="w-3/4 flex font-bold text-[9px] sm:text-[10px] md:text-sm text-gray-600 uppercase tracking-wide">
-                                        <div class="w-1/2 text-center px-1">Firm B: High R&D</div>
-                                        <div class="w-1/2 text-center px-1">Firm B: Low R&D</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex w-full max-w-lg mb-1">
-                                    <div class="w-1/4 flex items-center justify-end pr-2 sm:pr-4 font-bold text-[9px] sm:text-[10px] md:text-sm text-brandDark uppercase tracking-wide text-right">Firm A<br>(You):<br>High</div>
-                                    <div class="w-3/4 flex gap-1">
-                                        <div id="cell-high-high" class="w-1/2 p-2 sm:p-4 md:p-6 border-2 border-gray-200 bg-gray-50 rounded flex flex-col items-center justify-center transition-colors">
-                                            <span class="font-mono font-bold text-sm sm:text-base md:text-lg text-brandDark">$100M, $100M</span>
-                                            <span class="text-[8px] sm:text-[10px] text-gray-500 mt-1 text-center">Symmetric (Coin Toss)</span>
-                                        </div>
-                                        <div id="cell-high-low" class="w-1/2 p-2 sm:p-4 md:p-6 border-2 border-gray-200 bg-gray-50 rounded flex flex-col items-center justify-center transition-colors">
-                                            <span class="font-mono font-bold text-sm sm:text-base md:text-lg text-green-600">$600M, <span class="text-red-500">-$100M</span></span>
-                                            <span class="text-[8px] sm:text-[10px] text-gray-500 mt-1 text-center">Asymmetric (You Win)</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex w-full max-w-lg">
-                                    <div class="w-1/4 flex items-center justify-end pr-2 sm:pr-4 font-bold text-[9px] sm:text-[10px] md:text-sm text-brandDark uppercase tracking-wide text-right">Firm A<br>(You):<br>Low</div>
-                                    <div class="w-3/4 flex gap-1">
-                                        <div id="cell-low-high" class="w-1/2 p-2 sm:p-4 md:p-6 border-2 border-gray-200 bg-gray-50 rounded flex flex-col items-center justify-center transition-colors">
-                                            <span class="font-mono font-bold text-sm sm:text-base md:text-lg"><span class="text-red-500">-$100M</span>, <span class="text-green-600">$600M</span></span>
-                                            <span class="text-[8px] sm:text-[10px] text-gray-500 mt-1 text-center">Asymmetric (Rival Wins)</span>
-                                        </div>
-                                        <div id="cell-low-low" class="w-1/2 p-2 sm:p-4 md:p-6 border-2 border-gray-200 bg-gray-50 rounded flex flex-col items-center justify-center transition-colors">
-                                            <span class="font-mono font-bold text-sm sm:text-base md:text-lg text-brandDark">$400M, $400M</span>
-                                            <span class="text-[8px] sm:text-[10px] text-gray-500 mt-1 text-center">Symmetric (Coin Toss)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="md:col-span-7 p-2 sm:p-6 bg-white flex flex-col justify-center gap-4 overflow-x-auto">
+                        <h5 class="font-bold text-[10px] sm:text-xs uppercase tracking-wide text-gray-500 text-center">Payoff matrix (your net profit, then Firm B's). Green border = equilibrium.</h5>
+                        <div id="race-matrix" class="min-w-[300px]" role="img"></div>
+                        <p class="text-xs sm:text-sm font-serif text-gray-700 bg-gray-50 p-3 rounded border border-gray-200" id="race-regime" aria-live="polite"></p>
                     </div>
                 </div>
             </div>
 
             <div class="bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-lg text-xs sm:text-sm text-gray-800 font-sans shadow-inner">
-                <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">The Policy Math & Economic Theory</h5>
+                <h5 class="font-bold text-base sm:text-lg mb-4 uppercase tracking-wide text-brandDark">The Policy Math & Sensitivity Analysis</h5>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                     <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. The R&D Investment Rule</strong>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">1. Payoffs</strong>
+                        <ul class="space-y-1 text-[10px] sm:text-xs text-gray-600 list-disc pl-4">
+                            <li>Win outright (outspend the rival, or invest alone): V &minus; C.</li>
+                            <li>Tie (equal spending): V/2 &minus; C, the expected value of a coin toss.</li>
+                            <li>Lose: &minus;C. Stay out: 0. High costs $400M, Low $100M.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">2. How the prize shrinks</strong>
                         <div class="bg-white p-2 border border-gray-200 rounded mt-2 mb-2 text-center">
-                            <span class="font-mono font-bold text-sm sm:text-base">p &times; V &ge; C</span>
+                            <span class="font-mono font-bold text-xs sm:text-sm">V(T) = 1000 &times; (1 &minus; 1.105<sup>&minus;T</sup>) / (1 &minus; 1.105<sup>&minus;20</sup>)</span>
                         </div>
-                        <ul class="space-y-1 text-[10px] sm:text-xs text-gray-600 mb-2 list-disc pl-4">
-                            <li>Investment is rational if the probability of winning (p) multiplied by the patent value (V) is greater than the development costs (C).</li>
-                            <li>If spending is unequal, the high-spender secures the patent outright, meaning their probability is 1.</li>
-                            <li>If spending is identical, the odds become a coin toss (p = 0.5) for both firms.</li>
+                        <ul class="space-y-1 text-[10px] sm:text-xs text-gray-600 list-disc pl-4">
+                            <li>Same yearly profit, fewer years before generic entry, discounted at the 10.5% cost of capital from section 2. V(20) = $1,000M.</li>
+                            <li>High beats Low against either rival choice only when V &gt; 2 &times; (400 &minus; 100) = $600M.</li>
                         </ul>
                     </div>
                     <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">2. The Dominant Strategy</strong>
-                        <ul class="space-y-2 text-[10px] sm:text-xs text-gray-600 list-disc pl-4">
-                            <li>Calculating the expected net payoffs mathematically: P/2 - C<sub>h</sub> vs -C<sub>l</sub>.</li>
-                            <li>Playing High R&D yields a better financial outcome regardless of the competitor's choice.</li>
-                            <li>In game theory, a move that is always superior regardless of the opponent's action is called a <strong>dominant strategy</strong>.</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">3. Socially Wasteful Outcomes</strong>
-                        <ul class="space-y-2 text-[10px] sm:text-xs text-gray-600 list-disc pl-4 mb-2">
-                            <li>If both firms agreed to stick to Low R&D, they would both net $400M instead of $100M.</li>
-                            <li>However, the winner-take-all threat of losing the patent entirely forces both to overspend.</li>
-                            <li>This creates hyper-competition resulting in excessive, overlapping research that drains resources from a societal perspective.</li>
+                        <strong class="text-scrollRed border-b border-blue-200 pb-1 block mb-2">3. What the stages show</strong>
+                        <ul class="space-y-1 text-[10px] sm:text-xs text-gray-600 list-disc pl-4">
+                            <li>20 years ($1,000M): both go High and net $100M each, against $400M each if both held back. Competition in R&amp;D pushes effort past what is socially worthwhile (<a href="https://doi.org/10.2307/3003398" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Dasgupta &amp; Stiglitz, 1980</a>).</li>
+                            <li>10 years ($731M): no stable pair of choices.</li>
+                            <li>5 years ($455M): both go Low; the race stops.</li>
+                            <li>1 year ($110M): only one firm can invest profitably.</li>
+                            <li>6 months ($56M): nobody invests, so the drug is not developed. The $1,000M, $400M and $100M are illustrative; the pattern is the point.</li>
                         </ul>
                     </div>
                 </div>
@@ -699,23 +694,23 @@
 
         <section class="mb-16 sm:mb-24 article-card p-6 sm:p-10 rounded-2xl bg-white border border-gray-100 transition-all duration-300 hover:shadow-2xl" id="oecd-benchmarks">
     <h3 class="text-2xl sm:text-4xl font-bold font-sans mb-6 tracking-tight border-b-2 border-black pb-4">
-        10. Global Benchmarks: The Generic Paradox
+        10. Global Benchmarks: The Generic Paradox, and Beyond the OECD
     </h3>
     
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
         <div class="lg:col-span-7">
             <p class="text-base sm:text-lg font-serif text-gray-700 leading-relaxed mb-6">
-                Data from the <strong>OECD Health at a Glance 2023</strong> reveals a striking "Generic Paradox." In countries like <strong>Germany</strong>, generics account for over <strong>83.4%</strong> of prescriptions by volume, yet represent only <strong>29.2%</strong> of total pharmaceutical spending. This demonstrates the massive fiscal relief generic manufacturers (largely supplied by India) provide to national health budgets.
+                Data from <strong>OECD Health at a Glance 2023</strong> show a "generic paradox." In <strong>Germany</strong>, generics made up <strong>83%</strong> of the reimbursed market by volume in 2021 but only <strong>29%</strong> of its value; across 26 OECD countries the averages were 54% and 25%. Generics carry most of the volume at a small share of the bill.
             </p>
             
             <div class="inline-flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 mb-6">
                 <span class="w-2 h-2 rounded-full bg-scrollRed"></span>
-                <span class="text-[10px] font-mono uppercase tracking-widest text-gray-500">Source: OECD Health Statistics 2023 / g9-7.csv</span>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-gray-500">Source: OECD, Health at a Glance 2023, Figure 9.7</span>
             </div>
         </div>
 
         <div class="lg:col-span-5 bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-inner">
-            <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 text-center">Verified CSV Data (2021)</h4>
+            <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 text-center">Generic share of market, 2021 (%)</h4>
             <table class="w-full text-[11px] font-mono leading-tight">
                 <thead>
                     <tr class="border-b border-gray-300">
@@ -725,11 +720,11 @@
                     </tr>
                 </thead>
                 <tbody class="text-gray-600">
-                    <tr><td class="pt-2">Chile</td><td class="text-right">82.3%</td><td class="text-right font-bold text-scrollRed">67.2%</td></tr>
-                    <tr><td>Germany</td><td class="text-right">83.4%</td><td class="text-right font-bold text-scrollRed">29.2%</td></tr>
-                    <tr><td>United Kingdom</td><td class="text-right">78.4%</td><td class="text-right font-bold text-scrollRed">34.3%</td></tr>
-                    <tr><td>OECD Average</td><td class="text-right">54.1%</td><td class="text-right font-bold text-scrollRed">24.7%</td></tr>
-                    <tr><td>Switzerland</td><td class="text-right">22.1%</td><td class="text-right font-bold text-scrollRed">14.1%</td></tr>
+                    <tr><td class="pt-2">Chile (community pharmacy)</td><td class="text-right">90%</td><td class="text-right font-bold text-scrollRed">65%</td></tr>
+                    <tr><td>Germany (reimbursed)</td><td class="text-right">83%</td><td class="text-right font-bold text-scrollRed">29%</td></tr>
+                    <tr><td>United Kingdom (community pharmacy)</td><td class="text-right">80%</td><td class="text-right font-bold text-scrollRed">54%</td></tr>
+                    <tr><td>OECD average (26)</td><td class="text-right">54%</td><td class="text-right font-bold text-scrollRed">25%</td></tr>
+                    <tr><td>Switzerland (total market)</td><td class="text-right">23%</td><td class="text-right font-bold text-scrollRed">19%</td></tr>
                 </tbody>
             </table>
         </div>
@@ -742,9 +737,22 @@
         </div>
     </div>
 
+
+
+    <div class="mt-8 bg-gray-50 border border-gray-200 p-4 sm:p-6 rounded-xl">
+        <h5 class="font-bold text-xs uppercase tracking-widest mb-4 text-gray-500 font-sans">Beyond the OECD: comparable economies</h5>
+        <p class="text-xs text-gray-600 font-serif mb-4">These are policy events, not volume and value shares, so they are not comparable with the chart above. They show that India is one of several middle-income countries that have used procurement or licensing to lower prices.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700 font-serif">
+            <div class="bg-white p-3 rounded border border-gray-200"><b class="font-sans">China.</b> In the "4+7" volume-based procurement pilot in 11 cities (issued nationally by the State Council in January 2019), winning bids for 25 drugs averaged 52% below the 2017 minimum purchase price (<a href="https://doi.org/10.5582/ddt.2019.01093" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Tang et al., 2019</a>).</div>
+            <div class="bg-white p-3 rounded border border-gray-200"><b class="font-sans">Brazil.</b> On 4 May 2007 Brazil issued a compulsory licence on the HIV drug efavirenz after rejecting Merck's offer of US$1.56 a day; an Indian generic cost US$0.45 a day (<a href="https://www.aidsmap.com/news/may-2007/brazil-issues-compulsory-license-efavirenz" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">Alcorn, aidsmap, 2007</a>).</div>
+            <div class="bg-white p-3 rounded border border-gray-200"><b class="font-sans">Thailand (Southeast Asia).</b> Thailand issued compulsory licences on efavirenz in 2006 and on lopinavir/ritonavir and clopidogrel in 2007 (<a href="https://msfaccess.org/2006-thailand-begins-issue-compulsory-licences" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">MSF Access</a>).</div>
+            <div class="bg-white p-3 rounded border border-gray-200"><b class="font-sans">South Africa.</b> In April 2001, 38 pharmaceutical companies and their association withdrew a court challenge to the 1997 Medicines and Related Substances Control Amendment Act, which provided for generic substitution and a pricing committee (<a href="https://www.polity.org.za/polity/govdocs/pr/2001/pr0419a.html" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">South African Government, 2001</a>).</div>
+        </div>
+    </div>
+
     <footer class="mt-8 pt-6 border-t border-gray-100 text-[10px] text-gray-400 font-serif italic">
         OECD (2023), "Generics and biosimilars", in Health at a Glance 2023: OECD Indicators, OECD Publishing, Paris. 
-        Data derived from the accompanying dataset (w74906.xlsx) specifically sheet g9-7.
+        Values are the data labels printed in Figure 9.7 (2021; StatLink https://stat.link/w74906). Market coverage differs by country, as the figure notes state, so the shares compare policy outcomes loosely, not like for like.
     </footer>
 </section>
     </main>
@@ -755,10 +763,10 @@
     <script src="game.js"></script>
     <script type="module" src="interludes.js"></script>
     <script type="module" src="interlude-molecule.js"></script>
+    <script type="module" src="interlude-pipeline.js"></script>
     <script type="module" src="interlude-courtroom.js"></script>
     <script type="module" src="interlude-dispatch.js"></script>
     <script type="module" src="interlude-market.js"></script>
-    <script type="module" src="interlude-equilibrium.js"></script>
     <script type="module" src="interlude-ward.js"></script>
     <script type="module" src="interlude-globe.js"></script>
     <script type="module" src="interlude-wage.js"></script>

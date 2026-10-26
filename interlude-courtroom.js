@@ -1,13 +1,13 @@
 /* ============================================================
    interlude-courtroom.js — 3D courtroom for the Legal Labyrinth
-   (module 2 of the artifact; Condition B embodied layer)
+   (module 3 of the artifact; Condition B embodied layer)
 
    The bench: a table, the two rulings as physical case papers,
    and a gavel. Choose a paper (mouse hover/click, or arrow keys)
    and strike (click, or Enter/Space).
 
    Flow: the game director opens this scene automatically after
-   module 1's objective; the player rules on ALL SIX cases here,
+   module 2's objective; the player rules on ALL SIX cases here,
    one after another, without returning to the page in between.
    Each strike calls the page's existing makeRuling(), so rulings
    drive the same market state and Access/Innovation scoring as
@@ -43,6 +43,7 @@
       title: g("case-title") || "Rule on the case",
       drug: g("case-drug") || "Legal Labyrinth",
       rejectLabel: g("btn-reject") || "Reject / Intervene",
+      grantLabel: g("btn-grant") || "Uphold the claim",
       claim: claim,
       context: context,
       label: num ? ("Case file " + num + (total ? " / " + total : "")) : "Case brief"
@@ -56,7 +57,8 @@
   }
 
   function allCasesRuled() {
-    var card = document.getElementById("goal-card-1");
+    // the courtroom is level index 2 (module 3) since the pipeline was added
+    var card = document.getElementById("goal-card-2");
     return !!(card && card.classList.contains("done"));
   }
 
@@ -252,8 +254,8 @@
 
         var current = readCase();
         var papers = [
-          makePaper(-1.75, A.paper.grantHeading, "the company keeps exclusivity"),
-          makePaper( 1.75, current.rejectLabel,  "the market is pried open")
+          makePaper(-1.75, current.grantLabel, "the claim stands"),
+          makePaper( 1.75, current.rejectLabel,  "the authority intervenes")
         ];
         var IS_GRANT = [true, false];
 
@@ -605,9 +607,11 @@
           // dress the bench for the (new) current case
           current = readCase();
           ctx.setTitle(current.title, current.drug);
-          var newTop = paperTexture(current.rejectLabel, "the market is pried open");
+          var newTop = paperTexture(current.rejectLabel, "the authority intervenes");
           papers[1].material[2].map = newTop;
           papers[1].material[2].needsUpdate = true;
+          papers[0].material[2].map = paperTexture(current.grantLabel, "the claim stands");
+          papers[0].material[2].needsUpdate = true;
           papers.forEach(function (p) { p.scale.set(1, 1, 1); });
           state = "aim"; strikeT = 0; selected = 0;
           highlight();
@@ -639,7 +643,7 @@
           // the record is written onto the case file itself
           docOutcome = verdict || "Ruling registered.";
           refreshDoc();
-          ctx.setHint((isGrant ? "You granted the monopoly. " : "You intervened in the market. ") +
+          ctx.setHint((isGrant ? "You upheld the company's claim. " : "You intervened. ") +
                       "Pick up the file to read what followed, or change the ruling if that " +
                       "was not what you meant.");
           refreshFooter();
